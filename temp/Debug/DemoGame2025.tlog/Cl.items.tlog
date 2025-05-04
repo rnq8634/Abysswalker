@@ -1,5 +1,6 @@
 C:\Users\nikol\source\repos\DemoGame2025\animatedsprite.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\animatedsprite.obj
 C:\Users\nikol\source\repos\DemoGame2025\ball.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\ball.obj
+C:\Users\nikol\source\repos\DemoGame2025\entity.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\entity.obj
 C:\Users\nikol\source\repos\DemoGame2025\game.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\game.obj
 C:\Users\nikol\source\repos\DemoGame2025\imgui\imgui.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\imgui.obj
 C:\Users\nikol\source\repos\DemoGame2025\imgui\imgui_demo.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\imgui_demo.obj
@@ -14,9 +15,11 @@ C:\Users\nikol\source\repos\DemoGame2025\main.cpp;C:\Users\nikol\source\repos\De
 C:\Users\nikol\source\repos\DemoGame2025\matrix4.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\matrix4.obj
 C:\Users\nikol\source\repos\DemoGame2025\particle.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\particle.obj
 C:\Users\nikol\source\repos\DemoGame2025\particleemitter.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\particleemitter.obj
+C:\Users\nikol\source\repos\DemoGame2025\player.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\player.obj
 C:\Users\nikol\source\repos\DemoGame2025\renderer.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\renderer.obj
 C:\Users\nikol\source\repos\DemoGame2025\scene.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\scene.obj
 C:\Users\nikol\source\repos\DemoGame2025\scenebouncingballs.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\scenebouncingballs.obj
+C:\Users\nikol\source\repos\DemoGame2025\scenetest.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\scenetest.obj
 C:\Users\nikol\source\repos\DemoGame2025\shader.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\shader.obj
 C:\Users\nikol\source\repos\DemoGame2025\sprite.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\sprite.obj
 C:\Users\nikol\source\repos\DemoGame2025\texture.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\texture.obj

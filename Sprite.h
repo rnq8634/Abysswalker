@@ -5,6 +5,7 @@
 // Forward Declarations:
 class Renderer;
 class Texture;
+class AnimatedSprites;
 
 class Sprite
 {

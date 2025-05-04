@@ -35,6 +35,7 @@ Renderer::Renderer()
 	, m_fClearRed(0.0f)
 	, m_fClearGreen(0.0f)
 	, m_fClearBlue(0.0f)
+	, m_pWindow(nullptr)
 {
 
 }
@@ -213,6 +214,7 @@ int Renderer::GetHeight() const
 	return m_iHeight;
 }
 
+// To create sprites!! (Static sprites)
 Sprite* Renderer::CreateSprite(const char* pcFilename)
 {
 	assert(m_pTextureManager);
@@ -294,6 +296,7 @@ void Renderer::DrawSprite(Sprite& sprite)
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
+// To create ANIMATED SPRITES
 AnimatedSprite*
 Renderer::CreateAnimatedSprite(const char* pcFilename)
 {

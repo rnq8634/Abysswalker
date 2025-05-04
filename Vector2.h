@@ -9,6 +9,8 @@ public:
 	Vector2();
 	Vector2(float inx, float iny);
 	~Vector2();
+	Vector2(const Vector2& vector2);
+	Vector2& operator=(const Vector2& vector2);
 
 	void Set(float inx, float iny);
 
@@ -65,8 +67,6 @@ public:
 protected:
 
 private:
-	Vector2(const Vector2& vector2);
-	Vector2& operator=(const Vector2& vector2);
 
 	// Member data
 public:
@@ -78,6 +78,5 @@ protected:
 private:
 
 };
-
 
 #endif // __VECTOR2_H__

@@ -33,9 +33,11 @@ public:
 	int GetWidth() const;
 	int GetHeight() const;
 
+	// Draw Static Sprites
 	Sprite* CreateSprite(const char* pcFilename);
 	void DrawSprite(Sprite& sprite);
 
+	// Draw Animated Sprites
 	AnimatedSprite* CreateAnimatedSprite(const char* pcFilename);
 	void DrawAnimatedSprite(AnimatedSprite& sprite, int frame);
 

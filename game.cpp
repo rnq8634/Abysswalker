@@ -14,6 +14,7 @@
 
 // SCENE INCLUDES
 #include "scenebouncingballs.h"
+#include "SceneTest.h"
 
 // Static Members:
 Game* Game::sm_pInstance = 0;
@@ -38,6 +39,14 @@ Game::Game()
 	, m_bLooping(true)
 	, m_pInputSystem(0)
 	, m_bShowDebugWindow(0)
+	, m_iCurrentScene(0)
+	, m_fElaspedSeconds(0.0f)
+	, m_fExecutionTime(0.0f)
+	, m_iFPS(0)
+	, m_iFrameCount(0)
+	, m_iLastTime(0)
+	, m_pCheckerboard(0)
+
 {
 
 }
@@ -55,10 +64,11 @@ void Game::Quit()
 	m_bLooping = false;
 }
 
+// Where scenes will be added
 bool Game::Initialise()
 {
-	int bbWidth = 1024;
-	int bbHeight = 768;
+	int bbWidth = 2560;
+	int bbHeight = 1440;
 
 	m_pRenderer = new Renderer();
 	if (!m_pRenderer->Initialize(true, bbWidth, bbHeight))
@@ -71,7 +81,9 @@ bool Game::Initialise()
 	bbHeight = m_pRenderer->GetHeight();
 
 	m_iLastTime = SDL_GetPerformanceCounter();
-	m_pRenderer->SetClearColor(0, 255, 255);
+
+	// CHange backgroudn color
+	m_pRenderer->SetClearColor(50, 50, 50);
 
 	// INPUT SYSTEM
 	m_pInputSystem = new InputSystem();
@@ -81,16 +93,21 @@ bool Game::Initialise()
 		return false;
 	}
 
+	//------------------------------------SCENES------------------------------------------
+
 	// SCENE BOUNCING BALLS
+	
+
+	// Scene Test
 	Scene* pScene = 0;
-	pScene = new SceneBouncingBalls();
+	pScene = new SceneTest();
 	if (!pScene->Initialise(*m_pRenderer))
 	{
-		LogManager::GetInstance().Log("SceneBouncingBalls failed to initialise!");
+		LogManager::GetInstance().Log("SceneTest failed to initialise!");
 		return false;
 	}
 
-
+	//------------------------------------SCENES END------------------------------------------
 
 	m_scenes.push_back(pScene);
 	m_iCurrentScene = 0; // Only one scene available
