@@ -67,8 +67,9 @@ void Game::Quit()
 // Where scenes will be added
 bool Game::Initialise()
 {
-	int bbWidth = 2560;
-	int bbHeight = 1440;
+	// WIndow screen
+	int bbWidth = 1280;
+	int bbHeight = 720;
 
 	m_pRenderer = new Renderer();
 	if (!m_pRenderer->Initialize(true, bbWidth, bbHeight))

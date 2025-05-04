@@ -39,7 +39,7 @@ public:
 
 	// Draw Animated Sprites
 	AnimatedSprite* CreateAnimatedSprite(const char* pcFilename);
-	void DrawAnimatedSprite(AnimatedSprite& sprite, int frame);
+	void DrawAnimatedSprite(AnimatedSprite& sprite, int frame, bool FlipHorizontal = false);
 
 	void CreateStaticText(const char* pText, int pointsize);
 

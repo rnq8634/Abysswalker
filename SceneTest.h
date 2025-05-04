@@ -1,5 +1,6 @@
 // Local includes
 #include "Scene.h"
+#include "InputSystem.h"
 
 class Player;
 class Renderer;

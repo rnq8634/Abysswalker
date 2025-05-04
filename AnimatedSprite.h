@@ -4,6 +4,9 @@
 // Local inc
 #include "sprite.h"
 
+// Lib includes
+#include <functional> // for std::functional
+
 // Forward dec
 class Renderer;
 class VertexArray;
@@ -30,6 +33,14 @@ public:
 	int GetHeight() const;
 	void DebugDraw();
 
+	void SetFlipHorizontal(bool flip);
+	bool IsFlippedHorizontal() const;
+
+	// Animation completion callback
+	typedef std::function<void()> AnimationCompleteCallback;
+	void SetAnimationCompleteCallback(AnimationCompleteCallback callback);
+	bool IsAnimationComplete() const;
+
 protected:
 
 private:
@@ -50,6 +61,9 @@ protected:
 	float totalTime;
 	bool m_bAnimating;
 	bool m_bLooping;
+	bool m_bFlipHorizontal;
+	bool m_bAnimationComplete;
+	AnimationCompleteCallback m_animationCompleteCallback;
 
 private:
 

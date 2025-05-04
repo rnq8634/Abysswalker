@@ -21,6 +21,9 @@ AnimatedSprite::AnimatedSprite()
 	, m_bLooping(false)
 	, m_frameDuration(1.0f)
 	, totalTime(0.0f)
+	, m_bFlipHorizontal(false)
+	, m_bAnimationComplete(false)
+	, m_animationCompleteCallback(nullptr)
 {
 
 }
@@ -152,6 +155,12 @@ AnimatedSprite::Process(float deltaTime)
 				{
 					m_iCurrentFrame = m_iTotalFrames - 1;
 					m_bAnimating = false;
+					m_bAnimationComplete = true;
+
+					if (m_animationCompleteCallback)
+					{
+						m_animationCompleteCallback();
+					}
 				}
 			}
 
@@ -161,18 +170,31 @@ AnimatedSprite::Process(float deltaTime)
 }
 
 void
+AnimatedSprite::SetFlipHorizontal(bool flip)
+{
+	m_bFlipHorizontal = flip;
+}
+
+bool
+AnimatedSprite::IsFlippedHorizontal() const
+{
+	return m_bFlipHorizontal;
+}
+
+void
 AnimatedSprite::Draw(Renderer& renderer)
 {
 	assert(m_pVertexData);
 	m_pTexture->SetActive();
 	m_pVertexData->SetActive(); // Set the vertex data required for this animated sprite before drawing it
-	renderer.DrawAnimatedSprite(*this, m_iCurrentFrame); // Draw the current frame
+	renderer.DrawAnimatedSprite(*this, m_iCurrentFrame, m_bFlipHorizontal); // Draw the current frame
 }
 
 void
 AnimatedSprite::Animate()
 {
 	m_bAnimating = true;
+	m_bAnimationComplete = false; // Reset animation complete state
 }
 
 void
@@ -192,6 +214,19 @@ AnimatedSprite::Restart()
 {
 	m_iCurrentFrame = 0;
 	m_fTimeElapsed = 0.0f;
+	m_bAnimationComplete = false;
+}
+
+void
+AnimatedSprite::SetAnimationCompleteCallback(AnimationCompleteCallback callBack)
+{
+	m_animationCompleteCallback = callBack;
+}
+
+bool
+AnimatedSprite::IsAnimationComplete() const
+{
+	return m_bAnimationComplete;
 }
 
 void

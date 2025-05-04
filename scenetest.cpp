@@ -4,6 +4,7 @@
 // Local Include
 #include "Player.h"
 #include "Renderer.h"
+#include "InputSystem.h"
 
 // IMGUI
 #include "imgui/imgui.h"
@@ -36,10 +37,49 @@ SceneTest::Initialise(Renderer& renderer)
 void
 SceneTest::Process(float deltaTime, InputSystem& inputSystem)
 {
-	if (m_pPlayer)
+	/*
+	* if (m_pPlayer)
 	{
 		m_pPlayer->Process(deltaTime);
 	}
+	*/
+
+	if (!m_pPlayer) return;
+
+	const float moveSpeed = 100.0f;
+	bool isMoving = false;
+
+	// Switch
+
+
+	// COntrols for the player
+	// Move Right = 'D'
+	// Move Left = 'A'
+	// Crouch = 'S'
+	// Dodge/Roll = 'Q'
+	// Interact = 'F'
+	// Jump = 'Spacebar'
+	// Attack = 'J'
+	// Move Left 'A' Key
+	if (inputSystem.GetKeyState(SDL_SCANCODE_A) == BS_HELD ||
+		inputSystem.GetKeyState(SDL_SCANCODE_LEFT) == BS_HELD)
+	{
+		m_pPlayer->MoveLeft(moveSpeed);
+		isMoving = true;
+	}
+	else if (inputSystem.GetKeyState(SDL_SCANCODE_D) == BS_HELD ||
+		inputSystem.GetKeyState(SDL_SCANCODE_RIGHT) == BS_HELD)
+	{
+		m_pPlayer->MoveRight(moveSpeed);
+		isMoving = true;
+	}
+
+	if (!isMoving)
+	{
+		m_pPlayer->StopMoving();
+	}
+
+	m_pPlayer->Process(deltaTime);
 }
 
 void

@@ -313,8 +313,10 @@ Renderer::CreateAnimatedSprite(const char* pcFilename)
 	return pSprite;
 }
 
+// -----------------------------------------------------------Draw Animated Sprites-------------------------------------------------
+
 void
-Renderer::DrawAnimatedSprite(AnimatedSprite& sprite, int frame)
+Renderer::DrawAnimatedSprite(AnimatedSprite& sprite, int frame, bool flipHorizontal)
 {
 	m_pSpriteShader->SetActive();
 
@@ -327,11 +329,33 @@ Renderer::DrawAnimatedSprite(AnimatedSprite& sprite, int frame)
 
 	Matrix4 world;
 	SetIdentity(world);
-	world.m[0][0] = cosf(angleInRadians) * (sizeX);
+
+	// Handle horizontal flipping
+	if (flipHorizontal)
+	{
+		world.m[0][0] = -cosf(angleInRadians) * (sizeX); // Flip horizontally by negating X scale
+		world.m[0][1] = sinf(angleInRadians) * (sizeX);  // Also need to flip this component
+		world.m[1][0] = -sinf(angleInRadians) * (sizeY); // Flip this component too
+		world.m[1][1] = cosf(angleInRadians) * (sizeY);  // Keep this the same
+	}
+	else
+	{
+		world.m[0][0] = cosf(angleInRadians) * (sizeX);   // Normal X scale
+		world.m[0][1] = -sinf(angleInRadians) * (sizeX);  // Normal rotation component
+		world.m[1][0] = sinf(angleInRadians) * (sizeY);   // Normal rotation component
+		world.m[1][1] = cosf(angleInRadians) * (sizeY);   // Normal Y scale
+	}
+
+	/* Default
+	* world.m[0][0] = cosf(angleInRadians) * (sizeX);
 	world.m[0][1] = -sinf(angleInRadians) * (sizeX); 
 	world.m[1][0] = sinf(angleInRadians) * (sizeY); 
 	world.m[1][1] = cosf(angleInRadians) * (sizeY); 
 	world.m[3][0] = static_cast<float>(sprite.GetX()); 
+	world.m[3][1] = static_cast<float>(sprite.GetY());
+	*/
+
+	world.m[3][0] = static_cast<float>(sprite.GetX());
 	world.m[3][1] = static_cast<float>(sprite.GetY());
 
 	m_pSpriteShader->SetMatrixUniform("uWorldTransform", world);
@@ -352,6 +376,8 @@ Renderer::DrawAnimatedSprite(AnimatedSprite& sprite, int frame)
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)((frame * 6) * sizeof(GLuint)));
 }
+
+// ------------------------------------------------------------To Create Static Texts--------------------------------------------
 
 void
 Renderer::CreateStaticText(const char* pText, int pointsize)
