@@ -1,16 +1,16 @@
 ﻿  player.cpp
-C:\Users\nikol\source\repos\DemoGame2025\player.cpp(138,38): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
 C:\Users\nikol\source\repos\DemoGame2025\player.cpp(139,38): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
-C:\Users\nikol\source\repos\DemoGame2025\player.cpp(212,34): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\nikol\source\repos\DemoGame2025\player.cpp(140,38): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
 C:\Users\nikol\source\repos\DemoGame2025\player.cpp(213,34): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\nikol\source\repos\DemoGame2025\player.cpp(222,33): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\nikol\source\repos\DemoGame2025\player.cpp(214,34): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
 C:\Users\nikol\source\repos\DemoGame2025\player.cpp(223,33): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\nikol\source\repos\DemoGame2025\player.cpp(232,40): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\nikol\source\repos\DemoGame2025\player.cpp(224,33): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
 C:\Users\nikol\source\repos\DemoGame2025\player.cpp(233,40): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\nikol\source\repos\DemoGame2025\player.cpp(246,34): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\nikol\source\repos\DemoGame2025\player.cpp(247,34): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\nikol\source\repos\DemoGame2025\player.cpp(256,34): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\nikol\source\repos\DemoGame2025\player.cpp(257,34): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\nikol\source\repos\DemoGame2025\player.cpp(266,36): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\nikol\source\repos\DemoGame2025\player.cpp(267,36): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\nikol\source\repos\DemoGame2025\player.cpp(234,40): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\nikol\source\repos\DemoGame2025\player.cpp(243,34): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\nikol\source\repos\DemoGame2025\player.cpp(244,34): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\nikol\source\repos\DemoGame2025\player.cpp(253,34): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\nikol\source\repos\DemoGame2025\player.cpp(254,34): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\nikol\source\repos\DemoGame2025\player.cpp(263,36): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\nikol\source\repos\DemoGame2025\player.cpp(264,36): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
   DemoGame2025.vcxproj -> C:\Users\nikol\source\repos\DemoGame2025\game\DemoGame2025_debug.exe

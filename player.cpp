@@ -14,6 +14,7 @@
 #include <cassert>
 #include <cstdlib>
 
+// PLAYER CLASS NEEDS TO BE CLEANED UP!!!
 Player::Player()
 	: m_pIdleSprite(0)
 	, m_pRunSprite(0)
@@ -231,10 +232,6 @@ Player::Process(float deltaTime)
 			m_pTurnAroundSprite->Process(deltaTime);
 			m_pTurnAroundSprite->SetX(m_position.x);
 			m_pTurnAroundSprite->SetY(m_position.y);
-
-			// When turning, we flip the sprite based on the direction we're coming from
-			// If currently facing right and turning left, don't flip
-			// If currently facing left and turning right, flip
 			m_pTurnAroundSprite->SetFlipHorizontal(!m_bFacingRight);
 		}
 		break;
@@ -512,9 +509,12 @@ Player::Fall(float amount)
 void
 Player::Attack(float amount)
 {
-	// player cant attack if already attacking, jumping or turning
+	// player cant attack if already attacking, jumping, turning, running or falling
 	if (m_currentState == PlayerState::ATTACKING ||
-		m_currentState == PlayerState::TURNING)
+		m_currentState == PlayerState::TURNING ||
+		m_currentState == PlayerState::JUMPING ||
+		m_currentState == PlayerState::RUNNING ||
+		m_currentState == PlayerState::FALLING)
 	{
 		return;
 	}
