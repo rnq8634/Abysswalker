@@ -63,7 +63,6 @@ Player::Initialise(Renderer& renderer)
 	m_pIdleSprite->SetupFrames(120, 80);
 	m_pIdleSprite->SetFrameDuration(0.15f);
 	m_pIdleSprite->SetLooping(true);
-	m_pIdleSprite->Animate();
 
 	// --------------------------------Jump Animation-----------------------------
 	m_pJumpSprite = renderer.CreateAnimatedSprite("assets/player/_Jump.png");
@@ -76,20 +75,18 @@ Player::Initialise(Renderer& renderer)
 	m_pJumpSprite->SetupFrames(120, 80);
 	m_pJumpSprite->SetFrameDuration(0.2f); // How long the frame is shown
 	m_pJumpSprite->SetLooping (false);
-	m_pJumpSprite->Animate();
 
-	// ----------------------------------Jump Fall Animation--------------------------------
+	// ----------------------------------Fall Animation--------------------------------
 	m_pFallSprite = renderer.CreateAnimatedSprite("assets/player/_Fall.png");
 	if (!m_pFallSprite)
 	{
 		LogManager::GetInstance().Log("Failed to create fall animation!");
 		return false;
 	}
-	// Jump Config
+	// Fall Config
 	m_pFallSprite->SetupFrames(120, 80);
 	m_pFallSprite->SetFrameDuration(0.2f);
 	m_pFallSprite->SetLooping(false);
-	m_pFallSprite->Animate();
 
 	// ----------------------------------Attack Animation------------------------------------
 	m_pAttackSprite = renderer.CreateAnimatedSprite("assets/player/_AttackComboNoMovement.png");
@@ -101,8 +98,6 @@ Player::Initialise(Renderer& renderer)
 	// Attack config
 	m_pAttackSprite->SetupFrames(120, 80);
 	m_pAttackSprite->SetFrameDuration(0.1f);
-	m_pAttackSprite->SetLooping(true);
-	m_pAttackSprite->Animate();
 
 	// ---------------------------------TurnAround Animation-------------------------------------
 	m_pTurnAroundSprite = renderer.CreateAnimatedSprite("assets/player/_TurnAround.png");
@@ -115,14 +110,13 @@ Player::Initialise(Renderer& renderer)
 	m_pTurnAroundSprite->SetupFrames(120, 80);
 	m_pTurnAroundSprite->SetFrameDuration(0.1f);
 	m_pTurnAroundSprite->SetLooping(false);
+	m_pTurnAroundSprite->Animate();
 
 	// Callback for when the animation completes
 	m_pTurnAroundSprite->SetAnimationCompleteCallback([this]()
 		{
 			this->OnTurnAnimationComplete();
 		});
-
-	m_pTurnAroundSprite->Animate();
 
 	// ---------------------------------Roll Animation---------------------------------------
 
@@ -141,7 +135,7 @@ Player::Initialise(Renderer& renderer)
 	m_pRunSprite->Animate();
 
 	// Position to be center of screen
-	m_position.x = renderer.GetWidth() / 2;
+	m_position.x = renderer.GetHeight() / 2;
 	m_position.y = renderer.GetHeight() / 2;
 
 	return true;
@@ -153,6 +147,53 @@ Player::Process(float deltaTime)
 	if (!m_bAlive)
 	{
 		return;
+	}
+
+	// apply gravity if jumping or falling
+	if (m_currentState == PlayerState::JUMPING || m_currentState == PlayerState::FALLING)
+	{
+		const float gravity = 100.0f;
+		m_velocity.y += gravity * deltaTime;
+
+		// check if the player has reached the peak of the jump height
+		if (m_currentState == PlayerState::JUMPING && m_velocity.y > 0)
+		{
+			m_currentState = PlayerState::FALLING;
+			if (m_pFallSprite)
+			{
+				m_pFallSprite->Restart();
+				m_pFallSprite->Animate();
+			}
+		}
+
+		// ground check
+		const float groundLevel = 360.0f; 
+
+		if (m_position.y + m_velocity.y * deltaTime >= groundLevel)
+		{
+			m_position.y = groundLevel;
+			m_velocity.y = 0;
+
+			// return to idle or to running
+			if (m_velocity.x != 0)
+			{
+				m_currentState = PlayerState::RUNNING;
+				if (m_pRunSprite)
+				{
+					m_pRunSprite->Restart();
+					m_pRunSprite->Animate();
+				}
+			}
+			else
+			{
+				m_currentState = PlayerState::IDLE;
+				if (m_pIdleSprite)
+				{
+					m_pIdleSprite->Restart();
+					m_pIdleSprite->Animate();
+				}
+			}
+		}
 	}
 
 	// Update position based on velocity (only if not turning)
@@ -238,7 +279,7 @@ Player::Draw(Renderer& renderer)
 		return;
 	}
 
-	// Load static image
+	// Load static image (THIS IS NEEDED OTHERWISE NOTHING WILL BE ON SCREEN)
 	m_pStaticSprite->Draw(renderer);
 
 	// Draw based on current state of player
@@ -256,6 +297,17 @@ Player::Draw(Renderer& renderer)
 		if (m_pTurnAroundSprite) m_pTurnAroundSprite->Draw(renderer);
 		break;
 
+	case PlayerState::JUMPING:
+		if (m_pJumpSprite) m_pJumpSprite->Draw(renderer);
+		break;
+
+	case PlayerState::ATTACKING:
+		if (m_pAttackSprite) m_pAttackSprite->Draw(renderer);
+		break;
+
+	case PlayerState::FALLING:
+		if (m_pFallSprite) m_pFallSprite->Draw(renderer);
+		break;
 	}
 }
 
@@ -269,26 +321,25 @@ Player::MoveLeft(float amount)
 		return;
 	}
 
-	// If already moving left, then just keep running
-	if (m_velocity.x < 0 && !m_bFacingRight)
+	// set velocity regardless of state
+	if (!m_bFacingRight)
 	{
 		m_velocity.x = -amount;
-		m_currentState = PlayerState::RUNNING;
-		return;
 	}
 
-	// If currently idle or running AND already facing right, start/continue running
-	if ((m_currentState == PlayerState::IDLE || m_currentState == PlayerState::RUNNING) && !m_bFacingRight)
+	// only change state if not already in a special state
+	if (m_currentState != PlayerState::JUMPING &&
+		m_currentState != PlayerState::FALLING &&
+		m_currentState != PlayerState::ATTACKING)
 	{
-		m_velocity.x = -amount;
-		m_currentState = PlayerState::RUNNING;
-		return;
-	}
-
-	// If facing left and need to turn right, start turn animation
-	if (m_bFacingRight)
-	{
-		StartTurnAnimation(-amount, false);
+		if (!m_bFacingRight)
+		{
+			m_currentState = PlayerState::RUNNING;
+		}
+		else
+		{
+			StartTurnAnimation(-amount, false);
+		}
 	}
 }
 
@@ -301,26 +352,25 @@ Player::MoveRight(float amount)
 		return;
 	}
 
-	// If already moving right, then just keep running
-	if (m_velocity.x > 0 && m_bFacingRight)
+	// set velocity regardless of state
+	if (m_bFacingRight)
 	{
 		m_velocity.x = amount;
-		m_currentState = PlayerState::RUNNING;
-		return;
 	}
 
-	// If currently idle or running AND already facing right, start/continue running
-	if ((m_currentState == PlayerState::IDLE || m_currentState == PlayerState::RUNNING) && m_bFacingRight)
+	// only change state if not already in a special state
+	if (m_currentState != PlayerState::JUMPING &&
+		m_currentState != PlayerState::FALLING &&
+		m_currentState != PlayerState::ATTACKING)
 	{
-		m_velocity.x = amount;
-		m_currentState = PlayerState::RUNNING;
-		return;
-	}
-
-	// If facing left and need to turn right, start turn animation
-	if (!m_bFacingRight)
-	{
-		StartTurnAnimation(amount, true);
+		if (m_bFacingRight)
+		{
+			m_currentState = PlayerState::RUNNING;
+		}
+		else
+		{
+			StartTurnAnimation(amount, true);
+		}
 	}
 }
 
@@ -381,19 +431,119 @@ Player::StopMoving()
 void
 Player::Jump(float amount) // NEED TO BE ABLE TO JUMP AND FACE LEFT AS WELL
 {
-	m_currentState = PlayerState::JUMPING;
+	// player cant jump if already jumping, falling or turning
+	if (m_currentState == PlayerState::JUMPING ||
+		m_currentState == PlayerState::FALLING ||
+		m_currentState == PlayerState::TURNING)
+	{
+		return;
+	}
+
+	const float groundLevel = 360.0f;
+
+	// only allow jumping if player is on the ground
+	if (m_position.y >= groundLevel - 0.1f)
+	{
+		m_velocity.y = -amount;
+
+		// state will then be changed to jumping
+		m_currentState = PlayerState::JUMPING;
+
+		if (m_pJumpSprite)
+		{
+			m_pJumpSprite->Restart();
+			m_pJumpSprite->Animate();
+
+			// set callback when the jump anim completes
+			m_pJumpSprite->SetAnimationCompleteCallback([this]()
+			{
+				// if player still in jump anim
+				if (this->m_currentState == PlayerState::JUMPING)
+				{
+					this->m_currentState = PlayerState::FALLING;
+					if (this->m_pFallSprite)
+					{
+						this->m_pFallSprite->Restart();
+						this->m_pFallSprite->Animate();
+					}
+				}
+			});
+		}
+	}
 }
 
 void
 Player::Fall(float amount)
 {
+	// Dont interrupt if already falling or turning
+	if (m_currentState == PlayerState::FALLING ||
+		m_currentState == PlayerState::TURNING)
+	{
+		return;
+	}
+
+	// Set velocity downward
+	m_velocity.y = amount;
+
+	// Change state to falling
 	m_currentState = PlayerState::FALLING;
+
+	// Reset and start the fall animation
+	if (m_pFallSprite)
+	{
+		m_pFallSprite->Restart();
+		m_pFallSprite->Animate();
+
+		// Set a callbakc for when the anim completes
+		m_pFallSprite->SetAnimationCompleteCallback([this]()
+		{
+			if (this->m_currentState == PlayerState::FALLING)
+			{
+				if (this->m_pFallSprite)
+				{
+						this->m_pFallSprite->Restart();
+						this->m_pFallSprite->Animate();
+				}
+			}
+		});
+	}
 }
 
 void
 Player::Attack(float amount)
 {
+	// player cant attack if already attacking, jumping or turning
+	if (m_currentState == PlayerState::ATTACKING ||
+		m_currentState == PlayerState::TURNING)
+	{
+		return;
+	}
+
+	// state will be changed to attacking
 	m_currentState = PlayerState::ATTACKING;
+
+	// reset and start the attack anim
+	if (m_pAttackSprite)
+	{
+		m_pAttackSprite->Restart();
+		m_pAttackSprite->SetLooping(false);
+		m_pAttackSprite->Animate();
+
+		// Set a callback when the animation completes
+		m_pAttackSprite->SetAnimationCompleteCallback([this]()
+		{
+			// when anim ends, return to idle or running
+			if (this->m_velocity.x != 0)
+			{
+				this->m_currentState = PlayerState::RUNNING;
+			}
+			else
+			{
+				this->m_currentState = PlayerState::IDLE;
+			}
+
+		});
+	}
 }
 
 void

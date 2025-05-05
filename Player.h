@@ -48,6 +48,8 @@ public:
 	void Roll(float amount);
 	void StopMoving();
 
+	PlayerState GetCurrentState() const { return m_currentState; }
+
 protected:
 	// Methods for turn animation
 	void StartTurnAnimation(float desiredSpeed, bool turnToRight);

@@ -21,8 +21,6 @@ public:
 	void Process(float deltaTime);
 	void Draw(Renderer& renderer);
 
-	void Rotate(float direction);
-
 	bool IsAlive() const;
 	void SetDead();
 

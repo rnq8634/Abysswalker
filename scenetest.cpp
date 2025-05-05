@@ -37,30 +37,13 @@ SceneTest::Initialise(Renderer& renderer)
 void
 SceneTest::Process(float deltaTime, InputSystem& inputSystem)
 {
-	/*
-	* if (m_pPlayer)
-	{
-		m_pPlayer->Process(deltaTime);
-	}
-	*/
-
 	if (!m_pPlayer) return;
 
 	const float moveSpeed = 100.0f;
+	const float jumpSpeed = 100.0f;
 	bool isMoving = false;
 
-	// Switch
-
-
-	// COntrols for the player
-	// Move Right = 'D'
-	// Move Left = 'A'
-	// Crouch = 'S'
-	// Dodge/Roll = 'Q'
-	// Interact = 'F'
-	// Jump = 'Spacebar'
-	// Attack = 'J'
-	// Move Left 'A' Key
+	// Movement keys left and right
 	if (inputSystem.GetKeyState(SDL_SCANCODE_A) == BS_HELD ||
 		inputSystem.GetKeyState(SDL_SCANCODE_LEFT) == BS_HELD)
 	{
@@ -74,7 +57,22 @@ SceneTest::Process(float deltaTime, InputSystem& inputSystem)
 		isMoving = true;
 	}
 
-	if (!isMoving)
+	// Other player actions
+	if (inputSystem.GetKeyState(SDL_SCANCODE_SPACE) == BS_PRESSED)
+	{
+		m_pPlayer->Jump(jumpSpeed);
+	}
+
+	if (inputSystem.GetKeyState(SDL_SCANCODE_J) == BS_PRESSED)
+	{
+		m_pPlayer->Attack(0);
+	}
+
+	if (!isMoving &&
+		m_pPlayer->GetCurrentState() != PlayerState::JUMPING &&
+		m_pPlayer->GetCurrentState() != PlayerState::FALLING &&
+		m_pPlayer->GetCurrentState() != PlayerState::TURNING &&
+		m_pPlayer->GetCurrentState() != PlayerState::ATTACKING)
 	{
 		m_pPlayer->StopMoving();
 	}

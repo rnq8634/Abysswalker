@@ -51,13 +51,6 @@ Entity::Draw(Renderer& renderer)
 	}
 }
 
-// Rotate the entity in a given direction
-void 
-Entity::Rotate(float direction)
-{
-
-}
-
 // Check if the entity is alive
 bool
 Entity::IsAlive() const
