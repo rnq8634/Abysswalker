@@ -41,6 +41,8 @@ public:
 	void SetAnimationCompleteCallback(AnimationCompleteCallback callback);
 	bool IsAnimationComplete() const;
 
+	bool IsLooping() const;
+
 protected:
 
 private:

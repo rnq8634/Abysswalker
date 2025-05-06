@@ -229,6 +229,12 @@ AnimatedSprite::IsAnimationComplete() const
 	return m_bAnimationComplete;
 }
 
+bool
+AnimatedSprite::IsLooping() const
+{
+	return m_bLooping;
+}
+
 void
 AnimatedSprite::DebugDraw()
 {

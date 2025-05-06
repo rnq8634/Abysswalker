@@ -39,9 +39,9 @@ SceneTest::Process(float deltaTime, InputSystem& inputSystem)
 {
 	if (!m_pPlayer) return;
 
-	const float moveSpeed = 100.0f;
+	const float moveSpeed = 80.0f;
 	const float jumpSpeed = 80.0f;
-	const float rollSpeed = 150.0f;
+	const float rollSpeed = 85.0f;
 	bool isMoving = false;
 
 	// Movement keys left and right
@@ -64,12 +64,12 @@ SceneTest::Process(float deltaTime, InputSystem& inputSystem)
 
 	if (inputSystem.GetKeyState(SDL_SCANCODE_J) == BS_PRESSED)
 	{
-		m_pPlayer->Attack(0);
+		m_pPlayer->Attack();
 	}
 	if (inputSystem.GetKeyState(SDL_SCANCODE_Q) == BS_PRESSED)
 	{
 		m_pPlayer->Roll(rollSpeed);
-		isMoving = true;
+	
 	}
 
 	if (!isMoving &&
