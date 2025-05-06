@@ -25,6 +25,12 @@ Player::Player()
 	, m_turnCompleteCallback(nullptr)
 	, m_desiredMoveSpeed(0)
 	, m_isTurning(false)
+	, m_pAttackSprite(0)
+	, m_pFallSprite(0)
+	, m_pRollSprite(0)
+	, m_pJumpSprite(0)
+	, m_pTurnAroundSprite(0)
+	, m_targetFacingRight(0)
 {
 	m_velocity.Set(0, 0);
 }
@@ -99,6 +105,7 @@ Player::Initialise(Renderer& renderer)
 	// Attack config
 	m_pAttackSprite->SetupFrames(120, 80);
 	m_pAttackSprite->SetFrameDuration(0.1f);
+	m_pAttackSprite->SetLooping(true);
 
 	// ---------------------------------TurnAround Animation-------------------------------------
 	m_pTurnAroundSprite = renderer.CreateAnimatedSprite("assets/player/_TurnAround.png");
@@ -120,6 +127,25 @@ Player::Initialise(Renderer& renderer)
 		});
 
 	// ---------------------------------Roll Animation---------------------------------------
+	m_pRollSprite = renderer.CreateAnimatedSprite("assets/player/_Roll.png");
+	if (!m_pRollSprite)
+	{
+		LogManager::GetInstance().Log("Failed to create roll animation!");
+		return false;
+	}
+	// Roll config
+	m_pRollSprite->SetupFrames(120, 80);
+	m_pRollSprite->SetFrameDuration(0.1f);
+	m_pRollSprite->SetLooping(false);
+
+	m_pRollSprite->SetAnimationCompleteCallback([this]()
+	{
+		this->RollAnimationComplete();
+	});
+
+	// ---------------------------------Death Animation---------------------------------------
+
+	// ---------------------------------Hit Animation---------------------------------------
 
 	// -----------------------------------Running Animation----------------------------------
 	m_pRunSprite = renderer.CreateAnimatedSprite("assets/player/_Run.png");
@@ -265,6 +291,16 @@ Player::Process(float deltaTime)
 			m_pAttackSprite->SetFlipHorizontal(!m_bFacingRight);
 		}
 		break;
+
+	case PlayerState::ROLLING:
+		if (m_pRollSprite)
+		{
+			m_pRollSprite->Process(deltaTime);
+			m_pRollSprite->SetX(m_position.x);
+			m_pRollSprite->SetY(m_position.y);
+			m_pRollSprite->SetFlipHorizontal(!m_bFacingRight);
+		}
+		break;
 	}
 }
 
@@ -305,6 +341,10 @@ Player::Draw(Renderer& renderer)
 	case PlayerState::FALLING:
 		if (m_pFallSprite) m_pFallSprite->Draw(renderer);
 		break;
+
+	case PlayerState::ROLLING:
+		if (m_pRollSprite) m_pRollSprite->Draw(renderer);
+		break;
 	}
 }
 
@@ -312,8 +352,9 @@ Player::Draw(Renderer& renderer)
 void
 Player::MoveLeft(float amount)
 {
-	// If turning, dont interrupt
-	if (m_currentState == PlayerState::TURNING)
+	// player cant move if turning or attacking
+	if (m_currentState == PlayerState::TURNING || 
+		m_currentState == PlayerState::ATTACKING)
 	{
 		return;
 	}
@@ -327,6 +368,7 @@ Player::MoveLeft(float amount)
 	// only change state if not already in a special state
 	if (m_currentState != PlayerState::JUMPING &&
 		m_currentState != PlayerState::FALLING &&
+		m_currentState != PlayerState::ROLLING &&
 		m_currentState != PlayerState::ATTACKING)
 	{
 		if (!m_bFacingRight)
@@ -343,8 +385,9 @@ Player::MoveLeft(float amount)
 void
 Player::MoveRight(float amount)
 {
-	// If turning, dont interrupt
-	if (m_currentState == PlayerState::TURNING)
+	// player cant move if attacking or turning
+	if (m_currentState == PlayerState::TURNING || 
+		m_currentState == PlayerState::ATTACKING)
 	{
 		return;
 	}
@@ -358,6 +401,7 @@ Player::MoveRight(float amount)
 	// only change state if not already in a special state
 	if (m_currentState != PlayerState::JUMPING &&
 		m_currentState != PlayerState::FALLING &&
+		m_currentState != PlayerState::ROLLING &&
 		m_currentState != PlayerState::ATTACKING)
 	{
 		if (m_bFacingRight)
@@ -412,6 +456,45 @@ Player::OnTurnAnimationComplete()
 	}
 }
 
+void 
+Player::RollAnimationComplete()
+{
+	if (m_currentState != PlayerState::ROLLING)
+	{
+		return;
+	}
+
+	// Transition
+	if (m_rollVelocityBeforeRoll != 0)
+	{
+		m_currentState = PlayerState::RUNNING;
+
+		// restore previous velocity
+		m_velocity.x = m_rollVelocityBeforeRoll;
+
+		// Start running animation
+		if (m_pRunSprite)
+		{
+			m_pRunSprite->Restart();
+			m_pRunSprite->Animate();
+		}
+	}
+	else
+	{
+		m_currentState = PlayerState::IDLE;
+		m_velocity.x = 0;
+
+		// Start idle anim
+		if (m_pIdleSprite)
+		{
+			m_pIdleSprite->Restart();
+			m_pIdleSprite->Animate();
+		}
+	}
+
+	m_rollVelocityBeforeRoll = 0;
+}
+
 void
 Player::StopMoving()
 {
@@ -431,6 +514,7 @@ Player::Jump(float amount) // NEED TO BE ABLE TO JUMP AND FACE LEFT AS WELL
 	// player cant jump if already jumping, falling or turning
 	if (m_currentState == PlayerState::JUMPING ||
 		m_currentState == PlayerState::FALLING ||
+		m_currentState == PlayerState::ROLLING ||
 		m_currentState == PlayerState::TURNING)
 	{
 		return;
@@ -514,6 +598,7 @@ Player::Attack(float amount)
 		m_currentState == PlayerState::TURNING ||
 		m_currentState == PlayerState::JUMPING ||
 		m_currentState == PlayerState::RUNNING ||
+		m_currentState == PlayerState::ROLLING ||
 		m_currentState == PlayerState::FALLING)
 	{
 		return;
@@ -555,7 +640,43 @@ Player::TurnAround(float amount)
 void
 Player::Roll(float amount)
 {
+	// if rolling these cant interuppt
+	if (m_currentState == PlayerState::ROLLING ||
+		m_currentState == PlayerState::TURNING ||
+		m_currentState == PlayerState::JUMPING ||
+		m_currentState == PlayerState::FALLING ||
+		m_currentState == PlayerState::ATTACKING)
+	{
+		return;
+	}
+
+	// Speed burst
+	m_rollVelocityBeforeRoll = m_velocity.x;
+
+	// Apply boost in the facing direction
+	float rollSpeedBoost = amount;
+
+	// Determine direction based on facing or previous movement
+	if (m_rollVelocityBeforeRoll != 0) 
+	{
+		// If already moving, use that direction
+		rollSpeedBoost = m_bFacingRight ? amount : -amount;
+	}
+	else 
+	{
+		// If standing still, roll in the direction player is facing
+		rollSpeedBoost = m_bFacingRight ? amount : -amount;
+	}
+
+	m_velocity.x = rollSpeedBoost;
+
 	m_currentState = PlayerState::ROLLING;
+
+	if (m_pRollSprite)
+	{
+		m_pRollSprite->Restart();
+		m_pRollSprite->Animate();
+	}
 }
 
 // ------------------------------------------Debugging-------------------------------------------------------

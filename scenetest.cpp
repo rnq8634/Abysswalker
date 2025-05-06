@@ -40,18 +40,17 @@ SceneTest::Process(float deltaTime, InputSystem& inputSystem)
 	if (!m_pPlayer) return;
 
 	const float moveSpeed = 100.0f;
-	const float jumpSpeed = 100.0f;
+	const float jumpSpeed = 80.0f;
+	const float rollSpeed = 150.0f;
 	bool isMoving = false;
 
 	// Movement keys left and right
-	if (inputSystem.GetKeyState(SDL_SCANCODE_A) == BS_HELD ||
-		inputSystem.GetKeyState(SDL_SCANCODE_LEFT) == BS_HELD)
+	if (inputSystem.GetKeyState(SDL_SCANCODE_A) == BS_HELD)
 	{
 		m_pPlayer->MoveLeft(moveSpeed);
 		isMoving = true;
 	}
-	else if (inputSystem.GetKeyState(SDL_SCANCODE_D) == BS_HELD ||
-		inputSystem.GetKeyState(SDL_SCANCODE_RIGHT) == BS_HELD)
+	else if (inputSystem.GetKeyState(SDL_SCANCODE_D) == BS_HELD)
 	{
 		m_pPlayer->MoveRight(moveSpeed);
 		isMoving = true;
@@ -67,11 +66,17 @@ SceneTest::Process(float deltaTime, InputSystem& inputSystem)
 	{
 		m_pPlayer->Attack(0);
 	}
+	if (inputSystem.GetKeyState(SDL_SCANCODE_Q) == BS_PRESSED)
+	{
+		m_pPlayer->Roll(rollSpeed);
+		isMoving = true;
+	}
 
 	if (!isMoving &&
 		m_pPlayer->GetCurrentState() != PlayerState::JUMPING &&
 		m_pPlayer->GetCurrentState() != PlayerState::FALLING &&
 		m_pPlayer->GetCurrentState() != PlayerState::TURNING &&
+		m_pPlayer->GetCurrentState() != PlayerState::ROLLING &&
 		m_pPlayer->GetCurrentState() != PlayerState::ATTACKING)
 	{
 		m_pPlayer->StopMoving();

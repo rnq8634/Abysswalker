@@ -21,6 +21,7 @@ InputSystem::InputSystem()
 	, m_pXboxController(0)
 	, m_iNumAttachedControllers(0)
 	, m_bRelativeMouseMode(false)
+	, m_previousKeyBoardState()
 {
 
 }

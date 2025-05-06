@@ -55,6 +55,9 @@ protected:
 	void StartTurnAnimation(float desiredSpeed, bool turnToRight);
 	void OnTurnAnimationComplete();
 
+	// Methods for roll
+	void RollAnimationComplete();
+
 private:
 	Player(const Player& player);
 	Player& operator=(const Player& player);
@@ -90,6 +93,9 @@ protected:
 	float m_desiredMoveSpeed;
 	bool m_isTurning;
 	bool m_targetFacingRight;
+
+	// Roll anim
+	float m_rollVelocityBeforeRoll;
 
 private:
 
