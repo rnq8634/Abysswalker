@@ -9,6 +9,7 @@
 #include <map>
 #include <functional>
 #include <string>
+#include <algorithm> // for std::min/max
 
 // Forward Declaration
 class Renderer;
@@ -51,13 +52,25 @@ public:
 	bool IsFacingRight() const { return m_bFacingRight; }
 	bool IsAlive() const { return m_bAlive;  }
 
+	// stat getters
+	int GetCurrentHealth() const { return m_currentHealth; }
+	int GetMaxHealth() const { return m_maxHealth;  }
+	float GetCurrentStamina() const { return m_currentStamina;  }
+	float GetMaxStamina() const { return m_maxStamina;  }
+
 	// Methods for player movement
 	void MoveLeft(float amount);
 	void MoveRight(float amount);
-	void Jump(float amount);
+	void Jump();
 	void Attack();
 	void Roll(float speedBoost);
 	void StopMoving();
+
+	// stat modifiers
+	void TakeDamage(int amount);
+	bool UseStamina(float amount); // will return false if not enough stamina
+	// void Heal
+	// void Revive
 
 protected:
 	// Methods for turn animation
@@ -66,6 +79,8 @@ protected:
 	void OnAttackAnimationComplete();
 	void OnJumpAnimationComplete();
 	void OnFallLand(); // added called when landing on ground
+	void OnHurtAnimationComplete(); // to be added
+	void OnDeathAnimationComplete(); // to be added
 
 private:
 	// helper methods
@@ -86,12 +101,11 @@ private:
 
 	void StartTurn(float desiredSpeed, bool turnToRight);
 
+	// --- Non copy ---
 	Player(const Player& player);
 	Player& operator=(const Player& player);
 
 	// Member data
-public:
-
 protected:
 	// Position and movement
 	Vector2 m_position; // Position of the player
@@ -105,14 +119,18 @@ protected:
 
 	std::map<PlayerState, AnimatedSprite*> m_animatedSprites;
 
-	// State specific data
-	// Turn animation
+	// Action States
 	float m_desiredMoveSpeed;
 	bool m_isTurning;
-
 	bool m_targetFacingRight;
-
 	float m_rollVelocityBeforeRoll;
+
+	// Stats
+	int m_maxHealth;
+	int m_currentHealth;
+	float m_maxStamina;
+	float m_currentStamina;
+	float m_staminaRegenRate;
 
 	// Physics constants
 	const float kGroundLevel = 360.0f;

@@ -4,7 +4,7 @@
 // Local Includes
 #include "Renderer.h"
 #include "AnimatedSprite.h"
-#include "InlineHelpers.h"
+//#include "InlineHelpers.h"
 #include "LogManager.h"
 #include "Texture.h"
 
@@ -14,13 +14,14 @@
 // Lib includes
 #include <cassert>
 #include <cstdlib>
+#include <string>
 
 // Consttants
 const int PLAYER_SPRITE_WIDTH = 120;
 const int PLAYER_SPRITE_HEIGHT = 80;
 
 Player::Player()
-	: m_bAlive(true)
+	: m_bAlive(false)
 	, m_pStaticSprite(nullptr)
 	, m_currentState(PlayerState::IDLE)
 	, m_bFacingRight(true)
@@ -28,6 +29,12 @@ Player::Player()
 	, m_isTurning(false)
 	, m_targetFacingRight(true)
 	, m_rollVelocityBeforeRoll(0.0f)
+	// Stats
+	, m_maxHealth(100)
+	, m_currentHealth(100)
+	, m_maxStamina(100.0f)
+	, m_currentStamina(100.0f)
+	, m_staminaRegenRate(10.0f)
 {
 	m_velocity.Set(0.0f, 0.0f);
 }
@@ -66,13 +73,19 @@ bool Player::Initialise(Renderer& renderer)
 	// ---ROLLING---
 	if (!InitialiseAnimatedSprite(renderer, PlayerState::ROLLING, "assets/player/_Roll.png", 120, 80, 0.1f, false, [this]() { this->OnRollAnimationComplete(); })) return false;
 	// ---HURTING---
-
+	if (!InitialiseAnimatedSprite(renderer, PlayerState::HURT, "assets/player/_Hit.png", 120, 80, 0.3f, false, [this]() { this->OnHurtAnimationComplete(); })) return false;
 	// ---DEATH---
+	if (!InitialiseAnimatedSprite(renderer, PlayerState::DEATH, "assets/player/_Death.png", 120, 80, 0.15f, false, [this]() { this->OnDeathAnimationComplete(); })) return false;
 
 	// Initial position
 	// Position to be center of screen
-	m_position.x = renderer.GetHeight() / 2;
+	m_position.x = static_cast<float>(renderer.GetWidth() / 2);
 	m_position.y = kGroundLevel;
+
+	// reset the stats
+	m_currentHealth = m_maxHealth;
+	m_currentStamina = m_maxStamina;
+	m_bAlive = true;
 
 	// Set the initial state
 	TransitionToState(PlayerState::IDLE);
@@ -101,7 +114,7 @@ bool Player::InitialiseAnimatedSprite(Renderer& renderer, PlayerState state, con
 
 	// Store the sprite in the map
 	m_animatedSprites[state] = sprite;
-	LogManager::GetInstance().Log(("Initialised sprite for state " + std::to_string((int)state) + ": " + std::string(pcFilename)).c_str());
+	//LogManager::GetInstance().Log(("Initialised sprite for state " + std::to_string((int)state) + ": " + std::string(pcFilename)).c_str());
 
 	return true;
 }
@@ -110,12 +123,32 @@ void Player::Process(float deltaTime)
 {
 	if (!m_bAlive)
 	{
-		return;
+		if (m_currentState != PlayerState::DEATH) 
+		{
+			TransitionToState(PlayerState::DEATH);
+		}
+		// Process death animation if applicable
+		AnimatedSprite* deathSprite = GetCurrentAnimatedSprite();
+		if (deathSprite) 
+		{
+			UpdateSprite(deathSprite, deltaTime);
+		}
+		return; // Don't process movement/physics if dead
 	}
 
-	// Physics and state logic
+	// Regen stam
+	bool canRegenStamina = (m_currentState != PlayerState::ROLLING && m_currentState != PlayerState::ATTACKING && m_currentState != PlayerState::JUMPING);
+
+	if (canRegenStamina && m_currentStamina < m_maxStamina)
+	{
+		m_currentStamina += m_staminaRegenRate * deltaTime;
+		m_currentStamina = std::min(m_currentStamina, m_maxStamina);
+	}
+
+	// ---------------------------------Physics and state logic-----------------------------
 	bool wasOnGround = (m_position.y >= kGroundLevel);
 
+	// gravity will be applied if not on the ground or jumping
 	if (m_currentState == PlayerState::JUMPING || m_currentState == PlayerState::FALLING || !wasOnGround)
 	{
 		m_velocity.y += kGravity * deltaTime;
@@ -129,8 +162,15 @@ void Player::Process(float deltaTime)
 
 	// Slodw donw movement if turning
 	float currentSpeedFactor = m_isTurning ? kTurnSpeedFactor : 1.0f;
-	m_position.x += m_velocity.x * currentSpeedFactor * deltaTime;
 	
+	// update the position based on player velocity
+	bool canMoveHorizontally = (m_currentState != PlayerState::ATTACKING); // prevent moving while attacking
+
+	if (canMoveHorizontally)
+	{
+		m_position.x += m_velocity.x * currentSpeedFactor * deltaTime;
+	}
+
 	m_position.y += m_velocity.y * deltaTime;
 
 	// ground collision and landing
@@ -140,15 +180,14 @@ void Player::Process(float deltaTime)
 	{
 		m_position.y = kGroundLevel;
 		m_velocity.y = 0;
-		OnFallLand();
+		//OnFallLand();
+		if (!wasOnGround || m_currentState == PlayerState::FALLING || m_currentState == PlayerState::JUMPING)
+		{
+			OnFallLand();
+		}
 	}
-	else if (isOnGround && (m_currentState == PlayerState::JUMPING || m_currentState == PlayerState::FALLING))
-	{
-		m_position.y = kGroundLevel;
-		m_velocity.y = 0;
-		OnFallLand();
-	}
-	else if (!isOnGround && wasOnGround && m_currentState != PlayerState::JUMPING)
+	// if they player rolls off the edge
+	else if (!isOnGround && wasOnGround && m_currentState != PlayerState::JUMPING && m_currentState != PlayerState::ROLLING)
 	{
 		TransitionToState(PlayerState::FALLING);
 	}
@@ -177,10 +216,7 @@ void Player::UpdateSprite(AnimatedSprite* sprite, float deltaTime)
 
 void Player::Draw(Renderer& renderer)
 {
-	if (!m_bAlive)
-	{
-		return;
-	}
+	if (!m_bAlive && GetCurrentAnimatedSprite() && GetCurrentAnimatedSprite()->IsAnimationComplete()) return;
 
 	// Load static image (THIS IS NEEDED OTHERWISE NOTHING WILL BE ON SCREEN)
 	m_pStaticSprite->Draw(renderer);
@@ -207,6 +243,15 @@ AnimatedSprite* Player::GetCurrentAnimatedSprite()
 // State transitions
 void Player::TransitionToState(PlayerState newState)
 {
+	// cant transition if dead
+	if (!m_bAlive && newState != PlayerState::DEATH)
+	{
+		return;
+	}
+
+	if (m_currentState == PlayerState::DEATH) return; // cannot transition out of death
+	if (m_currentState == PlayerState::HURT && !GetCurrentAnimatedSprite()->IsAnimationComplete()) return; // Can't interrupt hurt anim?
+
 	if (m_currentState == newState && newState != PlayerState::FALLING && newState != PlayerState::JUMPING)
 	{
 		AnimatedSprite* sprite = GetCurrentAnimatedSprite();
@@ -224,7 +269,7 @@ void Player::TransitionToState(PlayerState newState)
 	AnimatedSprite* newSprite = GetCurrentAnimatedSprite();
 	if (newSprite)
 	{
-		LogManager::GetInstance().Log(("Transitioning to state: " + std::to_string((int)newState)).c_str());
+		//LogManager::GetInstance().Log(("Transitioning to state: " + std::to_string((int)newState)).c_str());
 		newSprite->Restart();
 		newSprite->Animate();
 	}
@@ -238,14 +283,16 @@ void Player::TransitionToState(PlayerState newState)
 void Player::MoveLeft(float amount)
 {
 	// Cannot change direction or start moving while attacking, rolling, (or maybe jumping/falling depending on design)
-	if (m_currentState == PlayerState::ATTACKING || m_currentState == PlayerState::ROLLING || m_isTurning )
+	if (m_currentState == PlayerState::ATTACKING || m_currentState == PlayerState::ROLLING || m_isTurning || m_currentState == PlayerState::HURT || m_currentState == PlayerState::DEATH)
 	{
 		return;
 	}
 
+	bool isOnGround = (m_position.y >= kGroundLevel);
+
 	if (m_bFacingRight)
 	{
-		if (m_position.y >= kGroundLevel)
+		if (isOnGround) // can only turn on the grouynd
 		{
 			// Need to turn first
 			StartTurn(-amount, false); // can obly turn when on the ground
@@ -255,8 +302,8 @@ void Player::MoveLeft(float amount)
 	{
 		// Already facing left, start or continue running
 		m_velocity.x = -amount;
-		// Only transition to RUNNING if on the ground
-		if (m_position.y >= kGroundLevel)
+		// Only transition to RUNNING if on the ground and not already jumping or falling
+		if (isOnGround && m_currentState != PlayerState::JUMPING && m_currentState != PlayerState::FALLING)
 		{
 			TransitionToState(PlayerState::RUNNING);
 		}
@@ -266,14 +313,16 @@ void Player::MoveLeft(float amount)
 void Player::MoveRight(float amount)
 {
 	// Cannot change direction or start moving while attacking, rolling, (or maybe jumping/falling depending on design)
-	if (m_currentState == PlayerState::ATTACKING || m_currentState == PlayerState::ROLLING || m_isTurning)
+	if (m_currentState == PlayerState::ATTACKING || m_currentState == PlayerState::ROLLING || m_isTurning || m_currentState == PlayerState::HURT || m_currentState == PlayerState::DEATH)
 	{
 		return;
 	}
 
+	bool isOnGround = (m_position.y >= kGroundLevel);
+
 	if (!m_bFacingRight)
 	{
-		if (m_position.y >= kGroundLevel)
+		if (isOnGround)
 		{
 			StartTurn(amount, true); // Start turning right only on ground
 		}
@@ -283,7 +332,7 @@ void Player::MoveRight(float amount)
 		// Already facing right, start or continue running
 		m_velocity.x = amount;
 		// Only transition to RUNNING if on the ground
-		if (m_position.y >= kGroundLevel)
+		if (isOnGround && m_currentState != PlayerState::JUMPING && m_currentState != PlayerState::FALLING)
 		{
 			TransitionToState(PlayerState::RUNNING);
 		}
@@ -292,23 +341,20 @@ void Player::MoveRight(float amount)
 
 void Player::StopMoving()
 {
-	// Can stop moving if running or idle (or maybe after roll/attack completes)
-	// Don't interrupt actions like attack, roll, turn, jump, fall
 	if (m_currentState == PlayerState::RUNNING || m_currentState == PlayerState::IDLE)
 	{
-		if (m_velocity.x != 0) // Only transition if actually moving
+		if (abs(m_velocity.x) > 0.01f) // Only stop if actually moving
 		{
 			m_velocity.x = 0;
 			TransitionToState(PlayerState::IDLE);
 		}
 	}
-	// If stopping after a roll/attack, that logic is handled in their respective OnComplete handlers
 }
 
 // Helper to initiate the turning sequence
 void Player::StartTurn(float desiredSpeed, bool turnToRight)
 {
-	if (m_isTurning) return; // Already turning
+	if (m_isTurning || m_currentState != PlayerState::RUNNING && m_currentState != PlayerState::IDLE) return; // cant turn if already turning or not in movable ground state
 
 	m_desiredMoveSpeed = desiredSpeed;
 	m_targetFacingRight = turnToRight;
@@ -316,16 +362,23 @@ void Player::StartTurn(float desiredSpeed, bool turnToRight)
 	TransitionToState(PlayerState::TURNING);
 }
 
-void Player::Jump(float amount)
+void Player::Jump()
 {
 	// Can only jump from ground states (Idle, Running)
 	if (m_currentState == PlayerState::IDLE || m_currentState == PlayerState::RUNNING)
 	{
-		bool isOnGround = (m_position.y >= kGroundLevel);
-		if (isOnGround) // Double check we are on ground
+		bool isOnGround = (m_position.y >= kGroundLevel - 0.1f);
+		float staminaCost = 15.0f;
+
+		if (isOnGround && UseStamina(staminaCost)) // Double check we are on ground
 		{
 			m_velocity.y = -kJumpForce; // Apply upward force
 			TransitionToState(PlayerState::JUMPING);
+		}
+		else if (isOnGround)
+		{
+			LogManager::GetInstance().Log("Not enought stamina!");
+			// show on the player bar no stamina
 		}
 	}
 }
@@ -333,12 +386,18 @@ void Player::Jump(float amount)
 void Player::Attack()
 {
 	// Can only attack from ground states (Idle, Running)
-	// Or maybe allow air attacks later? Add checks for JUMPING/FALLING if so.
 	if (m_currentState == PlayerState::IDLE || m_currentState == PlayerState::RUNNING)
 	{
-		// Stop horizontal movement during attack
-		m_velocity.x = 0; // Or allow movement if desired, remove this line
-		TransitionToState(PlayerState::ATTACKING);
+		float staminaCost = 10.0f;
+		if (UseStamina(staminaCost))
+		{
+			m_velocity.x = 0;
+			TransitionToState(PlayerState::ATTACKING);
+		}
+		else
+		{
+			LogManager::GetInstance().Log("Not enough stamina!");
+		}
 	}
 }
 
@@ -347,15 +406,63 @@ void Player::Roll(float speedBoost)
 	// Can only roll from ground states (Idle, Running)
 	if (m_currentState == PlayerState::IDLE || m_currentState == PlayerState::RUNNING)
 	{
-		m_rollVelocityBeforeRoll = m_velocity.x; // Store current speed
+		float staminaCost = 30.0f;
+		if (UseStamina(staminaCost))
+		{
+			m_rollVelocityBeforeRoll = m_velocity.x; // store the current speed
 
-		// Apply boost in the facing direction
-		float rollSpeed = m_bFacingRight ? speedBoost : -speedBoost;
-		m_velocity.x = rollSpeed;
+			// Apply boost in the facing direction
+			float rollSpeed = m_bFacingRight ? speedBoost : -speedBoost;
+			m_velocity.x = rollSpeed;
 
-		TransitionToState(PlayerState::ROLLING);
+			TransitionToState(PlayerState::ROLLING);
+			// add a invincibility during roll
+		}
+		else
+		{
+			LogManager::GetInstance().Log("Not enough stamina to roll!");
+		}
 	}
 }
+
+// --- Stat Modifiers ---
+void Player::TakeDamage(int amount)
+{
+	if (!m_bAlive) return; // cant take damage if dead
+	if (m_currentState == PlayerState::ROLLING) return;
+
+	m_currentHealth -= amount;
+	m_currentHealth = std::max(0, m_currentHealth);
+
+	LogManager::GetInstance().Log(("Player took " + std::to_string(amount) + " damage. Health: " + std::to_string(m_currentHealth)).c_str());
+
+	if (m_currentHealth <= 0)
+	{
+		m_bAlive = false;
+		TransitionToState(PlayerState::DEATH); // add a revive feature as well. 
+		LogManager::GetInstance().Log("Player Died!");
+	}
+	else
+	{
+		TransitionToState(PlayerState::HURT);
+		// Maybe add knockback?
+		m_velocity.x = m_bFacingRight ? -50.0f : 50.0f;
+		m_velocity.y = -100.0f; // Small pop-up
+	}
+}
+
+bool Player::UseStamina(float amount)
+{
+	if (m_currentStamina >= amount)
+	{
+		m_currentStamina -= amount;
+		m_currentStamina = std::max(0.0f, m_currentStamina);
+		return true;
+	}
+	return false;
+}
+
+// Healing function
 
 // Animation Completion Handlers
 void Player::OnTurnAnimationComplete()
@@ -366,7 +473,7 @@ void Player::OnTurnAnimationComplete()
 		m_velocity.x = m_desiredMoveSpeed;    // Apply desired speed
 
 		// Decide next state based on whether the player intended to move
-		if (m_desiredMoveSpeed != 0)
+		if (abs(m_desiredMoveSpeed) > 0.01f)
 		{
 			TransitionToState(PlayerState::RUNNING);
 		}
@@ -376,6 +483,7 @@ void Player::OnTurnAnimationComplete()
 		}
 	}
 	m_isTurning = false; // Ensure flag is reset even if state was wrong
+	m_desiredMoveSpeed = 0;
 }
 
 void Player::OnRollAnimationComplete()
@@ -383,14 +491,14 @@ void Player::OnRollAnimationComplete()
 	if (m_currentState == PlayerState::ROLLING)
 	{
 		// Transition back to Idle or Running based on pre-roll speed
-		if (m_rollVelocityBeforeRoll != 0)
+		m_velocity.x = m_rollVelocityBeforeRoll;
+
+		if (abs(m_rollVelocityBeforeRoll) > 0.01f)
 		{
-			m_velocity.x = m_rollVelocityBeforeRoll; // Restore previous speed
 			TransitionToState(PlayerState::RUNNING);
 		}
 		else
 		{
-			m_velocity.x = 0; // Stop
 			TransitionToState(PlayerState::IDLE);
 		}
 		m_rollVelocityBeforeRoll = 0; // Reset temp variable
@@ -401,10 +509,6 @@ void Player::OnAttackAnimationComplete()
 {
 	if (m_currentState == PlayerState::ATTACKING)
 	{
-		// Transition back to Idle or Running (check velocity if attack allowed movement)
-		// Assuming attack stops movement for now:
-		// Check if movement keys are held down? Or just go to IDLE?
-		// Let's default to IDLE, input handling in Scene can override next frame
 		m_velocity.x = 0; // Ensure stopped if attack stops movement
 		TransitionToState(PlayerState::IDLE);
 	}
@@ -437,31 +541,84 @@ void Player::OnFallLand()
 	}
 }
 
+// Example Hurt complete callback
+void Player::OnHurtAnimationComplete() 
+{
+	if (m_currentState == PlayerState::HURT) 
+	{
+		// Transition back to idle or falling depending on whether still airborne
+		bool isOnGround = (m_position.y >= kGroundLevel);
+		if (isOnGround) 
+		{
+			TransitionToState(PlayerState::IDLE);
+		} else 
+		{
+			TransitionToState(PlayerState::FALLING);
+		}
+	}
+}
+
+
+// Example Death complete callback
+void Player::OnDeathAnimationComplete() 
+{
+	LogManager::GetInstance().Log("Death animation complete.");
+	// add a option if player wants to revive
+	// [Arise] / [Perish]
+}
+
 // ------------------------------------------Debugging-------------------------------------------------------
 void Player::DebugDraw()
 {
-	if (ImGui::CollapsingHeader("Player"))
+	if (ImGui::CollapsingHeader("Player Debug")) // Changed header name slightly
 	{
 		ImGui::Checkbox("Alive", &m_bAlive);
 		ImGui::Text("Position: (%.1f, %.1f)", m_position.x, m_position.y);
 		ImGui::Text("Velocity: (%.1f, %.1f)", m_velocity.x, m_velocity.y);
-		ImGui::Text("State: %d", static_cast<int>(m_currentState)); // Show state enum value
+
+		// Display current state as text
+		std::string stateName = "UNKNOWN";
+		switch (m_currentState) {
+		case PlayerState::IDLE: stateName = "IDLE"; break;
+		case PlayerState::RUNNING: stateName = "RUNNING"; break;
+		case PlayerState::JUMPING: stateName = "JUMPING"; break;
+		case PlayerState::FALLING: stateName = "FALLING"; break;
+		case PlayerState::ATTACKING: stateName = "ATTACKING"; break;
+		case PlayerState::TURNING: stateName = "TURNING"; break;
+		case PlayerState::ROLLING: stateName = "ROLLING"; break;
+		case PlayerState::HURT: stateName = "HURT"; break;
+		case PlayerState::DEATH: stateName = "DEATH"; break;
+		default: stateName = "(" + std::to_string((int)m_currentState) + ")"; break;
+		}
+		ImGui::Text("State: %s", stateName.c_str());
 		ImGui::Text("Facing: %s", m_bFacingRight ? "Right" : "Left");
-		ImGui::Text("Turning: %s", m_isTurning ? "Yes" : "No");
+		ImGui::Text("Turning: %s (Target: %s, Desired Spd: %.1f)",
+			m_isTurning ? "Yes" : "No",
+			m_targetFacingRight ? "Right" : "Left",
+			m_desiredMoveSpeed);
 		ImGui::Text("On Ground: %s", (m_position.y >= kGroundLevel) ? "Yes" : "No");
+
+		// Stats Display/Edit
+		ImGui::SliderInt("Health", &m_currentHealth, 0, m_maxHealth);
+		ImGui::SliderFloat("Stamina", &m_currentStamina, 0.0f, m_maxStamina);
+		if (ImGui::Button("Damage Player (15)")) { TakeDamage(15); }
+		ImGui::SameLine();
+		if (ImGui::Button("Kill Player")) { TakeDamage(m_maxHealth * 2); }
+
 
 		AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
 		if (currentSprite)
 		{
-			ImGui::Text("Current Sprite Addr: %p", currentSprite);
-			ImGui::Text("Sprite Dims: %d x %d", currentSprite->GetWidth(), currentSprite->GetHeight());
-			ImGui::Text("Animating: %s", currentSprite->IsAnimating() ? "Yes" : "No");
-			ImGui::Text("Looping: %s", currentSprite->IsLooping() ? "Yes" : "No"); // Added looping info
-			ImGui::Text("Flipped: %s", currentSprite->IsFlippedHorizontal() ? "Yes" : "No");
-			ImGui::Text("Anim Complete Flag: %s", currentSprite->IsAnimationComplete() ? "Yes" : "No"); // Added complete flag info
+			ImGui::Separator();
+			ImGui::Text("Current Sprite: %p", currentSprite);
+			ImGui::Text(" Sprite Dims: %d x %d", currentSprite->GetWidth(), currentSprite->GetHeight());
+			ImGui::Text(" Animating: %s", currentSprite->IsAnimating() ? "Yes" : "No");
+			ImGui::Text(" Looping: %s", currentSprite->IsLooping() ? "Yes" : "No");
+			ImGui::Text(" Flipped: %s", currentSprite->IsFlippedHorizontal() ? "Yes" : "No");
+			ImGui::Text(" Anim Complete Flag: %s", currentSprite->IsAnimationComplete() ? "Yes" : "No");
 
 			// Show the sprite's specific debug UI
-			currentSprite->DebugDraw();
+			currentSprite->DebugDraw(); // Includes frame slider
 		}
 		else
 		{

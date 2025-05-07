@@ -39,9 +39,8 @@ SceneTest::Process(float deltaTime, InputSystem& inputSystem)
 {
 	if (!m_pPlayer) return;
 
-	const float moveSpeed = 80.0f;
-	const float jumpSpeed = 80.0f;
-	const float rollSpeed = 85.0f;
+	const float moveSpeed = 125.0f;
+	const float rollSpeed = 105.0f;
 	bool isMoving = false;
 
 	// Movement keys left and right
@@ -59,7 +58,7 @@ SceneTest::Process(float deltaTime, InputSystem& inputSystem)
 	// Other player actions
 	if (inputSystem.GetKeyState(SDL_SCANCODE_SPACE) == BS_PRESSED)
 	{
-		m_pPlayer->Jump(jumpSpeed);
+		m_pPlayer->Jump();
 	}
 
 	if (inputSystem.GetKeyState(SDL_SCANCODE_J) == BS_PRESSED)
@@ -98,11 +97,6 @@ SceneTest::Draw(Renderer& renderer)
 void
 SceneTest::DebugDraw()
 {
-	if (ImGui::CollapsingHeader("Scene Test"))
-	{
-		ImGui::Text("Scene Debug Information");
-	}
-
 	if (m_pPlayer)
 	{
 		m_pPlayer->DebugDraw();
