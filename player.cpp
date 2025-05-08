@@ -4,7 +4,6 @@
 // Local Includes
 #include "Renderer.h"
 #include "AnimatedSprite.h"
-//#include "InlineHelpers.h"
 #include "LogManager.h"
 #include "Texture.h"
 
@@ -15,13 +14,14 @@
 #include <cassert>
 #include <cstdlib>
 #include <string>
+#include <algorithm>
 
 // Consttants
 const int PLAYER_SPRITE_WIDTH = 120;
 const int PLAYER_SPRITE_HEIGHT = 80;
 
 Player::Player()
-	: m_bAlive(false)
+	: Entity()
 	, m_pStaticSprite(nullptr)
 	, m_currentState(PlayerState::IDLE)
 	, m_bFacingRight(true)
@@ -30,13 +30,13 @@ Player::Player()
 	, m_targetFacingRight(true)
 	, m_rollVelocityBeforeRoll(0.0f)
 	// Stats
-	, m_maxHealth(100)
-	, m_currentHealth(100)
 	, m_maxStamina(100.0f)
 	, m_currentStamina(100.0f)
 	, m_staminaRegenRate(10.0f)
 	, m_justRevived(false)
 {
+	SetMaxHealth(100, true);
+	SetRadius(static_cast<float>(PLAYER_SPRITE_WIDTH) / 2.5f);
 	m_velocity.Set(0.0f, 0.0f);
 }
 
@@ -55,28 +55,35 @@ Player::~Player()
 
 bool Player::Initialise(Renderer& renderer)
 {
+	if (!Entity::Initialise(renderer))
+	{
+		return false;
+	}
+
+	SetMaxHealth(100, true);
+	m_bAlive = true;
+
 	// Load static image
 	m_pStaticSprite = renderer.CreateSprite("assets/player/_Idle.png");
 
-	// Animated Sprites
 	// ---IDLE---
-	if (!InitialiseAnimatedSprite(renderer, PlayerState::IDLE, "assets/player/_Idle.png", 120, 80, 0.15f, true))  return false;
+	if (!InitialiseAnimatedSprite(renderer, PlayerState::IDLE, "assets/player/_Idle.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.15f, true))  return false;
 	// ---RUNNING---
-	if (!InitialiseAnimatedSprite(renderer, PlayerState::RUNNING, "assets/player/_Run.png", 120, 80, 0.10f, true))  return false;
+	if (!InitialiseAnimatedSprite(renderer, PlayerState::RUNNING, "assets/player/_Run.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.10f, true))  return false;
 	// ---JUMPING---
-	if (!InitialiseAnimatedSprite(renderer, PlayerState::JUMPING, "assets/player/_Jump.png", 120, 80, 0.15f, false, [this]() { this->OnJumpAnimationComplete(); })) return false;
+	if (!InitialiseAnimatedSprite(renderer, PlayerState::JUMPING, "assets/player/_Jump.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.15f, false, [this]() { this->OnJumpAnimationComplete(); })) return false;
 	// ---FALLING---
-	if (!InitialiseAnimatedSprite(renderer, PlayerState::FALLING, "assets/player/_Fall.png", 120, 80, 0.20f, false)) return false;
+	if (!InitialiseAnimatedSprite(renderer, PlayerState::FALLING, "assets/player/_Fall.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.20f, false)) return false; // Typically looping or single very long frame
 	// ---ATTACKING---
-	if (!InitialiseAnimatedSprite(renderer, PlayerState::ATTACKING, "assets/player/_AttackComboNoMovement.png", 120, 80, 0.08f, false, [this]() { this->OnAttackAnimationComplete(); })) return false;
+	if (!InitialiseAnimatedSprite(renderer, PlayerState::ATTACKING, "assets/player/_AttackComboNoMovement.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.08f, false, [this]() { this->OnAttackAnimationComplete(); })) return false;
 	// ---TURNING---
-	if (!InitialiseAnimatedSprite(renderer, PlayerState::TURNING, "assets/player/_TurnAround.png", 120, 80, 0.1f, false, [this]() { this->OnTurnAnimationComplete(); })) return false;
+	if (!InitialiseAnimatedSprite(renderer, PlayerState::TURNING, "assets/player/_TurnAround.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.1f, false, [this]() { this->OnTurnAnimationComplete(); })) return false;
 	// ---ROLLING---
-	if (!InitialiseAnimatedSprite(renderer, PlayerState::ROLLING, "assets/player/_Roll.png", 120, 80, 0.1f, false, [this]() { this->OnRollAnimationComplete(); })) return false;
+	if (!InitialiseAnimatedSprite(renderer, PlayerState::ROLLING, "assets/player/_Roll.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.1f, false, [this]() { this->OnRollAnimationComplete(); })) return false;
 	// ---HURTING---
-	if (!InitialiseAnimatedSprite(renderer, PlayerState::HURT, "assets/player/_Hit.png", 120, 80, 0.3f, false, [this]() { this->OnHurtAnimationComplete(); })) return false;
+	if (!InitialiseAnimatedSprite(renderer, PlayerState::HURT, "assets/player/_Hit.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.3f, false, [this]() { this->OnHurtAnimationComplete(); })) return false;
 	// ---DEATH---
-	if (!InitialiseAnimatedSprite(renderer, PlayerState::DEATH, "assets/player/_Death.png", 120, 80, 0.15f, false, [this]() { this->OnDeathAnimationComplete(); })) return false;
+	if (!InitialiseAnimatedSprite(renderer, PlayerState::DEATH, "assets/player/_Death.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.15f, false, [this]() { this->OnDeathAnimationComplete(); })) return false;
 
 	// Initial position
 	// Position to be center of screen
@@ -84,9 +91,7 @@ bool Player::Initialise(Renderer& renderer)
 	m_position.y = kGroundLevel;
 
 	// reset the stats
-	m_currentHealth = m_maxHealth;
 	m_currentStamina = m_maxStamina;
-	m_bAlive = true;
 
 	// Set the initial state
 	TransitionToState(PlayerState::IDLE);
@@ -216,13 +221,13 @@ void Player::UpdateSprite(AnimatedSprite* sprite, float deltaTime)
 
 void Player::Draw(Renderer& renderer)
 {
+	AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
 	if (!m_bAlive && GetCurrentAnimatedSprite() && GetCurrentAnimatedSprite()->IsAnimationComplete()) return;
 
 	// Load static image (THIS IS NEEDED OTHERWISE NOTHING WILL BE ON SCREEN)
 	m_pStaticSprite->Draw(renderer);
 
 	// draw the animated sprite for the current state
-	AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
 	if (currentSprite)
 	{
 		currentSprite->Draw(renderer);
@@ -451,10 +456,12 @@ void Player::Revive()
 	if (!m_bAlive && m_currentState == PlayerState::DEATH)
 	{
 		m_bAlive = true;
-		m_currentHealth = m_maxHealth; // Revive to full health
-		m_currentStamina = m_maxStamina; // Restore stamina too
-		m_justRevived = true; // Set flag for UI
-		TransitionToState(PlayerState::IDLE); // Or a specific "get up" animation state
+		SetMaxHealth(GetMaxHealth(), true); 
+		m_currentStamina = m_maxStamina;
+		m_justRevived = true;
+		m_position.y = kGroundLevel; // makes sure the player is on ground
+		m_velocity.Set(0.0f, 0.0f);
+		TransitionToState(PlayerState::IDLE);
 		LogManager::GetInstance().Log("Player Revived!");
 	}
 }
@@ -470,7 +477,6 @@ bool Player::UseStamina(float amount)
 	return false;
 }
 
-// Healing function
 
 // Animation Completion Handlers
 void Player::OnTurnAnimationComplete()

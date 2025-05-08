@@ -9,6 +9,7 @@
 
 // Lib includes
 #include <cassert>
+#include <cmath>
 
 AnimatedSprite::AnimatedSprite()
 	: m_pVertexData(0)
@@ -20,7 +21,6 @@ AnimatedSprite::AnimatedSprite()
 	, m_bAnimating(false)
 	, m_bLooping(false)
 	, m_frameDuration(1.0f)
-	, totalTime(0.0f)
 	, m_bFlipHorizontal(false)
 	, m_bAnimationComplete(false)
 	, m_animationCompleteCallback(nullptr)
@@ -194,6 +194,7 @@ AnimatedSprite::Animate()
 {
 	m_bAnimating = true;
 	m_bAnimationComplete = false; // Reset animation complete state
+	m_fTimeElapsed = 0.0f;
 }
 
 void
@@ -232,6 +233,56 @@ bool
 AnimatedSprite::IsLooping() const
 {
 	return m_bLooping;
+}
+
+void
+AnimatedSprite::Pause()
+{
+	m_bAnimating = false;
+}
+
+void
+AnimatedSprite::Resume()
+{
+	if (m_bLooping || !m_bAnimationComplete)
+	{
+		m_bAnimating = true;
+	}
+}
+
+bool
+AnimatedSprite::IsPaused() const
+{
+	return !m_bAnimating && (m_bLooping || !m_bAnimationComplete);
+}
+
+void
+AnimatedSprite::SetCurrentFrame(int frameIndex)
+{
+	if (m_iTotalFrames == 0) return;
+	if (frameIndex >= 0 && frameIndex < m_iTotalFrames)
+	{
+		m_iCurrentFrame = frameIndex;
+		m_fTimeElapsed = 0.0f; // Reset time for the new current frame
+
+		if (!m_bLooping && m_iCurrentFrame == m_iTotalFrames - 1)
+		{
+		}
+		m_bAnimationComplete = (!m_bLooping && m_iCurrentFrame == m_iTotalFrames - 1);
+
+	}
+}
+
+int
+AnimatedSprite::GetCurrentFrame() const
+{
+	return m_iCurrentFrame;
+}
+
+int
+AnimatedSprite::GetTotalFrames() const
+{
+	return m_iTotalFrames;
 }
 
 void
