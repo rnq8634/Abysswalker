@@ -43,13 +43,13 @@ AnimatedSprite::Initialise(Texture& texture)
 int
 AnimatedSprite::GetWidth() const
 {
-	return static_cast<int>(ceilf(m_iFrameWidth * m_scale));
+	return static_cast<int>(ceilf(m_iFrameWidth * m_scaleX));
 }
 
 int
 AnimatedSprite::GetHeight() const
 {
-	return static_cast<int>(ceilf(m_iFrameHeight * m_scale));
+	return static_cast<int>(ceilf(m_iFrameHeight * m_scaleY));
 }
 
 bool
@@ -163,7 +163,6 @@ AnimatedSprite::Process(float deltaTime)
 					}
 				}
 			}
-
 			m_fTimeElapsed = 0.0f; // Reset this counter at the completion of each animated frame
 		}
 	}

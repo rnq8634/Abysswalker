@@ -13,8 +13,7 @@
 #include "imgui/imgui_impl_sdl2.h"
 
 // SCENE INCLUDES
-#include "scenebouncingballs.h"
-#include "SceneTest.h"
+#include "SceneAbyssWalker.h"
 
 // Static Members:
 Game* Game::sm_pInstance = 0;
@@ -96,15 +95,12 @@ bool Game::Initialise()
 
 	//------------------------------------SCENES------------------------------------------
 
-	// SCENE BOUNCING BALLS
-	
-
 	// Scene Test
 	Scene* pScene = 0;
-	pScene = new SceneTest();
+	pScene = new SceneAbyssWalker();
 	if (!pScene->Initialise(*m_pRenderer))
 	{
-		LogManager::GetInstance().Log("SceneTest failed to initialise!");
+		LogManager::GetInstance().Log("Abysswalker failed to launch!");
 		return false;
 	}
 

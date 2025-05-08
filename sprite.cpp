@@ -5,6 +5,7 @@
 // Local includes:
 #include "renderer.h"
 #include "texture.h"
+#include <cmath>
 
 Sprite::Sprite()
 	: m_pTexture(0)
@@ -15,11 +16,13 @@ Sprite::Sprite()
 	, m_angle(0.0f)
 	, m_centerX(0)
 	, m_centerY(0)
-	, m_scale(1.0f)
+	, m_scaleX(1.0f)
+	, m_scaleY(1.0f)
 	, m_alpha(1.0f)
 	, m_tintRed(1.0f)
 	, m_tintGreen(1.0f)
 	, m_tintBlue(1.0f)
+	, m_bFlipHorizontal(false)
 {
 
 }
@@ -44,10 +47,23 @@ void Sprite::Process(float deltaTime)
 
 }
 
+void Sprite::SetFlipHorizontal(bool flip)
+{
+	m_bFlipHorizontal = flip;
+}
+
+bool Sprite::IsFlippedHorizontal() const
+{
+	return m_bFlipHorizontal;
+}
+
 void Sprite::Draw(Renderer& renderer)
 {
-	m_pTexture->SetActive();
-	renderer.DrawSprite(*this);
+	if (m_pTexture)
+	{
+		m_pTexture->SetActive();
+		renderer.DrawSprite(*this, m_bFlipHorizontal);
+	}
 }
 
 void Sprite::SetX(int x)
@@ -86,14 +102,30 @@ float Sprite::GetAngle() const
 	return m_angle;
 }
 
-void Sprite::SetScale(float scale)
+void Sprite::SetScale(float scaleX, float scaleY)
 {
-	m_scale = scale;
+	m_scaleX = scaleX;
+	m_scaleY = scaleY;
 }
 
-float Sprite::GetScale() const
+void Sprite::SetScaleX(float scaleX)
 {
-	return m_scale;
+	m_scaleX = scaleX;
+}
+
+void Sprite::SetScaleY(float scaleY)
+{
+	m_scaleX = scaleY;
+}
+
+float Sprite::GetScaleX() const
+{
+	return m_scaleX;
+}
+
+float Sprite::GetScaleY() const
+{
+	return m_scaleY;
 }
 
 void Sprite::SetAlpha(float alpha)
@@ -108,12 +140,12 @@ float Sprite::GetAlpha() const
 
 int Sprite::GetWidth() const
 {
-	return static_cast<int>(ceilf(m_width * m_scale));
+	return static_cast<int>(ceilf(m_width * m_scaleX));
 }
 
 int Sprite::GetHeight() const
 {
-	return static_cast<int>(ceilf(m_height * m_scale));
+	return static_cast<int>(ceilf(m_height * m_scaleY));
 }
 
 float Sprite::Clamp(float minimum, float value, float maximum)

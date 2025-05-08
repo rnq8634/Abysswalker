@@ -1,2 +1,37 @@
-﻿  player.cpp
+﻿  animatedsprite.cpp
+  enemy.cpp
+  entity.cpp
+  game.cpp
+  imgui.cpp
+  imgui_demo.cpp
+  imgui_draw.cpp
+  imgui_impl_opengl3.cpp
+  imgui_impl_sdl2.cpp
+  imgui_tables.cpp
+  imgui_widgets.cpp
+  inputsystem.cpp
+  logmanager.cpp
+C:\Users\nikol\source\repos\DemoGame2025\inputsystem.cpp(106,18): warning C4552: '!=': result of expression not used
+  main.cpp
+  matrix4.cpp
+  particle.cpp
+  particleemitter.cpp
+  player.cpp
+  renderer.cpp
+  scene.cpp
+  Generating Code...
+  Compiling...
+  sceneabysswalker.cpp
+C:\Users\nikol\source\repos\DemoGame2025\sceneabysswalker.cpp(89,34): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+  shader.cpp
+  sprite.cpp
+  texture.cpp
+  texturemanager.cpp
+  tile.cpp
+  tilemap.cpp
+  uimanager.cpp
+  vector2.cpp
+  vertexarray.cpp
+  xboxcontroller.cpp
+  Generating Code...
   DemoGame2025.vcxproj -> C:\Users\nikol\source\repos\DemoGame2025\game\DemoGame2025_debug.exe

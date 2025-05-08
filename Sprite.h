@@ -5,7 +5,6 @@
 // Forward Declarations:
 class Renderer;
 class Texture;
-class AnimatedSprites;
 
 class Sprite
 {
@@ -21,6 +20,9 @@ public:
 	int GetWidth() const;
 	int GetHeight() const;
 
+	int GetOriginalWidth() const { return m_width; }
+	int GetOriginalHeight() const { return m_height; }
+
 	void SetX(int x);
 	int GetX() const;
 	void SetY(int y);
@@ -29,8 +31,12 @@ public:
 	void SetAngle(float angle);
 	float GetAngle() const;
 
-	void SetScale(float scale);
-	float GetScale() const;
+	// scaling methods
+	void SetScale(float scaleX, float scaleY);
+	void SetScaleX(float scaleX);
+	void SetScaleY(float scaleY);
+	float GetScaleX() const;
+	float GetScaleY() const;
 
 	void SetAlpha(float alpha);
 	float GetAlpha() const;
@@ -42,10 +48,11 @@ public:
 	void SetBlueTint(float value);
 	float GetBlueTint() const;
 
-	//Texture* GetTexture() const;
+	void SetFlipHorizontal(bool flip);
+	bool IsFlippedHorizontal() const;
 
 protected:
-	float Clamp(float minimum, float vlaue, float maximum);
+	float Clamp(float minimum, float value, float maximum);
 
 private:
 	Sprite(const Sprite& sprite);
@@ -66,12 +73,15 @@ protected:
 	int m_width;
 	int m_height;
 
-	float m_scale;
+	float m_scaleX;
+	float m_scaleY;
 	float m_alpha;
 
 	float m_tintRed;
 	float m_tintGreen;
 	float m_tintBlue;
+
+	bool m_bFlipHorizontal;
 
 private:
 };

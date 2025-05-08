@@ -70,7 +70,9 @@ public:
 	void TakeDamage(int amount);
 	bool UseStamina(float amount); // will return false if not enough stamina
 	// void Heal
-	// void Revive
+	void Revive();
+	bool WasJustRevived() const { return m_justRevived; }
+	void ClearReviveFlag() { m_justRevived = false; }
 
 protected:
 	// Methods for turn animation
@@ -124,6 +126,7 @@ protected:
 	bool m_isTurning;
 	bool m_targetFacingRight;
 	float m_rollVelocityBeforeRoll;
+	bool m_justRevived;
 
 	// Stats
 	int m_maxHealth;
@@ -133,7 +136,7 @@ protected:
 	float m_staminaRegenRate;
 
 	// Physics constants
-	const float kGroundLevel = 360.0f;
+	const float kGroundLevel = 580.0f;
 	const float kGravity = 150.0f; // gravity strengtth
 	const float kJumpForce = 100.0f; // initial jump strength
 	const float kTurnSpeedFactor = 0.2f; // speed multiplier when turning

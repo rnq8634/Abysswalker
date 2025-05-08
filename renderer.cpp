@@ -259,7 +259,7 @@ bool Renderer::SetupSpriteShader()
 	return loaded;
 }
 
-void Renderer::DrawSprite(Sprite& sprite)
+void Renderer::DrawSprite(Sprite& sprite, bool flipHorizontal)
 {
 	m_pSpriteShader->SetActive();
 	m_pSpriteVertexData->SetActive();
@@ -274,10 +274,23 @@ void Renderer::DrawSprite(Sprite& sprite)
 
 	Matrix4 world;
 	SetIdentity(world);
-	world.m[0][0] = cosf(angleInRadians) * (sizeX);
-	world.m[0][1] = -sinf(angleInRadians) * (sizeX);
-	world.m[1][0] = sinf(angleInRadians) * (sizeY);
-	world.m[1][1] = cosf(angleInRadians) * (sizeY);
+
+	// Handle horizontal flipping
+	if (flipHorizontal)
+	{
+		world.m[0][0] = -cosf(angleInRadians) * (sizeX); // Flip horizontally by negating X scale
+		world.m[0][1] = sinf(angleInRadians) * (sizeX);  // Also need to flip this component
+		world.m[1][0] = -sinf(angleInRadians) * (sizeY); // Flip this component too
+		world.m[1][1] = cosf(angleInRadians) * (sizeY);  // Keep this the same
+	}
+	else
+	{
+		world.m[0][0] = cosf(angleInRadians) * (sizeX);   // Normal X scale
+		world.m[0][1] = -sinf(angleInRadians) * (sizeX);  // Normal rotation component
+		world.m[1][0] = sinf(angleInRadians) * (sizeY);   // Normal rotation component
+		world.m[1][1] = cosf(angleInRadians) * (sizeY);   // Normal Y scale
+	}
+
 	world.m[3][0] = static_cast<float>(sprite.GetX());
 	world.m[3][1] = static_cast<float>(sprite.GetY());
 
@@ -345,15 +358,6 @@ Renderer::DrawAnimatedSprite(AnimatedSprite& sprite, int frame, bool flipHorizon
 		world.m[1][0] = sinf(angleInRadians) * (sizeY);   // Normal rotation component
 		world.m[1][1] = cosf(angleInRadians) * (sizeY);   // Normal Y scale
 	}
-
-	/* Default
-	* world.m[0][0] = cosf(angleInRadians) * (sizeX);
-	world.m[0][1] = -sinf(angleInRadians) * (sizeX); 
-	world.m[1][0] = sinf(angleInRadians) * (sizeY); 
-	world.m[1][1] = cosf(angleInRadians) * (sizeY); 
-	world.m[3][0] = static_cast<float>(sprite.GetX()); 
-	world.m[3][1] = static_cast<float>(sprite.GetY());
-	*/
 
 	world.m[3][0] = static_cast<float>(sprite.GetX());
 	world.m[3][1] = static_cast<float>(sprite.GetY());

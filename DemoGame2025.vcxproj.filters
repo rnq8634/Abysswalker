@@ -60,9 +60,6 @@
     <ClCompile Include="scene.cpp">
       <Filter>Engine\Scenes</Filter>
     </ClCompile>
-    <ClCompile Include="scenebouncingballs.cpp">
-      <Filter>Engine\Scenes</Filter>
-    </ClCompile>
     <ClCompile Include="game.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
@@ -77,9 +74,6 @@
     </ClCompile>
     <ClCompile Include="texturemanager.cpp">
       <Filter>Engine\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ball.cpp">
-      <Filter>Engine\GameObjects</Filter>
     </ClCompile>
     <ClCompile Include="animatedsprite.cpp">
       <Filter>Engine\Graphics</Filter>
@@ -117,8 +111,20 @@
     <ClCompile Include="player.cpp">
       <Filter>Engine\GameObjects</Filter>
     </ClCompile>
-    <ClCompile Include="scenetest.cpp">
+    <ClCompile Include="sceneabysswalker.cpp">
       <Filter>Engine\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="uimanager.cpp">
+      <Filter>Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="enemy.cpp">
+      <Filter>Engine\GameObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="tile.cpp">
+      <Filter>Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="tilemap.cpp">
+      <Filter>Engine\Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -182,9 +188,6 @@
     <ClInclude Include="Entity.h">
       <Filter>Engine\GameObjects</Filter>
     </ClInclude>
-    <ClInclude Include="Ball.h">
-      <Filter>Engine\GameObjects</Filter>
-    </ClInclude>
     <ClInclude Include="Particle.h">
       <Filter>Engine\GameObjects</Filter>
     </ClInclude>
@@ -192,9 +195,6 @@
       <Filter>Engine\GameObjects</Filter>
     </ClInclude>
     <ClInclude Include="Scene.h">
-      <Filter>Engine\Scenes</Filter>
-    </ClInclude>
-    <ClInclude Include="SceneBouncingBalls.h">
       <Filter>Engine\Scenes</Filter>
     </ClInclude>
     <ClInclude Include="Vector2.h">
@@ -212,8 +212,20 @@
     <ClInclude Include="Player.h">
       <Filter>Engine\GameObjects</Filter>
     </ClInclude>
-    <ClInclude Include="SceneTest.h">
+    <ClInclude Include="SceneAbyssWalker.h">
       <Filter>Engine\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="UIManager.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Enemy.h">
+      <Filter>Engine\GameObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="Tile.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="TileMap.h">
+      <Filter>Engine\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

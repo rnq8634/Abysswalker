@@ -23,7 +23,11 @@ Texture::Texture()
 
 Texture::~Texture()
 {
-	glDeleteTextures(1, &m_uiTextureId);
+	if (m_uiTextureId != 0)
+	{
+		glDeleteTextures(1, &m_uiTextureId);
+		m_uiTextureId = 0;
+	}
 }
 
 bool Texture::Initialize(const char* pcFilename)
@@ -36,7 +40,6 @@ bool Texture::Initialize(const char* pcFilename)
 		m_iHeight = pSurface->h;
 
 		int bytesPerPixel = pSurface->format->BytesPerPixel;
-
 		unsigned int format = 0;
 
 		if (bytesPerPixel == 3)
@@ -54,7 +57,7 @@ bool Texture::Initialize(const char* pcFilename)
 		glTexImage2D(GL_TEXTURE_2D, 0, format, m_iWidth, m_iHeight, 0, format, GL_UNSIGNED_BYTE, pSurface->pixels);
 
 		SDL_FreeSurface(pSurface);
-		pSurface = 0;
+		pSurface = nullptr;
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -65,7 +68,6 @@ bool Texture::Initialize(const char* pcFilename)
 		assert(0);
 		return false;
 	}
-	LoadSurfaceIntoTexture(pSurface);
 
 	return true;
 }
@@ -77,13 +79,11 @@ void Texture::SetActive()
 
 int Texture::GetWidth() const
 {
-	assert(m_iWidth);
 	return (m_iWidth);
 }
 
 int Texture::GetHeight() const
 {
-	assert(m_iHeight);
 	return (m_iHeight);
 }
 

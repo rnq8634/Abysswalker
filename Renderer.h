@@ -35,7 +35,7 @@ public:
 
 	// Draw Static Sprites
 	Sprite* CreateSprite(const char* pcFilename);
-	void DrawSprite(Sprite& sprite);
+	void DrawSprite(Sprite& sprite, bool FlipHorizontal = false);
 
 	// Draw Animated Sprites
 	AnimatedSprite* CreateAnimatedSprite(const char* pcFilename);

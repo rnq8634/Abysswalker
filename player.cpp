@@ -35,6 +35,7 @@ Player::Player()
 	, m_maxStamina(100.0f)
 	, m_currentStamina(100.0f)
 	, m_staminaRegenRate(10.0f)
+	, m_justRevived(false)
 {
 	m_velocity.Set(0.0f, 0.0f);
 }
@@ -114,8 +115,7 @@ bool Player::InitialiseAnimatedSprite(Renderer& renderer, PlayerState state, con
 
 	// Store the sprite in the map
 	m_animatedSprites[state] = sprite;
-	//LogManager::GetInstance().Log(("Initialised sprite for state " + std::to_string((int)state) + ": " + std::string(pcFilename)).c_str());
-
+	
 	return true;
 }
 
@@ -243,13 +243,6 @@ AnimatedSprite* Player::GetCurrentAnimatedSprite()
 // State transitions
 void Player::TransitionToState(PlayerState newState)
 {
-	// cant transition if dead
-	if (!m_bAlive && newState != PlayerState::DEATH)
-	{
-		return;
-	}
-
-	if (m_currentState == PlayerState::DEATH) return; // cannot transition out of death
 	if (m_currentState == PlayerState::HURT && !GetCurrentAnimatedSprite()->IsAnimationComplete()) return; // Can't interrupt hurt anim?
 
 	if (m_currentState == newState && newState != PlayerState::FALLING && newState != PlayerState::JUMPING)
@@ -269,7 +262,6 @@ void Player::TransitionToState(PlayerState newState)
 	AnimatedSprite* newSprite = GetCurrentAnimatedSprite();
 	if (newSprite)
 	{
-		//LogManager::GetInstance().Log(("Transitioning to state: " + std::to_string((int)newState)).c_str());
 		newSprite->Restart();
 		newSprite->Animate();
 	}
@@ -385,6 +377,7 @@ void Player::Jump()
 
 void Player::Attack()
 {
+	// need to add player attacks
 	// Can only attack from ground states (Idle, Running)
 	if (m_currentState == PlayerState::IDLE || m_currentState == PlayerState::RUNNING)
 	{
@@ -428,13 +421,15 @@ void Player::Roll(float speedBoost)
 // --- Stat Modifiers ---
 void Player::TakeDamage(int amount)
 {
-	if (!m_bAlive) return; // cant take damage if dead
+	if (!m_bAlive && amount < 0)
+	{
+		//Revive();
+	}
+	else if (!m_bAlive) return;
 	if (m_currentState == PlayerState::ROLLING) return;
 
 	m_currentHealth -= amount;
 	m_currentHealth = std::max(0, m_currentHealth);
-
-	LogManager::GetInstance().Log(("Player took " + std::to_string(amount) + " damage. Health: " + std::to_string(m_currentHealth)).c_str());
 
 	if (m_currentHealth <= 0)
 	{
@@ -445,9 +440,22 @@ void Player::TakeDamage(int amount)
 	else
 	{
 		TransitionToState(PlayerState::HURT);
-		// Maybe add knockback?
+		// knockback for the player
 		m_velocity.x = m_bFacingRight ? -50.0f : 50.0f;
-		m_velocity.y = -100.0f; // Small pop-up
+		m_velocity.y = -50.0f; // Small pop-up
+	}
+}
+
+void Player::Revive()
+{
+	if (!m_bAlive && m_currentState == PlayerState::DEATH)
+	{
+		m_bAlive = true;
+		m_currentHealth = m_maxHealth; // Revive to full health
+		m_currentStamina = m_maxStamina; // Restore stamina too
+		m_justRevived = true; // Set flag for UI
+		TransitionToState(PlayerState::IDLE); // Or a specific "get up" animation state
+		LogManager::GetInstance().Log("Player Revived!");
 	}
 }
 
@@ -558,7 +566,6 @@ void Player::OnHurtAnimationComplete()
 	}
 }
 
-
 // Example Death complete callback
 void Player::OnDeathAnimationComplete() 
 {
@@ -568,6 +575,10 @@ void Player::OnDeathAnimationComplete()
 }
 
 // ------------------------------------------Debugging-------------------------------------------------------
+// Need to add cheat features for debug
+// God Mode
+// One Shot
+// Inf Stamina
 void Player::DebugDraw()
 {
 	if (ImGui::CollapsingHeader("Player Debug")) // Changed header name slightly
@@ -604,7 +615,10 @@ void Player::DebugDraw()
 		if (ImGui::Button("Damage Player (15)")) { TakeDamage(15); }
 		ImGui::SameLine();
 		if (ImGui::Button("Kill Player")) { TakeDamage(m_maxHealth * 2); }
-
+		if (ImGui::Button("Revive Player")) { Revive(); }
+		// if if (ImGui::Button("God Mode")) { GodMode(); }
+		// if (ImGui::Button("One Shot")) { OneShotMode(); }
+		// if (ImGui::Button("Infinite Stamina")) { InfStamina(); }
 
 		AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
 		if (currentSprite)

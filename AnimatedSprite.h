@@ -43,6 +43,13 @@ public:
 
 	bool IsLooping() const;
 
+	void Pause();
+	void Resume();
+	bool IsPaused() const;
+	void SetCurrentFrame(int frameIndex);
+	int GetCurrentFrame() const;
+	int GetTotalFrames() const;
+
 protected:
 
 private:
