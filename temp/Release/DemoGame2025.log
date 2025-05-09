@@ -1,7 +1,11 @@
-﻿  Player.cpp
+﻿  Enemy.cpp
+  InputSystem.cpp
+  Player.cpp
+  SceneAbyssWalker.cpp
+C:\Users\nikol\source\repos\DemoGame2025\SceneAbyssWalker.cpp(267,34): warning C4018: '<': signed/unsigned mismatch
   Generating code
-  4 of 2701 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
+  10 of 2701 functions ( 0.4%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    30 functions had inline decision re-evaluated but remain unchanged
+    32 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   DemoGame2025.vcxproj -> C:\Users\nikol\source\repos\DemoGame2025\game\DemoGame2025.exe
