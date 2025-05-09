@@ -106,8 +106,9 @@ bool SceneAbyssWalker::Initialise(Renderer& renderer)
 {
     m_pRenderer = &renderer; // Store the renderer
 
-    fullBackground(*m_pRenderer); // Use stored renderer
+    fullBackground(*m_pRenderer);
 
+    // load player
     m_pPlayer = new Player();
     if (!m_pPlayer || !m_pPlayer->Initialise(*m_pRenderer))
     {
@@ -115,6 +116,7 @@ bool SceneAbyssWalker::Initialise(Renderer& renderer)
         delete m_pPlayer; m_pPlayer = nullptr;
         return false;
     }
+
     m_spawnTimer = m_spawnInterval; // Start ready to spawn
 
     return true;
@@ -173,8 +175,13 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
 
     for (Enemy* enemy : m_enemies)
     {
+        if (enemy->m_pTargetPlayer == nullptr && m_pPlayer)
+        {
+            enemy->m_pTargetPlayer = m_pPlayer;
+        }
         enemy->Process(deltaTime);
     }
+    
 
     HandleCollisions();
 
@@ -307,7 +314,7 @@ void SceneAbyssWalker::SpawnEnemy(bool spawnOnLeft) // Renderer argument removed
     }
 
     Vector2 spawnPos;
-    const float spawnXOffset = 70.0f;
+    const float spawnXOffset = 50.0f;
     if (spawnOnLeft)
     {
         spawnPos.x = -spawnXOffset;
@@ -320,7 +327,7 @@ void SceneAbyssWalker::SpawnEnemy(bool spawnOnLeft) // Renderer argument removed
     spawnPos.y = newEnemy->kGroundLevel;
 
     // Ensure *m_pRenderer is used here for initialization
-    if (newEnemy->Initialise(*m_pRenderer, m_pPlayer, spawnPos))
+    if (newEnemy->Initialise(*m_pRenderer, spawnPos))
     {
         m_enemies.push_back(newEnemy);
         LogManager::GetInstance().Log(("Spawned new enemy on " + std::string(spawnOnLeft ? "left" : "right")).c_str());

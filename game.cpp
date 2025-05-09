@@ -71,7 +71,7 @@ bool Game::Initialise()
 	int bbHeight = 720;
 
 	m_pRenderer = new Renderer();
-	if (!m_pRenderer->Initialize(true, bbWidth, bbHeight))
+	if (!m_pRenderer->Initialize(false, bbWidth, bbHeight))
 	{
 		LogManager::GetInstance().Log("Renderer failed to initialise!");
 		return false;
@@ -93,8 +93,6 @@ bool Game::Initialise()
 		return false;
 	}
 
-	//------------------------------------SCENES------------------------------------------
-
 	// Scene Test
 	Scene* pScene = 0;
 	pScene = new SceneAbyssWalker();
@@ -103,8 +101,6 @@ bool Game::Initialise()
 		LogManager::GetInstance().Log("Abysswalker failed to launch!");
 		return false;
 	}
-
-	//------------------------------------SCENES END------------------------------------------
 
 	m_scenes.push_back(pScene);
 	m_iCurrentScene = 0; // Only one scene available

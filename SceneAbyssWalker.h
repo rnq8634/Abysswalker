@@ -2,6 +2,7 @@
 #include "Scene.h"
 #include <vector>
 #include <string>
+#include "Vector2.h"
 
 // Forward declarations
 class Player;
@@ -15,29 +16,29 @@ class SceneAbyssWalker : public Scene
 	// Member methods
 public:
 	SceneAbyssWalker();
-	~SceneAbyssWalker() override;
+	~SceneAbyssWalker();
 
-	bool Initialise(Renderer& renderer) override;
-	void Process(float deltaTime, InputSystem& inputSystem) override;
-	void Draw(Renderer& renderer) override;
-	void DebugDraw() override;
+	bool Initialise(Renderer& renderer);
+	void Process(float deltaTime, InputSystem& inputSystem);
+	void Draw(Renderer& renderer);
+	void DebugDraw();
 
 	void fullBackground(Renderer& renderer);
 
 protected:
+	Player* m_pPlayer;
 	void UpdateSpawning(float deltaTime);
 	void SpawnEnemy(bool spawnOnLeft);
 	void HandleCollisions();
 
 private:
-	SceneAbyssWalker(const SceneAbyssWalker& scene);
-	SceneAbyssWalker& operator=(const SceneAbyssWalker& scene);
+	SceneAbyssWalker(const SceneAbyssWalker& scene) = delete;
+	SceneAbyssWalker& operator=(const SceneAbyssWalker& scene) = delete;
 
 	// Member data
 public:
 
 protected:
-	Player* m_pPlayer;
 	std::vector<Enemy*> m_enemies;
 	Renderer* m_pRenderer;
 

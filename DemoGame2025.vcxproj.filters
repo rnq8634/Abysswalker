@@ -114,17 +114,8 @@
     <ClCompile Include="sceneabysswalker.cpp">
       <Filter>Engine\Scenes</Filter>
     </ClCompile>
-    <ClCompile Include="uimanager.cpp">
-      <Filter>Engine\Core</Filter>
-    </ClCompile>
     <ClCompile Include="enemy.cpp">
       <Filter>Engine\GameObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="tile.cpp">
-      <Filter>Engine\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="tilemap.cpp">
-      <Filter>Engine\Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -215,17 +206,8 @@
     <ClInclude Include="SceneAbyssWalker.h">
       <Filter>Engine\Scenes</Filter>
     </ClInclude>
-    <ClInclude Include="UIManager.h">
-      <Filter>Engine\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Enemy.h">
       <Filter>Engine\GameObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Tile.h">
-      <Filter>Engine\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="TileMap.h">
-      <Filter>Engine\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

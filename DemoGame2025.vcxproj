@@ -169,9 +169,6 @@
     <ClCompile Include="sprite.cpp" />
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="texturemanager.cpp" />
-    <ClCompile Include="tile.cpp" />
-    <ClCompile Include="tilemap.cpp" />
-    <ClCompile Include="uimanager.cpp" />
     <ClCompile Include="vector2.cpp" />
     <ClCompile Include="vertexarray.cpp" />
     <ClCompile Include="xboxcontroller.cpp" />
@@ -202,9 +199,6 @@
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureManager.h" />
-    <ClInclude Include="Tile.h" />
-    <ClInclude Include="TileMap.h" />
-    <ClInclude Include="UIManager.h" />
     <ClInclude Include="Vector2.h" />
     <ClInclude Include="VertexArray.h" />
     <ClInclude Include="XboxController.h" />

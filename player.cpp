@@ -16,9 +16,8 @@
 #include <string>
 #include <algorithm>
 
-// Consttants
-const int PLAYER_SPRITE_WIDTH = 120;
-const int PLAYER_SPRITE_HEIGHT = 80;
+// Constants
+const float PLAYER_VISUAL_SCALE = 2.0f;
 
 Player::Player()
 	: Entity()
@@ -34,9 +33,10 @@ Player::Player()
 	, m_currentStamina(100.0f)
 	, m_staminaRegenRate(10.0f)
 	, m_justRevived(false)
+	, m_bAlive(false)
 {
 	SetMaxHealth(100, true);
-	SetRadius(static_cast<float>(PLAYER_SPRITE_WIDTH) / 2.5f);
+	SetRadius((static_cast<float>(PLAYER_SPRITE_WIDTH) * PLAYER_VISUAL_SCALE) / 2.5f);
 	m_velocity.Set(0.0f, 0.0f);
 }
 
@@ -65,6 +65,7 @@ bool Player::Initialise(Renderer& renderer)
 
 	// Load static image
 	m_pStaticSprite = renderer.CreateSprite("assets/player/_Idle.png");
+	m_pStaticSprite->SetScale(PLAYER_VISUAL_SCALE, PLAYER_VISUAL_SCALE);
 
 	// ---IDLE---
 	if (!InitialiseAnimatedSprite(renderer, PlayerState::IDLE, "assets/player/_Idle.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.15f, true))  return false;
@@ -118,6 +119,7 @@ bool Player::InitialiseAnimatedSprite(Renderer& renderer, PlayerState state, con
 		sprite->SetAnimationCompleteCallback(onComplete);
 	}
 
+	sprite->SetScale(PLAYER_VISUAL_SCALE, PLAYER_VISUAL_SCALE);
 	// Store the sprite in the map
 	m_animatedSprites[state] = sprite;
 	

@@ -69,8 +69,6 @@ bool Renderer::Initialize(bool windowed, int width, int height)
 		return false;
 	}
 
-	bool initialized = InitializeOpenGL(width, height);
-
 	if (!windowed)
 	{
 		// Go fullscreen, with current resolution!
@@ -101,6 +99,8 @@ bool Renderer::Initialize(bool windowed, int width, int height)
 		width = widest;
 		height = andItsHeight;
 	}
+
+	bool initialized = InitializeOpenGL(width, height);
 
 	SetFullscreen(!windowed);
 
@@ -179,7 +179,6 @@ void Renderer::SetFullscreen(bool fullscreen)
 {
 	if (fullscreen)
 	{
-		//SDL_SetWindowFullscreen(m_pWindow, SDL_WINDOW_FULLSCREEN | SDL_SetWindowAlwaysOnTop);
 		SDL_SetWindowFullscreen(m_pWindow, SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_ALWAYS_ON_TOP);
 		SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
 		SDL_SetWindowSize(m_pWindow, m_iWidth, m_iHeight);

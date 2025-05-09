@@ -24,8 +24,11 @@ Entity::Entity()
 // Destructor
 Entity::~Entity()
 {
-	delete m_pSprite;
-	m_pSprite = nullptr;
+	if (m_pSprite)
+	{
+		delete m_pSprite;
+		m_pSprite = nullptr;
+	}
 }
 
 // Initialsie the entity
@@ -41,8 +44,13 @@ Entity::Initialise(Renderer& renderer)
 void 
 Entity::Process(float deltaTime)
 {
-	if (!m_bAlive) return;
 	m_position += m_velocity * deltaTime;
+	if (!m_bAlive) return;
+	if (m_pSprite)
+	{
+		m_pSprite->SetX(static_cast<int>(m_position.x));
+		m_pSprite->SetY(static_cast<int>(m_position.y));
+	}
 }
 
 // draw the entity using the renderer
@@ -51,10 +59,7 @@ Entity::Draw(Renderer& renderer)
 {
 	if (m_pSprite && m_bAlive)
 	{
-		m_pSprite->SetX(static_cast<int>(m_position.x));
-		m_pSprite->SetY(static_cast<int>(m_position.y));
-		// m_pSprite->SetAngle(0); // Or some other default if needed
-		// m_pSprite->SetScale(1.0f, 1.0f);
+		m_pSprite->SetScale(2.0f, 2.0f);
 		m_pSprite->Draw(renderer);
 	}
 }
@@ -109,21 +114,10 @@ Vector2& Entity::GetPosition()
 	return m_position;
 }
 
-const Vector2& Entity::GetPosition() const
-{
-	return m_position;
-}
-
 Vector2& Entity::GetVelocity()
 {
 	return m_velocity;
 }
-
-const Vector2& Entity::GetVelocity() const
-{
-	return m_velocity;
-}
-
 
 bool Entity::IsCollidingWith(Entity& toCheck)
 {

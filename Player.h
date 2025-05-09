@@ -17,6 +17,9 @@ class Renderer;
 class AnimatedSprite;
 class Sprite;
 
+const int PLAYER_SPRITE_WIDTH = 120;
+const int PLAYER_SPRITE_HEIGHT = 80;
+
 // enum for player states
 enum class PlayerState
 {
@@ -39,12 +42,12 @@ class Player : public Entity
 	// Member methods
 public:
 	Player();
-	~Player() override;
+	~Player();
 
-	bool Initialise(Renderer& renderer) override;
-	void Process(float deltaTime) override;
-	void Draw(Renderer& renderer) override;
-	void DebugDraw() override;
+	bool Initialise(Renderer& renderer);
+	void Process(float deltaTime);
+	void Draw(Renderer& renderer);
+	void DebugDraw();
 
 	// Getters
 	PlayerState GetCurrentState() const { return m_currentState;  }
@@ -63,7 +66,8 @@ public:
 	void StopMoving();
 
 	// stat modifiers
-	void TakeDamage(int amount) override;
+	void TakeDamage(int amount);
+	bool PlayerAttack();
 	bool UseStamina(float amount); // will return false if not enough stamina
 	void Revive();
 	bool WasJustRevived() const { return m_justRevived; }
@@ -107,16 +111,15 @@ public:
 	static const int PLAYER_SPRITE_WIDTH = 120;
 	static const int PLAYER_SPRITE_HEIGHT = 80;
 
-	const float kGroundLevel = 580.0f;
+	const float kGroundLevel = 1200.0f;
 
 protected:
 	PlayerState m_currentState;
 	bool m_bFacingRight;
 
 	// Position and movement
-	Vector2 m_position; // Position of the player
-	Vector2 m_velocity; // Speed of the player
-	bool m_bAlive;
+	//Vector2 m_position; // Position of the player
+	//Vector2 m_velocity; // Speed of the player
 
 	// Static (NEEDS STATIC SPRITE TO LOAD SPRITES)
 	Sprite* m_pStaticSprite;
@@ -128,6 +131,7 @@ protected:
 	bool m_targetFacingRight;
 	float m_rollVelocityBeforeRoll;
 	bool m_justRevived;
+	bool m_bAlive;
 
 	// Stats
 	float m_maxStamina;

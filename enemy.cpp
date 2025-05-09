@@ -18,11 +18,12 @@ Enemy::Enemy()
     , m_damage(10)
     , m_moveSpeed(75.0f)    // Slightly slower than player run
     , m_attackRange(60.0f)  // Player radius + enemy radius + small buffer
-    , m_detectionRange(400.0f)
+    , m_detectionRange(2000.0f) // for now so that the enemies would find the player straight away
     , m_attackCooldown(2.5f)
     , m_timeSinceLastAttack(m_attackCooldown) // Ready to attack initially
     , m_attackWindUpTime(0.5f) // Example: damage applied 0.5s into attack animation
     , m_currentAttackTime(0.0f)
+    , m_pStaticEnemy(nullptr)
 {
     SetMaxHealth(50, true); // Enemy specific health
     SetRadius(static_cast<float>(ENEMY_DEFAULT_SPRITE_WIDTH) / 2.5f);
@@ -30,6 +31,9 @@ Enemy::Enemy()
 
 Enemy::~Enemy()
 {
+    delete m_pStaticEnemy;
+    m_pStaticEnemy = nullptr;
+
     for (const auto& pair : m_animatedSprites)
     {
         delete pair.second;
@@ -38,21 +42,10 @@ Enemy::~Enemy()
     m_pTargetPlayer = nullptr;
 }
 
-bool Enemy::Initialise(Renderer& renderer)
-{
-    // This version is if an Enemy is created without a specific target or position initially.
-    // It's less likely to be used directly if enemies always need a target.
-    LogManager::GetInstance().Log("Warning: Enemy::Initialise(Renderer&) called. Target player and position might not be set.");
-    return Entity::Initialise(renderer); // Basic entity init
-    // Sprite loading would ideally happen in the more specific Init
-}
-
-
-bool Enemy::Initialise(Renderer& renderer, Player* targetPlayer, const Vector2& startPosition)
+bool Enemy::Initialise(Renderer& renderer, const Vector2& startPosition)
 {
     if (!Entity::Initialise(renderer)) return false;
 
-    m_pTargetPlayer = targetPlayer;
     m_position = startPosition;
     m_position.y = kGroundLevel; // Ensure Y is on ground
 
@@ -61,6 +54,12 @@ bool Enemy::Initialise(Renderer& renderer, Player* targetPlayer, const Vector2& 
     {
         m_bFacingRight = (m_pTargetPlayer->GetPosition().x > m_position.x);
     }
+    else
+    {
+        m_bFacingRight = false;
+    }
+
+    m_pStaticEnemy = renderer.CreateSprite("assets/enemy/Bat-IdleFly.png");
 
     if (!InitialiseAnimatedSprite(renderer, EnemyState::IDLE, "assets/enemy/Bat-IdleFly.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.2f, true)) return false;
     if (!InitialiseAnimatedSprite(renderer, EnemyState::WALKING, "assets/enemy/Bat-Run.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.15f, true)) return false;
@@ -80,7 +79,6 @@ bool Enemy::InitialiseAnimatedSprite(Renderer& renderer, EnemyState state, const
     if (!sprite)
     {
         LogManager::GetInstance().Log(("Failed to create animated sprite for enemy: " + std::string(pcFilename)).c_str());
-        // Attempt to load a default/error sprite? For now, just fail.
         return false;
     }
     sprite->SetupFrames(frameWidth, frameHeight);
@@ -101,53 +99,56 @@ void Enemy::Process(float deltaTime)
         AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
         if (m_currentState == EnemyState::DEATH && currentSprite) {
             UpdateSprite(currentSprite, deltaTime); // Process death animation
-            // Scene will check IsAnimationComplete() for cleanup
         }
         return;
     }
 
     UpdateAI(deltaTime);
 
+    if (m_currentState == EnemyState::WALKING)
+    {
+        MoveToPlayer(deltaTime);
+    }
+
     // Apply velocity to position (basic physics)
-    m_position += m_velocity * deltaTime;
+    //m_position.x += m_velocity.x * deltaTime;
     // Ensure enemy stays on ground if ground-based
     if (m_position.y > kGroundLevel) { // Basic ground clamping
         m_position.y = kGroundLevel;
         m_velocity.y = 0;
     }
 
-
-    AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
-    if (currentSprite)
-    {
-        UpdateSprite(currentSprite, deltaTime);
-    }
-
+    // attack timing and damage
     m_timeSinceLastAttack += deltaTime;
-
-    if (m_currentState == EnemyState::ATTACKING) 
+    if (m_currentState == EnemyState::ATTACKING)
     {
         m_currentAttackTime += deltaTime;
-        if (m_currentAttackTime >= m_attackWindUpTime) 
+
+        if (m_currentAttackTime >= m_attackWindUpTime && m_currentAttackTime != -1.0f)
         {
-            // Time to deal damage
-            if (m_pTargetPlayer && m_pTargetPlayer->IsAlive()) 
+            if (m_pTargetPlayer && m_pTargetPlayer->IsAlive())
             {
                 Vector2 directionToPlayer = m_pTargetPlayer->GetPosition() - m_position;
                 float distanceToPlayer = directionToPlayer.Length();
-                // Check if player is in front and within attack range + player's radius for more accuracy
-                bool playerInFront = (m_bFacingRight && directionToPlayer.x > 0 && std::abs(directionToPlayer.x) > std::abs(directionToPlayer.y)) ||
-                    (!m_bFacingRight && directionToPlayer.x < 0 && std::abs(directionToPlayer.x) > std::abs(directionToPlayer.y));
 
-                if (playerInFront && distanceToPlayer < (m_attackRange + m_pTargetPlayer->GetRadius())) 
+                bool playerInFront = (m_bFacingRight && directionToPlayer.x >= 0) ||
+                    (!m_bFacingRight && directionToPlayer.x <= 0);
+
+                if (playerInFront && distanceToPlayer < (m_attackRange + m_pTargetPlayer->GetRadius()))
                 {
                     m_pTargetPlayer->TakeDamage(m_damage);
                     LogManager::GetInstance().Log("Enemy dealt damage to player.");
                 }
             }
-            m_currentAttackTime = -1.0f; // Mark damage as dealt for this attack cycle to prevent multi-hits
+            m_currentAttackTime = -1.0f;
         }
     }
+    AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
+    if (currentSprite)
+    {
+        UpdateSprite(currentSprite, deltaTime);
+    }
+    
 }
 
 void Enemy::UpdateAI(float deltaTime)
@@ -161,7 +162,6 @@ void Enemy::UpdateAI(float deltaTime)
             m_currentState != EnemyState::HURT &&
             m_currentState != EnemyState::DEATH)
         {
-            m_velocity.x = 0;
             if (m_currentState == EnemyState::WALKING) TransitionToState(EnemyState::IDLE);
         }
         return;
@@ -178,39 +178,29 @@ void Enemy::UpdateAI(float deltaTime)
     float detectionRangeSq = m_detectionRange * m_detectionRange;
     float attackRangeSq = effectiveAttackRange * effectiveAttackRange;
 
-
     if (distanceToPlayerSquared <= attackRangeSq)
     {
-        m_velocity.x = 0;
         if (m_timeSinceLastAttack >= m_attackCooldown)
         {
             TransitionToState(EnemyState::ATTACKING);
             m_timeSinceLastAttack = 0.0f;
             m_currentAttackTime = 0.0f; // Reset wind-up timer
         }
-        else if (m_currentState != EnemyState::ATTACKING) { // Ensure not already attacking
+        else if (m_currentState != EnemyState::ATTACKING) 
+        { // Ensure not already attacking
             TransitionToState(EnemyState::IDLE);
         }
     }
-    else if (distanceToPlayerSquared <= detectionRangeSq)
+    else if (distanceToPlayerSquared <= detectionRangeSq) // if the player is in detection range but not in attacking range
     {
-        if (m_currentState != EnemyState::WALKING)
+        if (m_currentState != EnemyState::WALKING && m_currentState != EnemyState::ATTACKING)
         {
             TransitionToState(EnemyState::WALKING);
-        }
-        // Normalize only if moving, to avoid normalizing zero vector
-        if (directionToPlayer.x != 0) { // Simple check, can be more robust
-            Vector2 moveDir = directionToPlayer;
-            moveDir.Normalise();
-            m_velocity.x = moveDir.x * m_moveSpeed;
-        }
-        else {
-            m_velocity.x = 0; // If directly above/below, stop horizontal movement
         }
     }
     else
     {
-        m_velocity.x = 0;
+        //m_velocity.x = 0;
         if (m_currentState == EnemyState::WALKING)
         {
             TransitionToState(EnemyState::IDLE);
@@ -218,6 +208,24 @@ void Enemy::UpdateAI(float deltaTime)
     }
 }
 
+void Enemy::MoveToPlayer(float deltaTime) 
+{
+    if (!m_pTargetPlayer) return;
+    Vector2 playerPos = m_pTargetPlayer->GetPosition();
+    float directionX = 0.0f;
+    float deadZone = 2.0f;
+    
+    if (playerPos.x < m_position.x - deadZone)
+    {
+        directionX = -1.0f;
+    }
+    else if (playerPos.x > m_position.x + deadZone)
+    {
+        directionX = 1.0f;
+    }
+
+    m_position.x += directionX * m_moveSpeed * deltaTime;
+}
 
 void Enemy::Draw(Renderer& renderer)
 {
@@ -230,10 +238,9 @@ void Enemy::Draw(Renderer& renderer)
     {
         currentSprite->Draw(renderer);
     }
-    else {
-        // Fallback draw if no animated sprite? (e.g. a colored box)
-        // For now, just log and don't draw.
-        // LogManager::GetInstance().Log("Enemy::Draw: No current animated sprite to draw.");
+    else 
+    {
+        
     }
 }
 
@@ -254,7 +261,6 @@ AnimatedSprite* Enemy::GetCurrentAnimatedSprite()
     {
         return it->second;
     }
-    // LogManager::GetInstance().Log(("Enemy: No sprite for state " + std::to_string(static_cast<int>(m_currentState))).c_str());
     // Fallback to IDLE sprite if available and current state has no sprite
     auto idle_it = m_animatedSprites.find(EnemyState::IDLE);
     if (idle_it != m_animatedSprites.end()) return idle_it->second;
@@ -294,16 +300,13 @@ void Enemy::TakeDamage(int amount)
     else if (amount > 0) // Took damage and still alive
     {
         TransitionToState(EnemyState::HURT);
-        // Optional: small knockback
-        // float knockbackSpeed = 30.0f;
-        // Vector2 dirFromPlayer = m_position - m_pTargetPlayer->GetPosition(); // Crude direction
-        // if (dirFromPlayer.LengthSquared() > 0) dirFromPlayer.Normalise(); else dirFromPlayer.Set(m_bFacingRight ? -1.0f : 1.0f, 0.0f);
-        // m_velocity.x = dirFromPlayer.x * knockbackSpeed;
     }
 }
 
-void Enemy::OnAttackAnimationComplete() {
-    if (m_currentState == EnemyState::ATTACKING) {
+void Enemy::OnAttackAnimationComplete() 
+{
+    if (m_currentState == EnemyState::ATTACKING) 
+    {
         TransitionToState(EnemyState::IDLE); // Or back to walking if player is still in range but needs cooldown
     }
     m_currentAttackTime = 0.0f; // Ensure attack timer is reset
@@ -321,7 +324,6 @@ void Enemy::OnHurtAnimationComplete()
 void Enemy::OnDeathAnimationComplete()
 {
     LogManager::GetInstance().Log("Enemy death animation complete. Ready for cleanup.");
-    // m_bAlive is already false. Scene will handle removal.
 }
 
 bool Enemy::IsAttacking() const
@@ -336,15 +338,26 @@ void Enemy::DebugDraw()
     if (ImGui::TreeNode((void*)this, "Enemy Specifics"))
     {
         const char* stateNames[] = { "IDLE", "WALKING", "ATTACKING", "HURT", "DEATH" };
-        ImGui::Text("Enemy State: %s", stateNames[static_cast<int>(m_currentState)]);
+        int stateIndex = static_cast<int>(m_currentState);
+        if (stateIndex >= 0 && stateIndex < sizeof(stateNames) / sizeof(char*)) 
+        {
+            ImGui::Text("Enemy State: %s", stateNames[stateIndex]);
+        }
+        else 
+        {
+            ImGui::Text("Enemy State: UNKNOWN (%d)", stateIndex);
+        }
+            
         ImGui::Text("Facing: %s", m_bFacingRight ? "Right" : "Left");
         ImGui::SliderInt("Attack Damage", &m_damage, 0, 50);
         ImGui::DragFloat("Move Speed", &m_moveSpeed, 1.0f, 0.0f, 300.0f);
         ImGui::DragFloat("Attack Range", &m_attackRange, 1.0f, 0.0f, 200.0f);
         ImGui::DragFloat("Detection Range", &m_detectionRange, 1.0f, 0.0f, 1000.0f);
         ImGui::Text("Attack Cooldown: %.2f / %.2f", m_timeSinceLastAttack, m_attackCooldown);
-        if (m_pTargetPlayer) ImGui::Text("Dist to Player: %.2f", (m_pTargetPlayer->GetPosition() - m_position).Length());
+        ImGui::Text("Attack Windup Timer: %.2f / %.2f", m_currentAttackTime, m_attackWindUpTime);
 
+        if (m_pTargetPlayer) ImGui::Text("Dist to Player: %.2f", (m_pTargetPlayer->GetPosition() - m_position).Length());
+        else ImGui::Text("Target Player: None");
 
         AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
         if (currentSprite)
@@ -355,4 +368,9 @@ void Enemy::DebugDraw()
         }
         ImGui::TreePop();
     }
+}
+
+Vector2& Enemy::GetPosition()
+{
+    return m_position;
 }

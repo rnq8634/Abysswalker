@@ -1,6 +1,7 @@
-﻿  game.cpp
+﻿  enemy.cpp
+  player.cpp
   sceneabysswalker.cpp
 C:\Users\nikol\source\repos\DemoGame2025\sceneabysswalker.cpp(93,44): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\nikol\source\repos\DemoGame2025\sceneabysswalker.cpp(258,30): warning C4018: '<': signed/unsigned mismatch
+C:\Users\nikol\source\repos\DemoGame2025\sceneabysswalker.cpp(265,30): warning C4018: '<': signed/unsigned mismatch
   Generating Code...
   DemoGame2025.vcxproj -> C:\Users\nikol\source\repos\DemoGame2025\game\DemoGame2025_debug.exe
