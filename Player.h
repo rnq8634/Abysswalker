@@ -10,7 +10,6 @@
 #include <map>
 #include <functional>
 #include <string>
-#include <algorithm> // for std::min/max
 
 // Forward Declaration
 class Renderer;
@@ -67,7 +66,6 @@ public:
 
 	// stat modifiers
 	void TakeDamage(int amount);
-	bool PlayerAttack();
 	bool UseStamina(float amount); // will return false if not enough stamina
 	void Revive();
 	bool WasJustRevived() const { return m_justRevived; }
@@ -77,13 +75,13 @@ public:
 
 protected:
 	// Methods for turn animation
-	void OnTurnAnimationComplete();
-	void OnRollAnimationComplete();
-	void OnAttackAnimationComplete();
-	void OnJumpAnimationComplete();
-	void OnFallLand(); // added called when landing on ground
-	void OnHurtAnimationComplete(); // to be added
-	void OnDeathAnimationComplete(); // to be added
+	void TurnAnimationComplete();
+	void RollAnimationComplete();
+	void AttackAnimationComplete();
+	void JumpAnimationComplete();
+	void FallOnLand(); // added called when landing on ground
+	void HurtAnimationComplete();
+	void DeathAnimationComplete();
 
 private:
 	// helper methods
@@ -102,7 +100,6 @@ private:
 	void UpdateSprite(AnimatedSprite* sprite, float deltaTime);
 	void StartTurn(float desiredSpeed, bool turnToRight);
 
-	// --- Non copy ---
 	Player(const Player& player);
 	Player& operator=(const Player& player);
 
@@ -116,10 +113,6 @@ public:
 protected:
 	PlayerState m_currentState;
 	bool m_bFacingRight;
-
-	// Position and movement
-	//Vector2 m_position; // Position of the player
-	//Vector2 m_velocity; // Speed of the player
 
 	// Static (NEEDS STATIC SPRITE TO LOAD SPRITES)
 	Sprite* m_pStaticSprite;

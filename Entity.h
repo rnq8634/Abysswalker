@@ -26,7 +26,6 @@ public:
 
 	float GetRadius();
 	void SetRadius(float radius);
-	Vector2 GetFacingDirection();
 
 	Vector2& GetPosition();
 	Vector2& GetVelocity();

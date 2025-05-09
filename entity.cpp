@@ -9,7 +9,6 @@
 #include "imgui/imgui.h"
 #include <cmath>
 
-// COnstructor
 Entity::Entity()
 	: m_pSprite(nullptr)
 	, m_position(0.0f, 0.0f)
@@ -21,7 +20,6 @@ Entity::Entity()
 {
 }
 
-// Destructor
 Entity::~Entity()
 {
 	if (m_pSprite)
@@ -32,17 +30,14 @@ Entity::~Entity()
 }
 
 // Initialsie the entity
-bool 
-Entity::Initialise(Renderer& renderer)
+bool Entity::Initialise(Renderer& renderer)
 {
 	m_bAlive = true;
 	m_currentHealth = m_maxHealth;
 	return true;
 }
 
-// Process entity logic based on time passed
-void 
-Entity::Process(float deltaTime)
+void Entity::Process(float deltaTime)
 {
 	m_position += m_velocity * deltaTime;
 	if (!m_bAlive) return;
@@ -54,8 +49,7 @@ Entity::Process(float deltaTime)
 }
 
 // draw the entity using the renderer
-void 
-Entity::Draw(Renderer& renderer)
+void Entity::Draw(Renderer& renderer)
 {
 	if (m_pSprite && m_bAlive)
 	{

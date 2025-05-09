@@ -142,10 +142,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="animatedsprite.cpp" />
-    <ClCompile Include="enemy.cpp" />
-    <ClCompile Include="entity.cpp" />
-    <ClCompile Include="game.cpp" />
+    <ClCompile Include="AnimatedSprite.cpp" />
+    <ClCompile Include="Enemy.cpp" />
+    <ClCompile Include="Entity.cpp" />
+    <ClCompile Include="Game.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
@@ -153,24 +153,24 @@
     <ClCompile Include="imgui\imgui_impl_sdl2.cpp" />
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
-    <ClCompile Include="inputsystem.cpp" />
-    <ClCompile Include="logmanager.cpp" />
+    <ClCompile Include="InputSystem.cpp" />
+    <ClCompile Include="LogManager.cpp" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="LogManager.h" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="matrix4.cpp" />
-    <ClCompile Include="particle.cpp" />
-    <ClCompile Include="particleemitter.cpp" />
-    <ClCompile Include="player.cpp" />
-    <ClCompile Include="renderer.cpp" />
-    <ClCompile Include="scene.cpp" />
-    <ClCompile Include="sceneabysswalker.cpp" />
-    <ClCompile Include="shader.cpp" />
-    <ClCompile Include="sprite.cpp" />
-    <ClCompile Include="texture.cpp" />
-    <ClCompile Include="texturemanager.cpp" />
-    <ClCompile Include="vector2.cpp" />
-    <ClCompile Include="vertexarray.cpp" />
+    <ClCompile Include="Matrix4.cpp" />
+    <ClCompile Include="Particle.cpp" />
+    <ClCompile Include="ParticleEmitter.cpp" />
+    <ClCompile Include="Player.cpp" />
+    <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="Scene.cpp" />
+    <ClCompile Include="SceneAbyssWalker.cpp" />
+    <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="Sprite.cpp" />
+    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="TextureManager.cpp" />
+    <ClCompile Include="Vector2.cpp" />
+    <ClCompile Include="VertexArray.cpp" />
     <ClCompile Include="xboxcontroller.cpp" />
   </ItemGroup>
   <ItemGroup>

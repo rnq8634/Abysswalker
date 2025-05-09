@@ -57,64 +57,64 @@
     <ClCompile Include="main.cpp">
       <Filter>Engine\Main Application</Filter>
     </ClCompile>
-    <ClCompile Include="scene.cpp">
+    <ClCompile Include="Scene.cpp">
       <Filter>Engine\Scenes</Filter>
     </ClCompile>
-    <ClCompile Include="game.cpp">
+    <ClCompile Include="Game.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="inputsystem.cpp">
+    <ClCompile Include="InputSystem.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="logmanager.cpp">
+    <ClCompile Include="LogManager.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="renderer.cpp">
+    <ClCompile Include="Renderer.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="texturemanager.cpp">
+    <ClCompile Include="TextureManager.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="animatedsprite.cpp">
+    <ClCompile Include="AnimatedSprite.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="matrix4.cpp">
+    <ClCompile Include="Matrix4.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="shader.cpp">
+    <ClCompile Include="Shader.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="sprite.cpp">
+    <ClCompile Include="Sprite.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="texture.cpp">
+    <ClCompile Include="Texture.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="vertexarray.cpp">
+    <ClCompile Include="VertexArray.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="vector2.cpp">
+    <ClCompile Include="Vector2.cpp">
       <Filter>Engine\Math Utils</Filter>
     </ClCompile>
     <ClCompile Include="xboxcontroller.cpp">
       <Filter>Engine\Input Devices</Filter>
     </ClCompile>
-    <ClCompile Include="particle.cpp">
+    <ClCompile Include="Particle.cpp">
       <Filter>Engine\GameObjects</Filter>
     </ClCompile>
-    <ClCompile Include="particleemitter.cpp">
+    <ClCompile Include="ParticleEmitter.cpp">
       <Filter>Engine\GameObjects</Filter>
     </ClCompile>
-    <ClCompile Include="entity.cpp">
+    <ClCompile Include="Entity.cpp">
       <Filter>Engine\GameObjects</Filter>
     </ClCompile>
-    <ClCompile Include="player.cpp">
+    <ClCompile Include="Player.cpp">
       <Filter>Engine\GameObjects</Filter>
     </ClCompile>
-    <ClCompile Include="sceneabysswalker.cpp">
+    <ClCompile Include="SceneAbyssWalker.cpp">
       <Filter>Engine\Scenes</Filter>
     </ClCompile>
-    <ClCompile Include="enemy.cpp">
+    <ClCompile Include="Enemy.cpp">
       <Filter>Engine\GameObjects</Filter>
     </ClCompile>
   </ItemGroup>

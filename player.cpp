@@ -71,19 +71,19 @@ bool Player::Initialise(Renderer& renderer)
 	// ---RUNNING---
 	if (!InitialiseAnimatedSprite(renderer, PlayerState::RUNNING, "assets/player/_Run.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.10f, true))  return false;
 	// ---JUMPING---
-	if (!InitialiseAnimatedSprite(renderer, PlayerState::JUMPING, "assets/player/_Jump.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.15f, false, [this]() { this->OnJumpAnimationComplete(); })) return false;
+	if (!InitialiseAnimatedSprite(renderer, PlayerState::JUMPING, "assets/player/_Jump.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.15f, false, [this]() { this->JumpAnimationComplete(); })) return false;
 	// ---FALLING---
 	if (!InitialiseAnimatedSprite(renderer, PlayerState::FALLING, "assets/player/_Fall.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.20f, false)) return false; // Typically looping or single very long frame
 	// ---ATTACKING---
-	if (!InitialiseAnimatedSprite(renderer, PlayerState::ATTACKING, "assets/player/_AttackComboNoMovement.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.08f, false, [this]() { this->OnAttackAnimationComplete(); })) return false;
+	if (!InitialiseAnimatedSprite(renderer, PlayerState::ATTACKING, "assets/player/_AttackComboNoMovement.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.08f, false, [this]() { this->AttackAnimationComplete(); })) return false;
 	// ---TURNING---
-	if (!InitialiseAnimatedSprite(renderer, PlayerState::TURNING, "assets/player/_TurnAround.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.1f, false, [this]() { this->OnTurnAnimationComplete(); })) return false;
+	if (!InitialiseAnimatedSprite(renderer, PlayerState::TURNING, "assets/player/_TurnAround.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.1f, false, [this]() { this->TurnAnimationComplete(); })) return false;
 	// ---ROLLING---
-	if (!InitialiseAnimatedSprite(renderer, PlayerState::ROLLING, "assets/player/_Roll.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.1f, false, [this]() { this->OnRollAnimationComplete(); })) return false;
+	if (!InitialiseAnimatedSprite(renderer, PlayerState::ROLLING, "assets/player/_Roll.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.1f, false, [this]() { this->RollAnimationComplete(); })) return false;
 	// ---HURTING---
-	if (!InitialiseAnimatedSprite(renderer, PlayerState::HURT, "assets/player/_Hit.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.3f, false, [this]() { this->OnHurtAnimationComplete(); })) return false;
+	if (!InitialiseAnimatedSprite(renderer, PlayerState::HURT, "assets/player/_Hit.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.3f, false, [this]() { this->HurtAnimationComplete(); })) return false;
 	// ---DEATH---
-	if (!InitialiseAnimatedSprite(renderer, PlayerState::DEATH, "assets/player/_Death.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.15f, false, [this]() { this->OnDeathAnimationComplete(); })) return false;
+	if (!InitialiseAnimatedSprite(renderer, PlayerState::DEATH, "assets/player/_Death.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.15f, false, [this]() { this->DeathAnimationComplete(); })) return false;
 
 	// Position to be center of screen
 	m_position.x = static_cast<float>(renderer.GetWidth() / 2);
@@ -188,7 +188,7 @@ void Player::Process(float deltaTime)
 		//OnFallLand();
 		if (!wasOnGround || m_currentState == PlayerState::FALLING || m_currentState == PlayerState::JUMPING)
 		{
-			OnFallLand();
+			FallOnLand();
 		}
 	}
 	// if they player rolls off the edge
@@ -481,7 +481,7 @@ bool Player::UseStamina(float amount)
 
 
 // Animation Completion Handlers
-void Player::OnTurnAnimationComplete()
+void Player::TurnAnimationComplete()
 {
 	if (m_currentState == PlayerState::TURNING) // Ensure we were actually turning
 	{
@@ -502,7 +502,7 @@ void Player::OnTurnAnimationComplete()
 	m_desiredMoveSpeed = 0;
 }
 
-void Player::OnRollAnimationComplete()
+void Player::RollAnimationComplete()
 {
 	if (m_currentState == PlayerState::ROLLING)
 	{
@@ -521,7 +521,7 @@ void Player::OnRollAnimationComplete()
 	}
 }
 
-void Player::OnAttackAnimationComplete()
+void Player::AttackAnimationComplete()
 {
 	if (m_currentState == PlayerState::ATTACKING)
 	{
@@ -530,7 +530,7 @@ void Player::OnAttackAnimationComplete()
 	}
 }
 
-void Player::OnJumpAnimationComplete()
+void Player::JumpAnimationComplete()
 {
 	// Jump animation finishes mid-air, transition to falling state
 	if (m_currentState == PlayerState::JUMPING)
@@ -539,7 +539,7 @@ void Player::OnJumpAnimationComplete()
 	}
 }
 
-void Player::OnFallLand()
+void Player::FallOnLand()
 {
 	// Called when player hits the ground (from Process)
 	if (m_currentState == PlayerState::FALLING || m_currentState == PlayerState::JUMPING)
@@ -556,8 +556,7 @@ void Player::OnFallLand()
 	}
 }
 
-// Example Hurt complete callback
-void Player::OnHurtAnimationComplete() 
+void Player::HurtAnimationComplete() 
 {
 	if (m_currentState == PlayerState::HURT) 
 	{
@@ -573,8 +572,7 @@ void Player::OnHurtAnimationComplete()
 	}
 }
 
-// Example Death complete callback
-void Player::OnDeathAnimationComplete() 
+void Player::DeathAnimationComplete() 
 {
 	LogManager::GetInstance().Log("Death animation complete.");
 	// add a option if player wants to revive

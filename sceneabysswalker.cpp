@@ -13,13 +13,9 @@
 // IMGUI
 #include "imgui/imgui.h"
 
-// Lib includes
-#include <algorithm> // For std::remove_if
-
-
 SceneAbyssWalker::SceneAbyssWalker()
     : m_pPlayer(nullptr)
-    , m_pRenderer(nullptr) // Initialize m_pRenderer
+    , m_pRenderer(nullptr)
     , m_pmoonBackground(nullptr)
     , m_ptree5Background(nullptr)
     , m_ptree4Background(nullptr)
@@ -28,7 +24,6 @@ SceneAbyssWalker::SceneAbyssWalker()
     , m_ptree1Background(nullptr)
     , m_spawnTimer(0.0f)
 {
-
 }
 
 SceneAbyssWalker::~SceneAbyssWalker()
@@ -42,7 +37,6 @@ SceneAbyssWalker::~SceneAbyssWalker()
     }
     m_enemies.clear();
 
-    // m_pRenderer is not owned by SceneAbyssWalker, so don't delete it here.
     m_pRenderer = nullptr;
 
     // Background
@@ -104,7 +98,7 @@ void SceneAbyssWalker::fullBackground(Renderer& renderer)
 
 bool SceneAbyssWalker::Initialise(Renderer& renderer)
 {
-    m_pRenderer = &renderer; // Store the renderer
+    m_pRenderer = &renderer;
 
     fullBackground(*m_pRenderer);
 
@@ -124,7 +118,7 @@ bool SceneAbyssWalker::Initialise(Renderer& renderer)
 
 void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
 {
-    if (!m_pPlayer || !m_pRenderer) return; // Check if m_pRenderer is also valid
+    if (!m_pPlayer || !m_pRenderer) return;
 
     // Player input processing
     const float moveSpeed = 150.0f;
@@ -182,18 +176,21 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
         enemy->Process(deltaTime);
     }
     
-
     HandleCollisions();
 
     m_enemies.erase(std::remove_if(m_enemies.begin(), m_enemies.end(),
-        [](Enemy* enemy) {
-            if (!enemy->IsAlive()) {
+        [](Enemy* enemy) 
+        {
+            if (!enemy->IsAlive()) 
+            {
                 AnimatedSprite* sprite = enemy->GetCurrentAnimatedSprite();
-                if (sprite && sprite->IsAnimationComplete()) {
+                if (sprite && sprite->IsAnimationComplete()) 
+                {
                     delete enemy;
                     return true;
                 }
-                if (!sprite) {
+                if (!sprite) 
+                {
                     LogManager::GetInstance().Log("Dead enemy removed (no death animation).");
                     delete enemy;
                     return true;
@@ -204,12 +201,13 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
 
     if (m_pPlayer->IsAlive())
     {
-        UpdateSpawning(deltaTime); // Renderer argument removed
+        UpdateSpawning(deltaTime);
     }
 }
 
 void SceneAbyssWalker::HandleCollisions() {
-    if (!m_pPlayer || !m_pPlayer->IsAlive() || m_pPlayer->GetCurrentState() != PlayerState::ATTACKING) {
+    if (!m_pPlayer || !m_pPlayer->IsAlive() || m_pPlayer->GetCurrentState() != PlayerState::ATTACKING) 
+    {
         return;
     }
 
@@ -217,7 +215,7 @@ void SceneAbyssWalker::HandleCollisions() {
     if (!playerSprite) return;
 
     int currentFrame = playerSprite->GetCurrentFrame();
-    bool isHitFrame = (currentFrame >= 2 && currentFrame <= 5); // Example hit frames
+    bool isHitFrame = (currentFrame >= 2 && currentFrame <= 5);
 
     if (!isHitFrame) return;
 
@@ -242,17 +240,19 @@ void SceneAbyssWalker::HandleCollisions() {
         bool overlapX = pAttackMinX < eMaxX && pAttackMaxX > eMinX;
         bool overlapY = pAttackMinY < eMaxY && pAttackMaxY > eMinY;
 
-        if (overlapX && overlapY) {
-            enemy->TakeDamage(25); // Player attack damage
+        if (overlapX && overlapY) 
+        {
+            enemy->TakeDamage(25); // Player attack dmg to enemy
             LogManager::GetInstance().Log("Player hit enemy!");
         }
     }
 }
 
 
-void SceneAbyssWalker::UpdateSpawning(float deltaTime) // Renderer argument removed
+void SceneAbyssWalker::UpdateSpawning(float deltaTime)
 {
-    if (!m_pRenderer) { // Safety check for stored renderer
+    if (!m_pRenderer) 
+    {
         LogManager::GetInstance().Log("SceneAbyssWalker::UpdateSpawning - Renderer is null!");
         return;
     }
@@ -266,9 +266,10 @@ void SceneAbyssWalker::UpdateSpawning(float deltaTime) // Renderer argument remo
         {
             int leftCount = 0;
             int rightCount = 0;
-            for (const auto& enemy : m_enemies) {
-                // Ensure m_pRenderer is used here
-                if (enemy->GetPosition().x < m_pRenderer->GetWidth() / 2.0f) {
+            for (const auto& enemy : m_enemies) 
+            {
+                if (enemy->GetPosition().x < m_pRenderer->GetWidth() / 2.0f) 
+                {
                     leftCount++;
                 }
                 else {
@@ -278,36 +279,43 @@ void SceneAbyssWalker::UpdateSpawning(float deltaTime) // Renderer argument remo
 
             bool trySpawnLeft = (leftCount <= rightCount);
 
-            if (trySpawnLeft && leftCount < m_maxEnemiesPerSide) {
-                SpawnEnemy(true); // Renderer argument removed
+            if (trySpawnLeft && leftCount < m_maxEnemiesPerSide) 
+            {
+                SpawnEnemy(true);
             }
-            else if (!trySpawnLeft && rightCount < m_maxEnemiesPerSide) {
-                SpawnEnemy(false); // Renderer argument removed
+            else if (!trySpawnLeft && rightCount < m_maxEnemiesPerSide) 
+            {
+                SpawnEnemy(false);
             }
-            else if (leftCount < m_maxEnemiesPerSide) {
-                SpawnEnemy(true); // Renderer argument removed
+            else if (leftCount < m_maxEnemiesPerSide) 
+            {
+                SpawnEnemy(true);
             }
-            else if (rightCount < m_maxEnemiesPerSide) {
-                SpawnEnemy(false); // Renderer argument removed
+            else if (rightCount < m_maxEnemiesPerSide) 
+            {
+                SpawnEnemy(false); 
             }
         }
     }
 }
 
-void SceneAbyssWalker::SpawnEnemy(bool spawnOnLeft) // Renderer argument removed
+void SceneAbyssWalker::SpawnEnemy(bool spawnOnLeft)
 {
-    if (!m_pRenderer) { // Safety check for stored renderer
+    if (!m_pRenderer) 
+    {
         LogManager::GetInstance().Log("SceneAbyssWalker::SpawnEnemy - Renderer is null!");
         return;
     }
 
     Enemy* newEnemy = new Enemy();
-    if (!newEnemy) {
+    if (!newEnemy) 
+    {
         LogManager::GetInstance().Log("Failed to allocate memory for new enemy.");
         return;
     }
 
-    if (!m_pPlayer) {
+    if (!m_pPlayer) 
+    {
         LogManager::GetInstance().Log("Cannot spawn enemy, player is null.");
         delete newEnemy;
         return;
@@ -321,12 +329,10 @@ void SceneAbyssWalker::SpawnEnemy(bool spawnOnLeft) // Renderer argument removed
     }
     else
     {
-        // Ensure m_pRenderer is used here
         spawnPos.x = static_cast<float>(m_pRenderer->GetWidth()) + spawnXOffset;
     }
     spawnPos.y = newEnemy->kGroundLevel;
 
-    // Ensure *m_pRenderer is used here for initialization
     if (newEnemy->Initialise(*m_pRenderer, spawnPos))
     {
         m_enemies.push_back(newEnemy);
@@ -372,7 +378,8 @@ void SceneAbyssWalker::DebugDraw()
     ImGui::Text("Spawn Timer: %.2f / %.2f", m_spawnTimer, m_spawnInterval);
 
 
-    if (ImGui::CollapsingHeader("Enemy List")) {
+    if (ImGui::CollapsingHeader("Enemy List")) 
+    {
         for (size_t i = 0; i < m_enemies.size(); ++i)
         {
             std::string enemyNodeId = "Enemy " + std::to_string(i);
