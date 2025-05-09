@@ -51,9 +51,9 @@ protected:
 
 	// Spawn logic
 	float m_spawnTimer;
-	const float m_spawnInterval = 7.0f; // spawns a mob every 7 secs
-	const int m_maxEnemies = 8;
-	const int m_maxEnemiesPerSide = 4;
+	const float m_spawnInterval = 2.0f; // spawns a mob every X secs
+	const int m_maxEnemies = 20; // max enemy limit
+	const int m_maxEnemiesPerSide = 5; // how many enemies spawn on each side
 	
 private:
 

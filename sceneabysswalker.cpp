@@ -127,7 +127,7 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
     if (!m_pPlayer || !m_pRenderer) return; // Check if m_pRenderer is also valid
 
     // Player input processing
-    const float moveSpeed = 125.0f;
+    const float moveSpeed = 150.0f;
     const float rollSpeed = 200.0f;
     bool isMoving = false;
 

@@ -8,7 +8,9 @@
 #include "Texture.h" 
 #include "imgui/imgui.h"
 #include <algorithm> 
-#include <cmath>     
+#include <cmath> 
+
+const float ENEMY_VISUAL_SCALE = 1.5f;
 
 Enemy::Enemy()
     : Entity()
@@ -16,17 +18,17 @@ Enemy::Enemy()
     , m_pTargetPlayer(nullptr)
     , m_bFacingRight(false)
     , m_damage(10)
-    , m_moveSpeed(75.0f)    // Slightly slower than player run
-    , m_attackRange(60.0f)  // Player radius + enemy radius + small buffer
+    , m_moveSpeed(120.0f) // enemy movespeed
+    , m_attackRange(60.0f) 
     , m_detectionRange(2000.0f) // for now so that the enemies would find the player straight away
     , m_attackCooldown(2.5f)
     , m_timeSinceLastAttack(m_attackCooldown) // Ready to attack initially
-    , m_attackWindUpTime(0.5f) // Example: damage applied 0.5s into attack animation
+    , m_attackWindUpTime(0.5f) // damage applied 0.5s into attack animation
     , m_currentAttackTime(0.0f)
     , m_pStaticEnemy(nullptr)
 {
     SetMaxHealth(50, true); // Enemy specific health
-    SetRadius(static_cast<float>(ENEMY_DEFAULT_SPRITE_WIDTH) / 2.5f);
+    SetRadius(static_cast<float>(ENEMY_DEFAULT_SPRITE_WIDTH) * ENEMY_VISUAL_SCALE / 2.5f); // scales sprite
 }
 
 Enemy::~Enemy()
@@ -60,6 +62,10 @@ bool Enemy::Initialise(Renderer& renderer, const Vector2& startPosition)
     }
 
     m_pStaticEnemy = renderer.CreateSprite("assets/enemy/Bat-IdleFly.png");
+    if (m_pStaticEnemy)
+    {
+        m_pStaticEnemy->SetScale(ENEMY_VISUAL_SCALE, ENEMY_VISUAL_SCALE);
+    }
 
     if (!InitialiseAnimatedSprite(renderer, EnemyState::IDLE, "assets/enemy/Bat-IdleFly.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.2f, true)) return false;
     if (!InitialiseAnimatedSprite(renderer, EnemyState::WALKING, "assets/enemy/Bat-Run.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.15f, true)) return false;
@@ -88,6 +94,7 @@ bool Enemy::InitialiseAnimatedSprite(Renderer& renderer, EnemyState state, const
     {
         sprite->SetAnimationCompleteCallback(onComplete);
     }
+    sprite->SetScale(ENEMY_VISUAL_SCALE, ENEMY_VISUAL_SCALE);
     m_animatedSprites[state] = sprite;
     return true;
 }
@@ -110,9 +117,6 @@ void Enemy::Process(float deltaTime)
         MoveToPlayer(deltaTime);
     }
 
-    // Apply velocity to position (basic physics)
-    //m_position.x += m_velocity.x * deltaTime;
-    // Ensure enemy stays on ground if ground-based
     if (m_position.y > kGroundLevel) { // Basic ground clamping
         m_position.y = kGroundLevel;
         m_velocity.y = 0;
@@ -240,7 +244,6 @@ void Enemy::Draw(Renderer& renderer)
     }
     else 
     {
-        
     }
 }
 
@@ -261,7 +264,6 @@ AnimatedSprite* Enemy::GetCurrentAnimatedSprite()
     {
         return it->second;
     }
-    // Fallback to IDLE sprite if available and current state has no sprite
     auto idle_it = m_animatedSprites.find(EnemyState::IDLE);
     if (idle_it != m_animatedSprites.end()) return idle_it->second;
     return nullptr;
@@ -297,7 +299,7 @@ void Enemy::TakeDamage(int amount)
         TransitionToState(EnemyState::DEATH);
         m_velocity.Set(0.0f, 0.0f); // Stop all movement on death
     }
-    else if (amount > 0) // Took damage and still alive
+    else if (amount > 0) // Took damage and if still alive
     {
         TransitionToState(EnemyState::HURT);
     }

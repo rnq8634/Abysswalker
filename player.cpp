@@ -28,7 +28,6 @@ Player::Player()
 	, m_isTurning(false)
 	, m_targetFacingRight(true)
 	, m_rollVelocityBeforeRoll(0.0f)
-	// Stats
 	, m_maxStamina(100.0f)
 	, m_currentStamina(100.0f)
 	, m_staminaRegenRate(10.0f)
@@ -86,7 +85,6 @@ bool Player::Initialise(Renderer& renderer)
 	// ---DEATH---
 	if (!InitialiseAnimatedSprite(renderer, PlayerState::DEATH, "assets/player/_Death.png", PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT, 0.15f, false, [this]() { this->OnDeathAnimationComplete(); })) return false;
 
-	// Initial position
 	// Position to be center of screen
 	m_position.x = static_cast<float>(renderer.GetWidth() / 2);
 	m_position.y = kGroundLevel;
@@ -291,10 +289,10 @@ void Player::MoveLeft(float amount)
 
 	if (m_bFacingRight)
 	{
-		if (isOnGround) // can only turn on the grouynd
+		if (isOnGround) // Can only turn on the grouynd
 		{
 			// Need to turn first
-			StartTurn(-amount, false); // can obly turn when on the ground
+			StartTurn(-amount, false); // Can obly turn when on the ground
 		}
 	}
 	else
@@ -371,7 +369,7 @@ void Player::Jump()
 
 		if (isOnGround && UseStamina(staminaCost)) // Double check we are on ground
 		{
-			m_velocity.y = -kJumpForce; // Apply upward force
+			m_velocity.y = -kJumpForce;
 			TransitionToState(PlayerState::JUMPING);
 		}
 		else if (isOnGround)
@@ -443,6 +441,7 @@ void Player::TakeDamage(int amount)
 		m_bAlive = false;
 		TransitionToState(PlayerState::DEATH); // add a revive feature as well. 
 		LogManager::GetInstance().Log("Player Died!");
+
 	}
 	else
 	{
@@ -544,7 +543,6 @@ void Player::OnFallLand()
 	// Called when player hits the ground (from Process)
 	if (m_currentState == PlayerState::FALLING || m_currentState == PlayerState::JUMPING)
 	{
-		// Decide whether to land in IDLE or RUNNING state based on horizontal velocity
 		if (abs(m_velocity.x) > 0.1f) // Check if there's significant horizontal speed
 		{
 			TransitionToState(PlayerState::RUNNING);
@@ -589,7 +587,7 @@ void Player::OnDeathAnimationComplete()
 // Inf Stamina
 void Player::DebugDraw()
 {
-	if (ImGui::CollapsingHeader("Player Debug")) // Changed header name slightly
+	if (ImGui::CollapsingHeader("Player Debug"))
 	{
 		ImGui::Checkbox("Alive", &m_bAlive);
 		ImGui::Text("Position: (%.1f, %.1f)", m_position.x, m_position.y);
@@ -639,7 +637,6 @@ void Player::DebugDraw()
 			ImGui::Text(" Flipped: %s", currentSprite->IsFlippedHorizontal() ? "Yes" : "No");
 			ImGui::Text(" Anim Complete Flag: %s", currentSprite->IsAnimationComplete() ? "Yes" : "No");
 
-			// Show the sprite's specific debug UI
 			currentSprite->DebugDraw(); // Includes frame slider
 		}
 		else
