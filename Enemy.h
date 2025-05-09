@@ -1,8 +1,11 @@
 #ifndef __ENEMY_H
 #define __ENEMY_H
 
+// Includes
 #include "Entity.h"
 #include "AnimatedSprite.h" 
+
+// Lib inclduesS
 #include <map>
 #include <string>
 #include <functional> 
@@ -86,10 +89,10 @@ protected:
     float m_moveSpeed;
     float m_attackRange;
     float m_detectionRange;
-    float m_attackCooldown;       // Time between attacks
-    float m_timeSinceLastAttack;  // Timer for attack cooldown
-    float m_attackWindUpTime;     // Time from starting attack state to dealing damage
-    float m_currentAttackTime;    // Timer for wind-up
+    float m_attackCooldown; // Time between enemy attack
+    float m_timeSinceLastAttack; // Time for attack CD
+    float m_attackWindUpTime; // Time from starting attacking state to deal damage
+    float m_currentAttackTime; // Time for windup on attack
 
 private:
     Enemy(const Enemy& enemy) = delete;

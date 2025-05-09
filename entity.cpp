@@ -145,7 +145,7 @@ void Entity::TakeDamage(int amount)
 	}
 	else if (m_currentHealth > m_maxHealth)
 	{
-		m_currentHealth = m_maxHealth; // Cap health at max (e.g. if amount was negative for healing)
+		m_currentHealth = m_maxHealth;
 	}
 }
 

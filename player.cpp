@@ -234,7 +234,7 @@ void Player::Draw(Renderer& renderer)
 	}
 }
 
-// helper to get the sprite for the current state from the map
+// Helper to get the sprite for the current state from the map
 AnimatedSprite* Player::GetCurrentAnimatedSprite()
 {
 	auto it = m_animatedSprites.find(m_currentState);
@@ -248,7 +248,7 @@ AnimatedSprite* Player::GetCurrentAnimatedSprite()
 // State transitions
 void Player::TransitionToState(PlayerState newState)
 {
-	if (m_currentState == PlayerState::HURT && !GetCurrentAnimatedSprite()->IsAnimationComplete()) return; // Can't interrupt hurt anim?
+	if (m_currentState == PlayerState::HURT && !GetCurrentAnimatedSprite()->IsAnimationComplete()) return;
 
 	if (m_currentState == newState && newState != PlayerState::FALLING && newState != PlayerState::JUMPING)
 	{
@@ -351,7 +351,7 @@ void Player::StopMoving()
 // Helper to initiate the turning sequence
 void Player::StartTurn(float desiredSpeed, bool turnToRight)
 {
-	if (m_isTurning || m_currentState != PlayerState::RUNNING && m_currentState != PlayerState::IDLE) return; // cant turn if already turning or not in movable ground state
+	if (m_isTurning || m_currentState != PlayerState::RUNNING && m_currentState != PlayerState::IDLE) return; // Cant turn if already turning or not in movable ground state
 
 	m_desiredMoveSpeed = desiredSpeed;
 	m_targetFacingRight = turnToRight;
@@ -375,14 +375,13 @@ void Player::Jump()
 		else if (isOnGround)
 		{
 			LogManager::GetInstance().Log("Not enought stamina!");
-			// show on the player bar no stamina
+			// Show on the player bar no stamina
 		}
 	}
 }
 
 void Player::Attack()
 {
-	// need to add player attacks
 	// Can only attack from ground states (Idle, Running)
 	if (m_currentState == PlayerState::IDLE || m_currentState == PlayerState::RUNNING)
 	{
@@ -395,6 +394,7 @@ void Player::Attack()
 		else
 		{
 			LogManager::GetInstance().Log("Not enough stamina!");
+			// Show on the stamina bar
 		}
 	}
 }
@@ -407,14 +407,14 @@ void Player::Roll(float speedBoost)
 		float staminaCost = 30.0f;
 		if (UseStamina(staminaCost))
 		{
-			m_rollVelocityBeforeRoll = m_velocity.x; // store the current speed
+			m_rollVelocityBeforeRoll = m_velocity.x; // Store the current speed
 
 			// Apply boost in the facing direction
 			float rollSpeed = m_bFacingRight ? speedBoost : -speedBoost;
 			m_velocity.x = rollSpeed;
 
 			TransitionToState(PlayerState::ROLLING);
-			// add a invincibility during roll
+			// Add a invincibility during roll
 		}
 		else
 		{
@@ -429,6 +429,7 @@ void Player::TakeDamage(int amount)
 	if (!m_bAlive && amount < 0)
 	{
 		//Revive();
+		// if have enough abyssal essence
 	}
 	else if (!m_bAlive) return;
 	if (m_currentState == PlayerState::ROLLING) return;

@@ -90,7 +90,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\SDL2_ttf-2.22.0\lib\x86;$(SolutionDir)lib\glew-2.1.0\lib\x86\;$(SolutionDir)lib\SDL2_image-2.6.1\lib\x86\;$(SolutionDir)lib\SDL2-2.0.22\lib\x86\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib\SDL2_ttf-2.22.0\lib\x86\;$(SolutionDir)lib\glew-2.1.0\lib\x86\;$(SolutionDir)lib\SDL2_image-2.6.1\lib\x86\;$(SolutionDir)lib\SDL2-2.0.22\lib\x86\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>SDL2_ttf.lib;SDL2.lib;SDL2main.lib;SDL2_image.lib;glew32.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -102,7 +102,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)lib\glew-2.1.0\include\;$(SolutionDir)lib\SDL2_image-2.6.1\include\;$(SolutionDir)lib\SDL2-2.0.22\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)lib\SDL2_ttf-2.22.0\include\;$(SolutionDir)lib\glew-2.1.0\include\;$(SolutionDir)lib\SDL2_image-2.6.1\include\;$(SolutionDir)lib\SDL2-2.0.22\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

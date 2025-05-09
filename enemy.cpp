@@ -18,17 +18,17 @@ Enemy::Enemy()
     , m_pTargetPlayer(nullptr)
     , m_bFacingRight(false)
     , m_damage(10)
-    , m_moveSpeed(120.0f) // enemy movespeed
+    , m_moveSpeed(120.0f) // Enemy movespeed
     , m_attackRange(60.0f) 
-    , m_detectionRange(2000.0f) // for now so that the enemies would find the player straight away
+    , m_detectionRange(2000.0f) // For now so that the enemies would find the player straight away
     , m_attackCooldown(2.5f)
     , m_timeSinceLastAttack(m_attackCooldown) // Ready to attack initially
-    , m_attackWindUpTime(0.5f) // damage applied 0.5s into attack animation
+    , m_attackWindUpTime(0.5f) // Damage applied 0.5s into attack animation
     , m_currentAttackTime(0.0f)
     , m_pStaticEnemy(nullptr)
 {
     SetMaxHealth(50, true); // Enemy specific health
-    SetRadius(static_cast<float>(ENEMY_DEFAULT_SPRITE_WIDTH) * ENEMY_VISUAL_SCALE / 2.5f); // scales sprite
+    SetRadius(static_cast<float>(ENEMY_DEFAULT_SPRITE_WIDTH) * ENEMY_VISUAL_SCALE / 2.5f); // Scales sprite
 }
 
 Enemy::~Enemy()
