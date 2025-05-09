@@ -1,7 +1,7 @@
-﻿  animatedsprite.cpp
-  enemy.cpp
-  entity.cpp
-  game.cpp
+﻿  AnimatedSprite.cpp
+  Enemy.cpp
+  Entity.cpp
+  Game.cpp
   imgui.cpp
   imgui_demo.cpp
   imgui_draw.cpp
@@ -9,27 +9,25 @@
   imgui_impl_sdl2.cpp
   imgui_tables.cpp
   imgui_widgets.cpp
-  inputsystem.cpp
-C:\Users\nikol\source\repos\DemoGame2025\inputsystem.cpp(106,18): warning C4552: '!=': result of expression not used
-  logmanager.cpp
+  InputSystem.cpp
+  LogManager.cpp
   main.cpp
-  matrix4.cpp
-  particle.cpp
-  particleemitter.cpp
-  player.cpp
-  renderer.cpp
-  scene.cpp
+  Matrix4.cpp
+  Particle.cpp
+  ParticleEmitter.cpp
+  Player.cpp
+  Renderer.cpp
+  Scene.cpp
   Generating Code...
   Compiling...
-  sceneabysswalker.cpp
-C:\Users\nikol\source\repos\DemoGame2025\sceneabysswalker.cpp(93,44): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\nikol\source\repos\DemoGame2025\sceneabysswalker.cpp(265,30): warning C4018: '<': signed/unsigned mismatch
-  shader.cpp
-  sprite.cpp
-  texture.cpp
-  texturemanager.cpp
-  vector2.cpp
-  vertexarray.cpp
+  SceneAbyssWalker.cpp
+C:\Users\nikol\source\repos\DemoGame2025\SceneAbyssWalker.cpp(267,34): warning C4018: '<': signed/unsigned mismatch
+  Shader.cpp
+  Sprite.cpp
+  Texture.cpp
+  TextureManager.cpp
+  Vector2.cpp
+  VertexArray.cpp
   xboxcontroller.cpp
   Generating Code...
   DemoGame2025.vcxproj -> C:\Users\nikol\source\repos\DemoGame2025\game\DemoGame2025_debug.exe

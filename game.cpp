@@ -6,8 +6,10 @@
 // Library includes:
 #include "renderer.h"
 #include "logmanager.h"
+#include "Sprite.h"
 #include "scene.h"
 #include "inputsystem.h"
+#include "XboxController.h"
 
 //IMGUI INCLUDES
 #include "imgui/imgui_impl_sdl2.h"
@@ -90,6 +92,7 @@ bool Game::Initialise()
 	bool inputInitialised = m_pInputSystem->Initialise();
 	if (!inputInitialised)
 	{
+		LogManager::GetInstance().Log("InputSystem failed to initialise!");
 		return false;
 	}
 

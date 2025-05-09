@@ -84,7 +84,7 @@ void SceneAbyssWalker::fullBackground(Renderer& renderer)
             treeSprite->SetX(screenCenterX);
 
             float scaledTreeHeight = treeSprite->GetOriginalHeight() * scaleToScreenWidthY;
-            treeSprite->SetY(screenBottomY - (scaledTreeHeight / 2.0f));
+            treeSprite->SetY(static_cast<int>(screenBottomY - (scaledTreeHeight / 2.0f)));
             treeSprite->SetFlipHorizontal(true);
             treeSprite->SetAngle(180.0f);
         };
@@ -257,43 +257,46 @@ void SceneAbyssWalker::UpdateSpawning(float deltaTime)
         return;
     }
 
-    m_spawnTimer += deltaTime;
-    if (m_spawnTimer >= m_spawnInterval)
+    if (m_maxEnemies >= 0 && m_enemies.size() < static_cast<size_t>(m_maxEnemies))
     {
-        m_spawnTimer = 0.0f;
-
-        if (m_enemies.size() < m_maxEnemies)
+        m_spawnTimer += deltaTime;
+        if (m_spawnTimer >= m_spawnInterval)
         {
-            int leftCount = 0;
-            int rightCount = 0;
-            for (const auto& enemy : m_enemies) 
+            m_spawnTimer = 0.0f;
+
+            if (m_enemies.size() < m_maxEnemies)
             {
-                if (enemy->GetPosition().x < m_pRenderer->GetWidth() / 2.0f) 
+                int leftCount = 0;
+                int rightCount = 0;
+                for (const auto& enemy : m_enemies)
                 {
-                    leftCount++;
+                    if (enemy->GetPosition().x < m_pRenderer->GetWidth() / 2.0f)
+                    {
+                        leftCount++;
+                    }
+                    else {
+                        rightCount++;
+                    }
                 }
-                else {
-                    rightCount++;
+
+                bool trySpawnLeft = (leftCount <= rightCount);
+
+                if (trySpawnLeft && leftCount < m_maxEnemiesPerSide)
+                {
+                    SpawnEnemy(true);
                 }
-            }
-
-            bool trySpawnLeft = (leftCount <= rightCount);
-
-            if (trySpawnLeft && leftCount < m_maxEnemiesPerSide) 
-            {
-                SpawnEnemy(true);
-            }
-            else if (!trySpawnLeft && rightCount < m_maxEnemiesPerSide) 
-            {
-                SpawnEnemy(false);
-            }
-            else if (leftCount < m_maxEnemiesPerSide) 
-            {
-                SpawnEnemy(true);
-            }
-            else if (rightCount < m_maxEnemiesPerSide) 
-            {
-                SpawnEnemy(false); 
+                else if (!trySpawnLeft && rightCount < m_maxEnemiesPerSide)
+                {
+                    SpawnEnemy(false);
+                }
+                else if (leftCount < m_maxEnemiesPerSide)
+                {
+                    SpawnEnemy(true);
+                }
+                else if (rightCount < m_maxEnemiesPerSide)
+                {
+                    SpawnEnemy(false);
+                }
             }
         }
     }

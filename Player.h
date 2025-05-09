@@ -108,7 +108,7 @@ public:
 	static const int PLAYER_SPRITE_WIDTH = 120;
 	static const int PLAYER_SPRITE_HEIGHT = 80;
 
-	const float kGroundLevel = 1200.0f;
+	const float kGroundLevel = 850.0f;
 
 protected:
 	PlayerState m_currentState;

@@ -103,7 +103,7 @@ InputSystem::ProcessInput()
 		ImGuiIO& io = ImGui::GetIO();
 
 		// Tell ImGui to hide the mouse cursor:
-		io.ConfigFlags != ImGuiConfigFlags_NoMouseCursorChange;
+		io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
 
 		if (io.WantCaptureMouse || io.WantCaptureKeyboard)
 		{

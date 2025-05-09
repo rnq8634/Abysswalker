@@ -73,7 +73,7 @@ private:
 public:
     Player* m_pTargetPlayer;
 
-    const float kGroundLevel = 1200.0f;
+    const float kGroundLevel = 850.0f;
     // Sprite dimensions for reference or default radius, actual values depend on enemy type
     static const int ENEMY_DEFAULT_SPRITE_WIDTH = 64;
     static const int ENEMY_DEFAULT_SPRITE_HEIGHT = 64;
