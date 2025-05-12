@@ -64,6 +64,12 @@ protected:
 	FMOD::Sound* m_pSound;
 	FMOD::Channel* m_pChannel;
 
+	// Sound effects for player
+	FMOD::Sound* m_pJumpSound;
+	FMOD::Sound* m_pAttackSound;
+	FMOD::Sound* m_pRollSound;
+	FMOD::Sound* m_pHurtSound;
+
 private:
 
 };

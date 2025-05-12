@@ -61,17 +61,17 @@ bool EnemyBat::Initialise(Renderer& renderer, const Vector2& startPosition)
         m_bFacingRight = false;
     }
 
-    m_pStaticEnemy = renderer.CreateSprite("assets/enemy/Bat-IdleFly.png");
+    m_pStaticEnemy = renderer.CreateSprite("assets/enemyBat/Bat-IdleFly.png");
     if (m_pStaticEnemy)
     {
         m_pStaticEnemy->SetScale(ENEMYBAT_VISUAL_SCALE, ENEMYBAT_VISUAL_SCALE);
     }
 
-    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::IDLE, "assets/enemy/Bat-IdleFly.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.2f, true)) return false;
-    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::WALKING, "assets/enemy/Bat-Run.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.15f, true)) return false;
-    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::ATTACKING, "assets/enemy/Bat-Attack1.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.1f, false, [this]() { this->OnAttackAnimationComplete(); })) return false;
-    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::HURT, "assets/enemy/Bat-Hurt.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.3f, false, [this]() { this->OnHurtAnimationComplete(); })) return false;
-    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::DEATH, "assets/enemy/Bat-Die.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.15f, false, [this]() { this->OnDeathAnimationComplete(); })) return false;
+    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::IDLE, "assets/enemyBat/Bat-IdleFly.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.2f, true)) return false;
+    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::WALKING, "assets/enemyBat/Bat-Run.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.15f, true)) return false;
+    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::ATTACKING, "assets/enemyBat/Bat-Attack1.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.1f, false, [this]() { this->OnAttackAnimationComplete(); })) return false;
+    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::HURT, "assets/enemyBat/Bat-Hurt.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.3f, false, [this]() { this->OnHurtAnimationComplete(); })) return false;
+    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::DEATH, "assets/enemyBat/Bat-Die.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.15f, false, [this]() { this->OnDeathAnimationComplete(); })) return false;
 
     TransitionToState(EnemyBatState::IDLE);
     return true;

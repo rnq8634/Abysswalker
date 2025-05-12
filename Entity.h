@@ -24,11 +24,11 @@ public:
 	bool IsAlive() const;
 	void SetDead();
 
-	float GetRadius();
+	float GetRadius() const;
 	void SetRadius(float radius);
 
-	Vector2& GetPosition();
-	Vector2& GetVelocity();
+	const Vector2& GetPosition() const;
+	const Vector2& GetVelocity() const;
 
 	bool IsCollidingWith(Entity& toCheck); // Collision
 

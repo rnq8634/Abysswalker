@@ -166,8 +166,11 @@ void Game::Process(float deltaTime)
 
 	// TODO: Add game objects to process here!
 
-	// Note:
-	//FMOD::System must be updated here!!
+	//Update FMOD system
+	if (m_pFMODSystem)
+	{
+		m_pFMODSystem->update();
+	}
 	
 }
 

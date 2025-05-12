@@ -21,6 +21,10 @@ SceneAbyssWalker::SceneAbyssWalker(FMOD::System* pFMODSystem)
     , m_pFMODSystem(pFMODSystem)
     , m_pSound(0)
     , m_pChannel(0)
+    , m_pJumpSound(0)
+    , m_pAttackSound(0)
+    , m_pRollSound(0)
+    , m_pHurtSound(0)
     , m_pRenderer(nullptr)
     , m_pmoonBackground(nullptr)
     , m_ptree5Background(nullptr)
@@ -34,6 +38,13 @@ SceneAbyssWalker::SceneAbyssWalker(FMOD::System* pFMODSystem)
 
 SceneAbyssWalker::~SceneAbyssWalker()
 {
+    // FMOD resources
+    if (m_pSound) { m_pSound->release(); m_pSound = nullptr; }
+    if (m_pJumpSound) { m_pJumpSound->release(); m_pJumpSound = nullptr; }
+    if (m_pAttackSound) { m_pAttackSound->release(); m_pAttackSound = nullptr; }
+    if (m_pRollSound) { m_pRollSound->release(); m_pRollSound = nullptr; }
+    if (m_pHurtSound) { m_pHurtSound->release(); m_pHurtSound = nullptr; }
+
     delete m_pPlayer;
     m_pPlayer = nullptr;
 
@@ -106,6 +117,35 @@ bool SceneAbyssWalker::Initialise(Renderer& renderer)
 {
     m_pRenderer = &renderer;
 
+    // Load FMOD
+    FMOD_RESULT result;
+
+    // Load BG Music (need to find music first)
+    /*
+    result = m_pFMODSystem->createStream("assets/sounds/background_music.mp3", FMOD_LOOP_NORMAL, 0, &m_pSound);
+    if (result != FMOD_OK)
+    {
+        LogManager::GetInstance().Log("Failed to load background music!");
+    }
+    else
+    {
+        // Play background music
+        m_pFMODSystem->playSound(m_pSound, 0, false, &m_pChannel);
+        if (m_pChannel)
+        {
+            m_pChannel->setVolume(0.5f); // Set volume to 50%
+        }
+    }
+    */
+
+    // For loading sound effects (PLACEHOLDER)!!!
+    /*
+    m_pFMODSystem->createSound("assets/sounds/jump.wav", FMOD_DEFAULT, 0, &m_pJumpSound);
+    m_pFMODSystem->createSound("assets/sounds/attack.wav", FMOD_DEFAULT, 0, &m_pAttackSound);
+    m_pFMODSystem->createSound("assets/sounds/roll.wav", FMOD_DEFAULT, 0, &m_pRollSound);
+    m_pFMODSystem->createSound("assets/sounds/hurt.wav", FMOD_DEFAULT, 0, &m_pHurtSound);
+    */
+
     fullBackground(*m_pRenderer);
 
     // load player
@@ -147,15 +187,23 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
         if (inputSystem.GetKeyState(SDL_SCANCODE_SPACE) == BS_PRESSED)
         {
             m_pPlayer->Jump();
+            /*
+            if (m_pJumpSound)
+            {
+                m_pFMODSystem->playSound(m_pJumpSound, 0, false, 0);
+            }
+            */
         }
 
         if (inputSystem.GetKeyState(SDL_SCANCODE_J) == BS_PRESSED)
         {
             m_pPlayer->Attack();
+            // add sound ^^^ like jump
         }
         if (inputSystem.GetKeyState(SDL_SCANCODE_LSHIFT) == BS_PRESSED || inputSystem.GetKeyState(SDL_SCANCODE_Q) == BS_PRESSED)
         {
             m_pPlayer->Roll(rollSpeed);
+            // add sound here
         }
 
         if (!isMoving &&
@@ -190,12 +238,12 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
             if (!enemyBat->IsAlive())
             {
                 AnimatedSprite* sprite = enemyBat->GetCurrentAnimatedSprite();
-                if (sprite && sprite->IsAnimationComplete()) 
+                if (sprite && sprite->IsAnimationComplete())
                 {
                     delete enemyBat;
                     return true;
                 }
-                if (!sprite) 
+                if (!sprite)
                 {
                     LogManager::GetInstance().Log("Dead enemy removed (no death animation).");
                     delete enemyBat;
@@ -211,45 +259,69 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
     }
 }
 
-void SceneAbyssWalker::HandleCollisions() {
-    if (!m_pPlayer || !m_pPlayer->IsAlive() || m_pPlayer->GetCurrentState() != PlayerState::ATTACKING) 
+void SceneAbyssWalker::HandleCollisions()
+{
+    if (!m_pPlayer) return;
+
+    for (EnemyBat* enemyBat : m_enemyType1)
     {
-        return;
-    }
-
-    AnimatedSprite* playerSprite = m_pPlayer->GetCurrentAnimatedSprite();
-    if (!playerSprite) return;
-
-    int currentFrame = playerSprite->GetCurrentFrame();
-    bool isHitFrame = (currentFrame >= 2 && currentFrame <= 5);
-
-    if (!isHitFrame) return;
-
-    Vector2 playerPos = m_pPlayer->GetPosition();
-    float attackReach = 40.0f;
-
-    float pAttackMinX = m_pPlayer->IsFacingRight() ? playerPos.x : playerPos.x - (Player::PLAYER_SPRITE_WIDTH / 2.0f + attackReach);
-    float pAttackMaxX = m_pPlayer->IsFacingRight() ? playerPos.x + (Player::PLAYER_SPRITE_WIDTH / 2.0f + attackReach) : playerPos.x;
-    float pAttackMinY = playerPos.y - (Player::PLAYER_SPRITE_HEIGHT / 2.0f);
-    float pAttackMaxY = playerPos.y + (Player::PLAYER_SPRITE_HEIGHT / 2.0f);
-
-    for (EnemyBat* enemyBat : m_enemyType1) {
         if (!enemyBat->IsAlive()) continue;
 
-        Vector2 enemyBatPos = enemyBat->GetPosition();
-        float enemyRadius = enemyBat->GetRadius();
-        float eMinX = enemyBatPos.x - enemyRadius;
-        float eMaxX = enemyBatPos.x + enemyRadius;
-        float eMinY = enemyBatPos.y - enemyRadius;
-        float eMaxY = enemyBatPos.y + enemyRadius;
-
-        bool overlapX = pAttackMinX < eMaxX && pAttackMaxX > eMinX;
-        bool overlapY = pAttackMinY < eMaxY && pAttackMaxY > eMinY;
-
-        if (overlapX && overlapY) 
+        if (m_pPlayer->IsAlive())
         {
-            enemyBat->TakeDamage(25); // Player attack dmg to enemyBat
-            LogManager::GetInstance().Log("Player hit Bat!");
+            // Check for player getting hit by enemy
+            if (m_pPlayer->GetCurrentState() != PlayerState::ROLLING &&
+                m_pPlayer->GetCurrentState() != PlayerState::HURT &&
+                m_pPlayer->CheckCollision(*enemyBat))
+            {
+                m_pPlayer->TakeDamage(1);
+                if (m_pHurtSound)
+                {
+                    m_pFMODSystem->playSound(m_pHurtSound, 0, false, 0);
+                }
+            }
+
+            // Check for player attacking enemy
+            if (m_pPlayer->GetCurrentState() == PlayerState::ATTACKING)
+            {
+                AnimatedSprite* playerSprite = m_pPlayer->GetCurrentAnimatedSprite();
+                if (playerSprite)
+                {
+                    int currentFrame = playerSprite->GetCurrentFrame();
+                    bool isHitFrame = (currentFrame >= 2 && currentFrame <= 5);
+
+                    if (isHitFrame)
+                    {
+                        Vector2 playerPos = m_pPlayer->GetPosition();
+                        float attackReach = 40.0f;
+
+                        float pAttackMinX = m_pPlayer->IsFacingRight() ?
+                            playerPos.x :
+                            playerPos.x - (Player::PLAYER_SPRITE_WIDTH / 2.0f + attackReach);
+                        float pAttackMaxX = m_pPlayer->IsFacingRight() ?
+                            playerPos.x + (Player::PLAYER_SPRITE_WIDTH / 2.0f + attackReach) :
+                            playerPos.x;
+                        float pAttackMinY = playerPos.y - (Player::PLAYER_SPRITE_HEIGHT / 2.0f);
+                        float pAttackMaxY = playerPos.y + (Player::PLAYER_SPRITE_HEIGHT / 2.0f);
+
+                        Vector2 enemyBatPos = enemyBat->GetPosition();
+                        float enemyRadius = enemyBat->GetRadius();
+                        float eMinX = enemyBatPos.x - enemyRadius;
+                        float eMaxX = enemyBatPos.x + enemyRadius;
+                        float eMinY = enemyBatPos.y - enemyRadius;
+                        float eMaxY = enemyBatPos.y + enemyRadius;
+
+                        bool overlapX = pAttackMinX < eMaxX && pAttackMaxX > eMinX;
+                        bool overlapY = pAttackMinY < eMaxY && pAttackMaxY > eMinY;
+
+                        if (overlapX && overlapY)
+                        {
+                            enemyBat->TakeDamage(25); // Player attack damage to enemyBat
+                            LogManager::GetInstance().Log("Player hit Bat!");
+                        }
+                    }
+                }
+            }
         }
     }
 }

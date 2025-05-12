@@ -644,3 +644,31 @@ void Player::DebugDraw()
 		}
 	}
 }
+
+bool Player::CheckCollision(const Entity& other) const
+{
+	if (!IsAlive()) return false;
+
+	Vector2 playerPos = GetPosition();
+	Vector2 otherPos = other.GetPosition();
+
+	// box collision using sprite dimensions
+	float playerHalfWidth = PLAYER_SPRITE_WIDTH / 2.0f;
+	float playerHalfHeight = PLAYER_SPRITE_HEIGHT / 2.0f;
+	float otherRadius = other.GetRadius();
+
+	float playerLeft = playerPos.x - playerHalfWidth;
+	float playerRight = playerPos.x + playerHalfWidth;
+	float playerTop = playerPos.y - playerHalfHeight;
+	float playerBottom = playerPos.y + playerHalfHeight;
+
+	float otherLeft = otherPos.x - otherRadius;
+	float otherRight = otherPos.x + otherRadius;
+	float otherTop = otherPos.y - otherRadius;
+	float otherBottom = otherPos.y + otherRadius;
+
+	return (playerLeft < otherRight &&
+		playerRight > otherLeft &&
+		playerTop < otherBottom &&
+		playerBottom > otherTop);
+}

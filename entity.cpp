@@ -91,8 +91,7 @@ Entity::SetDead()
 }
 
 // Get the collision radious of the entity
-float
-Entity::GetRadius()
+float Entity::GetRadius() const
 {
 	return m_radius; // Default value
 }
@@ -103,12 +102,12 @@ Entity::SetRadius(float radius)
 	m_radius = radius > 0 ? radius : 0.0f;
 }
 
-Vector2& Entity::GetPosition()
+const Vector2& Entity::GetPosition() const
 {
 	return m_position;
 }
 
-Vector2& Entity::GetVelocity()
+const Vector2& Entity::GetVelocity() const
 {
 	return m_velocity;
 }

@@ -73,6 +73,8 @@ public:
 
 	AnimatedSprite* GetCurrentAnimatedSprite();
 
+	bool CheckCollision(const Entity& other) const;
+
 protected:
 	// Methods for turn animation
 	void TurnAnimationComplete();
