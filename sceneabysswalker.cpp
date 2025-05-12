@@ -10,11 +10,17 @@
 #include "LogManager.h" 
 #include "AnimatedSprite.h" 
 
+// Lib includes
+#include "fmod.hpp"
+
 // IMGUI
 #include "imgui/imgui.h"
 
-SceneAbyssWalker::SceneAbyssWalker()
+SceneAbyssWalker::SceneAbyssWalker(FMOD::System* pFMODSystem)
     : m_pPlayer(nullptr)
+    , m_pFMODSystem(pFMODSystem)
+    , m_pSound(0)
+    , m_pChannel(0)
     , m_pRenderer(nullptr)
     , m_pmoonBackground(nullptr)
     , m_ptree5Background(nullptr)

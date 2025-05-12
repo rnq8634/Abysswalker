@@ -31,6 +31,9 @@
     <Filter Include="Engine\Main Application">
       <UniqueIdentifier>{37dd3dae-ad32-4c77-896f-3bcad59c9fdd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Audio">
+      <UniqueIdentifier>{4086b289-1a99-4dac-85d6-2ded7efb2a3d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="imgui\imgui.cpp">
@@ -116,6 +119,9 @@
     </ClCompile>
     <ClCompile Include="EnemyBat.cpp">
       <Filter>Engine\GameObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="SoundSystem.cpp">
+      <Filter>Engine\Audio</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -208,6 +214,9 @@
     </ClInclude>
     <ClInclude Include="EnemyBat.h">
       <Filter>Engine\GameObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="SoundSystem.h">
+      <Filter>Engine\Audio</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

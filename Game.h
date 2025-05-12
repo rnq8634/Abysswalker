@@ -10,6 +10,7 @@ class InputSystem;
 
 // Lib includes
 #include <vector>
+#include "fmod.hpp"
 
 class Game
 {
@@ -63,6 +64,11 @@ protected:
 #endif // USE_LAG
 
 	bool m_bLooping;
+
+	// FMOD stuff
+	FMOD::Sound* m_pSound;
+	FMOD::System* m_pFMODSystem;
+	FMOD::Channel* m_pChannel;
 
 private:
 

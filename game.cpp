@@ -1,15 +1,16 @@
 // COMP710 GP Framework
 
 // This include:
-#include "game.h"
+#include "Game.h"
 
 // Library includes:
-#include "renderer.h"
-#include "logmanager.h"
+#include "Renderer.h"
+#include "LogManager.h"
 #include "Sprite.h"
-#include "scene.h"
-#include "inputsystem.h"
+#include "Scene.h"
+#include "InputSystem.h"
 #include "XboxController.h"
+#include "fmod.hpp"
 
 //IMGUI INCLUDES
 #include "imgui/imgui_impl_sdl2.h"
@@ -19,6 +20,7 @@
 
 // Static Members:
 Game* Game::sm_pInstance = 0;
+FMOD::System* m_pFMODSystem = nullptr;
 
 Game& Game::GetInstance()
 {
@@ -49,7 +51,6 @@ Game::Game()
 	, m_pCheckerboard(0)
 
 {
-
 }
 
 Game::~Game()
@@ -87,6 +88,10 @@ bool Game::Initialise()
 	// CHange backgroudn color
 	m_pRenderer->SetClearColor(50, 50, 50);
 
+	// Initialise FMOD
+	FMOD::System_Create(&m_pFMODSystem);
+	m_pFMODSystem->init(512, FMOD_INIT_NORMAL, 0);
+
 	// INPUT SYSTEM
 	m_pInputSystem = new InputSystem();
 	bool inputInitialised = m_pInputSystem->Initialise();
@@ -98,7 +103,7 @@ bool Game::Initialise()
 
 	// Scene Test
 	Scene* pScene = 0;
-	pScene = new SceneAbyssWalker();
+	pScene = new SceneAbyssWalker(m_pFMODSystem);
 	if (!pScene->Initialise(*m_pRenderer))
 	{
 		LogManager::GetInstance().Log("Abysswalker failed to launch!");
@@ -160,6 +165,9 @@ void Game::Process(float deltaTime)
 	m_scenes[m_iCurrentScene]->Process(deltaTime, *m_pInputSystem);
 
 	// TODO: Add game objects to process here!
+
+	// Note:
+	//FMOD::System must be updated here!!
 	
 }
 

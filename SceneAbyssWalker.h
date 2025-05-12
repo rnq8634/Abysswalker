@@ -1,8 +1,12 @@
+#ifndef __SCENEABYSSWALKER_H
+#define __SCENEABYSSWALKER_H
+
 // Local includes
 #include "Scene.h"
 #include <vector>
 #include <string>
 #include "Vector2.h"
+#include "fmod.hpp"
 
 // Forward declarations
 class Player;
@@ -15,7 +19,7 @@ class SceneAbyssWalker : public Scene
 {
 	// Member methods
 public:
-	SceneAbyssWalker();
+	SceneAbyssWalker(FMOD::System* pFMODSystem);
 	~SceneAbyssWalker();
 
 	bool Initialise(Renderer& renderer);
@@ -55,6 +59,13 @@ protected:
 	const int m_maxEnemies = 20; // max enemy limit
 	const int m_maxEnemiesPerSide = 5; // how many enemies spawn on each side
 	
+	// FMOD stuff
+	FMOD::System* m_pFMODSystem;
+	FMOD::Sound* m_pSound;
+	FMOD::Channel* m_pChannel;
+
 private:
 
 };
+
+#endif // __SCENEABYSSWALKER_H
