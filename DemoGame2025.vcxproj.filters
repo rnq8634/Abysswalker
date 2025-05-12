@@ -114,7 +114,7 @@
     <ClCompile Include="SceneAbyssWalker.cpp">
       <Filter>Engine\Scenes</Filter>
     </ClCompile>
-    <ClCompile Include="Enemy.cpp">
+    <ClCompile Include="EnemyBat.cpp">
       <Filter>Engine\GameObjects</Filter>
     </ClCompile>
   </ItemGroup>
@@ -206,7 +206,7 @@
     <ClInclude Include="SceneAbyssWalker.h">
       <Filter>Engine\Scenes</Filter>
     </ClInclude>
-    <ClInclude Include="Enemy.h">
+    <ClInclude Include="EnemyBat.h">
       <Filter>Engine\GameObjects</Filter>
     </ClInclude>
   </ItemGroup>

@@ -3,7 +3,7 @@
 
 // Local Include
 #include "Player.h"
-#include "Enemy.h" 
+#include "EnemyBat.h" 
 #include "Renderer.h"
 #include "InputSystem.h"
 #include "Sprite.h"
@@ -31,11 +31,11 @@ SceneAbyssWalker::~SceneAbyssWalker()
     delete m_pPlayer;
     m_pPlayer = nullptr;
 
-    for (Enemy* enemy : m_enemies)
+    for (EnemyBat* enemyBat : m_enemyType1)
     {
-        delete enemy;
+        delete enemyBat;
     }
-    m_enemies.clear();
+    m_enemyType1.clear();
 
     m_pRenderer = nullptr;
 
@@ -167,37 +167,37 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
 
     m_pPlayer->Process(deltaTime);
 
-    for (Enemy* enemy : m_enemies)
+    for (EnemyBat* enemyBat : m_enemyType1)
     {
-        if (enemy->m_pTargetPlayer == nullptr && m_pPlayer)
+        if (enemyBat->m_pTargetPlayer == nullptr && m_pPlayer)
         {
-            enemy->m_pTargetPlayer = m_pPlayer;
+            enemyBat->m_pTargetPlayer = m_pPlayer;
         }
-        enemy->Process(deltaTime);
+        enemyBat->Process(deltaTime);
     }
     
     HandleCollisions();
 
-    m_enemies.erase(std::remove_if(m_enemies.begin(), m_enemies.end(),
-        [](Enemy* enemy) 
+    m_enemyType1.erase(std::remove_if(m_enemyType1.begin(), m_enemyType1.end(),
+        [](EnemyBat* enemyBat)
         {
-            if (!enemy->IsAlive()) 
+            if (!enemyBat->IsAlive())
             {
-                AnimatedSprite* sprite = enemy->GetCurrentAnimatedSprite();
+                AnimatedSprite* sprite = enemyBat->GetCurrentAnimatedSprite();
                 if (sprite && sprite->IsAnimationComplete()) 
                 {
-                    delete enemy;
+                    delete enemyBat;
                     return true;
                 }
                 if (!sprite) 
                 {
                     LogManager::GetInstance().Log("Dead enemy removed (no death animation).");
-                    delete enemy;
+                    delete enemyBat;
                     return true;
                 }
             }
             return false;
-        }), m_enemies.end());
+        }), m_enemyType1.end());
 
     if (m_pPlayer->IsAlive())
     {
@@ -227,23 +227,23 @@ void SceneAbyssWalker::HandleCollisions() {
     float pAttackMinY = playerPos.y - (Player::PLAYER_SPRITE_HEIGHT / 2.0f);
     float pAttackMaxY = playerPos.y + (Player::PLAYER_SPRITE_HEIGHT / 2.0f);
 
-    for (Enemy* enemy : m_enemies) {
-        if (!enemy->IsAlive()) continue;
+    for (EnemyBat* enemyBat : m_enemyType1) {
+        if (!enemyBat->IsAlive()) continue;
 
-        Vector2 enemyPos = enemy->GetPosition();
-        float enemyRadius = enemy->GetRadius();
-        float eMinX = enemyPos.x - enemyRadius;
-        float eMaxX = enemyPos.x + enemyRadius;
-        float eMinY = enemyPos.y - enemyRadius;
-        float eMaxY = enemyPos.y + enemyRadius;
+        Vector2 enemyBatPos = enemyBat->GetPosition();
+        float enemyRadius = enemyBat->GetRadius();
+        float eMinX = enemyBatPos.x - enemyRadius;
+        float eMaxX = enemyBatPos.x + enemyRadius;
+        float eMinY = enemyBatPos.y - enemyRadius;
+        float eMaxY = enemyBatPos.y + enemyRadius;
 
         bool overlapX = pAttackMinX < eMaxX && pAttackMaxX > eMinX;
         bool overlapY = pAttackMinY < eMaxY && pAttackMaxY > eMinY;
 
         if (overlapX && overlapY) 
         {
-            enemy->TakeDamage(25); // Player attack dmg to enemy
-            LogManager::GetInstance().Log("Player hit enemy!");
+            enemyBat->TakeDamage(25); // Player attack dmg to enemyBat
+            LogManager::GetInstance().Log("Player hit Bat!");
         }
     }
 }
@@ -257,18 +257,18 @@ void SceneAbyssWalker::UpdateSpawning(float deltaTime)
         return;
     }
 
-    if (m_maxEnemies >= 0 && m_enemies.size() < static_cast<size_t>(m_maxEnemies))
+    if (m_maxEnemies >= 0 && m_enemyType1.size() < static_cast<size_t>(m_maxEnemies))
     {
         m_spawnTimer += deltaTime;
         if (m_spawnTimer >= m_spawnInterval)
         {
             m_spawnTimer = 0.0f;
 
-            if (m_enemies.size() < m_maxEnemies)
+            if (m_enemyType1.size() < m_maxEnemies)
             {
                 int leftCount = 0;
                 int rightCount = 0;
-                for (const auto& enemy : m_enemies)
+                for (const auto& enemy : m_enemyType1)
                 {
                     if (enemy->GetPosition().x < m_pRenderer->GetWidth() / 2.0f)
                     {
@@ -310,8 +310,9 @@ void SceneAbyssWalker::SpawnEnemy(bool spawnOnLeft)
         return;
     }
 
-    Enemy* newEnemy = new Enemy();
-    if (!newEnemy) 
+    // Enemy bat
+    EnemyBat* newEnemyBat = new EnemyBat();
+    if (!newEnemyBat) 
     {
         LogManager::GetInstance().Log("Failed to allocate memory for new enemy.");
         return;
@@ -320,7 +321,7 @@ void SceneAbyssWalker::SpawnEnemy(bool spawnOnLeft)
     if (!m_pPlayer) 
     {
         LogManager::GetInstance().Log("Cannot spawn enemy, player is null.");
-        delete newEnemy;
+        delete newEnemyBat;
         return;
     }
 
@@ -334,17 +335,17 @@ void SceneAbyssWalker::SpawnEnemy(bool spawnOnLeft)
     {
         spawnPos.x = static_cast<float>(m_pRenderer->GetWidth()) + spawnXOffset;
     }
-    spawnPos.y = newEnemy->kGroundLevel;
+    spawnPos.y = newEnemyBat->kGroundLevel;
 
-    if (newEnemy->Initialise(*m_pRenderer, spawnPos))
+    if (newEnemyBat->Initialise(*m_pRenderer, spawnPos))
     {
-        m_enemies.push_back(newEnemy);
+        m_enemyType1.push_back(newEnemyBat);
         LogManager::GetInstance().Log(("Spawned new enemy on " + std::string(spawnOnLeft ? "left" : "right")).c_str());
     }
     else
     {
         LogManager::GetInstance().Log("Failed to initialise new enemy.");
-        delete newEnemy;
+        delete newEnemyBat;
     }
 }
 
@@ -363,9 +364,9 @@ void SceneAbyssWalker::Draw(Renderer& renderer)
         m_pPlayer->Draw(renderer);
     }
 
-    for (Enemy* enemy : m_enemies)
+    for (EnemyBat* enemyBat : m_enemyType1)
     {
-        enemy->Draw(renderer);
+        enemyBat->Draw(renderer);
     }
 }
 
@@ -377,18 +378,18 @@ void SceneAbyssWalker::DebugDraw()
     }
 
     ImGui::Separator();
-    ImGui::Text("Enemies: %zu / %d (Max Total)", m_enemies.size(), m_maxEnemies);
+    ImGui::Text("Enemies: %zu / %d (Max Total)", m_enemyType1.size(), m_maxEnemies);
     ImGui::Text("Spawn Timer: %.2f / %.2f", m_spawnTimer, m_spawnInterval);
 
 
     if (ImGui::CollapsingHeader("Enemy List")) 
     {
-        for (size_t i = 0; i < m_enemies.size(); ++i)
+        for (size_t i = 0; i < m_enemyType1.size(); ++i)
         {
-            std::string enemyNodeId = "Enemy " + std::to_string(i);
+            std::string enemyNodeId = "EnemyBat " + std::to_string(i);
             if (ImGui::TreeNode(enemyNodeId.c_str()))
             {
-                m_enemies[i]->DebugDraw();
+                m_enemyType1[i]->DebugDraw();
                 ImGui::TreePop();
             }
         }

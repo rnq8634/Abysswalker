@@ -1,5 +1,5 @@
 ﻿  AnimatedSprite.cpp
-  Enemy.cpp
+  EnemyBat.cpp
   Entity.cpp
   Game.cpp
   imgui.cpp
@@ -21,7 +21,7 @@
   Generating Code...
   Compiling...
   SceneAbyssWalker.cpp
-C:\Users\nikol\source\repos\DemoGame2025\SceneAbyssWalker.cpp(267,34): warning C4018: '<': signed/unsigned mismatch
+C:\Users\nikol\source\repos\DemoGame2025\SceneAbyssWalker.cpp(267,37): warning C4018: '<': signed/unsigned mismatch
   Shader.cpp
   Sprite.cpp
   Texture.cpp

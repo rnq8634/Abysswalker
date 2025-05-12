@@ -6,7 +6,7 @@
 
 // Forward declarations
 class Player;
-class Enemy;
+class EnemyBat;
 class Renderer;
 class InputSystem;
 class Sprite;
@@ -39,7 +39,7 @@ private:
 public:
 
 protected:
-	std::vector<Enemy*> m_enemies;
+	std::vector<EnemyBat*> m_enemyType1;
 	Renderer* m_pRenderer;
 
 	Sprite* m_pmoonBackground;

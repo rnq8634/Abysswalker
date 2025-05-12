@@ -143,7 +143,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AnimatedSprite.cpp" />
-    <ClCompile Include="Enemy.cpp" />
+    <ClCompile Include="EnemyBat.cpp" />
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
@@ -155,7 +155,7 @@
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="InputSystem.cpp" />
     <ClCompile Include="LogManager.cpp" />
-    <ClInclude Include="Enemy.h" />
+    <ClInclude Include="EnemyBat.h" />
     <ClInclude Include="LogManager.h" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Matrix4.cpp" />
