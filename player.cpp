@@ -33,10 +33,13 @@ Player::Player()
 	, m_staminaRegenRate(10.0f)
 	, m_justRevived(false)
 	, m_bAlive(false)
+	, m_invincibilityTimer(0.0f)
+	, m_bIsInvincible(false)
 {
 	SetMaxHealth(100, true);
 	SetRadius((static_cast<float>(PLAYER_SPRITE_WIDTH) * PLAYER_VISUAL_SCALE) / 2.5f);
 	m_velocity.Set(0.0f, 0.0f);
+	m_currentStamina = m_maxStamina;
 }
 
 Player::~Player()
@@ -141,6 +144,17 @@ void Player::Process(float deltaTime)
 		return; // Don't process movement/physics if dead
 	}
 
+	// Handle the I-Frame duration
+	if (m_invincibilityTimer > 0.0f)
+	{
+		m_invincibilityTimer -= deltaTime;
+		if (m_invincibilityTimer < 0.0f)
+		{
+			m_invincibilityTimer = 0.0f;
+			m_bIsInvincible = false;
+		}
+	}
+
 	// Regen stam
 	bool canRegenStamina = (m_currentState != PlayerState::ROLLING && m_currentState != PlayerState::ATTACKING && m_currentState != PlayerState::JUMPING);
 
@@ -224,6 +238,7 @@ void Player::Draw(Renderer& renderer)
 	AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
 	if (!m_bAlive && GetCurrentAnimatedSprite() && GetCurrentAnimatedSprite()->IsAnimationComplete()) return;
 
+	/*
 	// Load static image (THIS IS NEEDED OTHERWISE NOTHING WILL BE ON SCREEN)
 	m_pStaticSprite->Draw(renderer);
 
@@ -231,6 +246,45 @@ void Player::Draw(Renderer& renderer)
 	if (currentSprite)
 	{
 		currentSprite->Draw(renderer);
+	}
+	*/
+	if (m_bIsInvincible)
+	{
+		float flashFrequency = 8.0f;
+		if (static_cast<int>(m_invincibilityTimer * flashFrequency) % 2 == 0)
+		{
+			m_pStaticSprite->SetAlpha(128);
+			m_pStaticSprite->Draw(renderer);
+
+			if (currentSprite)
+			{
+				currentSprite->SetAlpha(128);
+				currentSprite->Draw(renderer);
+			}
+
+			// Reset the alpha for the next frame
+			m_pStaticSprite->SetAlpha(255);
+			if (currentSprite)
+			{
+				currentSprite->SetAlpha(255);
+			}
+		}
+		else
+		{
+			m_pStaticSprite->Draw(renderer);
+			if (currentSprite)
+			{
+				currentSprite->Draw(renderer);
+			}
+		}
+	}
+	else
+	{
+		m_pStaticSprite->Draw(renderer);
+		if (currentSprite)
+		{
+			currentSprite->Draw(renderer);
+		}
 	}
 }
 
@@ -432,7 +486,7 @@ void Player::TakeDamage(int amount)
 		// if have enough abyssal essence
 	}
 	else if (!m_bAlive) return;
-	if (m_currentState == PlayerState::ROLLING) return;
+	if (m_currentState == PlayerState::ROLLING || m_bIsInvincible) return;
 
 	m_currentHealth -= amount;
 	m_currentHealth = std::max(0, m_currentHealth);
@@ -442,7 +496,6 @@ void Player::TakeDamage(int amount)
 		m_bAlive = false;
 		TransitionToState(PlayerState::DEATH); // add a revive feature as well. 
 		LogManager::GetInstance().Log("Player Died!");
-
 	}
 	else
 	{
@@ -450,6 +503,8 @@ void Player::TakeDamage(int amount)
 		// knockback for the player
 		m_velocity.x = m_bFacingRight ? -50.0f : 50.0f;
 		m_velocity.y = -50.0f; // Small pop-up
+		m_bIsInvincible = true;
+		m_invincibilityTimer = m_invincibilityDuration; // Start invincibility period
 	}
 }
 
@@ -544,6 +599,20 @@ void Player::FallOnLand()
 	// Called when player hits the ground (from Process)
 	if (m_currentState == PlayerState::FALLING || m_currentState == PlayerState::JUMPING)
 	{
+		// Player gets Invis frames when landing on the ground after getting hit or dmagaed
+		if (m_currentState == PlayerState::FALLING && m_velocity.y > 0)
+		{
+			m_bIsInvincible = true;
+			m_invincibilityTimer = m_invincibilityDuration * 0.5f; // Half duration for landing i-frames
+		}
+
+		// Player gets Invis frames when landing on the ground after getting hit/damaged
+		if (m_currentState == PlayerState::FALLING && m_velocity.y > 0)
+		{
+			m_bIsInvincible = true;
+			m_invincibilityTimer = m_invincibilityDuration;
+		}
+
 		if (abs(m_velocity.x) > 0.1f) // Check if there's significant horizontal speed
 		{
 			TransitionToState(PlayerState::RUNNING);
@@ -565,7 +634,8 @@ void Player::HurtAnimationComplete()
 		if (isOnGround) 
 		{
 			TransitionToState(PlayerState::IDLE);
-		} else 
+		} 
+		else 
 		{
 			TransitionToState(PlayerState::FALLING);
 		}
@@ -591,6 +661,7 @@ void Player::DebugDraw()
 		ImGui::Checkbox("Alive", &m_bAlive);
 		ImGui::Text("Position: (%.1f, %.1f)", m_position.x, m_position.y);
 		ImGui::Text("Velocity: (%.1f, %.1f)", m_velocity.x, m_velocity.y);
+		ImGui::Text("Invincible: %s (%.1f seconds)", m_bIsInvincible ? "Yes" : "No", m_invincibilityTimer);
 
 		// Display current state as text
 		std::string stateName = "UNKNOWN";

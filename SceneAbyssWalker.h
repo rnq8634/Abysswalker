@@ -70,6 +70,8 @@ protected:
 	FMOD::Sound* m_pRollSound;
 	FMOD::Sound* m_pHurtSound;
 
+	bool m_bShowHitboxes; // for debugging
+
 private:
 
 };

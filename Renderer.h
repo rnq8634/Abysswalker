@@ -43,6 +43,8 @@ public:
 
 	void CreateStaticText(const char* pText, int pointsize);
 
+	void DrawDebugRect(float x1, float y1, float x2, float y2, unsigned char r, unsigned char g, unsigned char b, unsigned char a);
+
 protected:
 	bool InitializeOpenGL(int screenWidth, int screenHeight);
 	void SetFullscreen(bool fullscreen);

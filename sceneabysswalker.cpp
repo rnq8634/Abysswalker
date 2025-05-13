@@ -33,6 +33,7 @@ SceneAbyssWalker::SceneAbyssWalker(FMOD::System* pFMODSystem)
     , m_ptree2Background(nullptr)
     , m_ptree1Background(nullptr)
     , m_spawnTimer(0.0f)
+    , m_bShowHitboxes(false)
 {
 }
 
@@ -118,7 +119,7 @@ bool SceneAbyssWalker::Initialise(Renderer& renderer)
     m_pRenderer = &renderer;
 
     // Load FMOD
-    FMOD_RESULT result;
+    //FMOD_RESULT result;
 
     // Load BG Music (need to find music first)
     /*
@@ -272,9 +273,10 @@ void SceneAbyssWalker::HandleCollisions()
             // Check for player getting hit by enemy
             if (m_pPlayer->GetCurrentState() != PlayerState::ROLLING &&
                 m_pPlayer->GetCurrentState() != PlayerState::HURT &&
+                !m_pPlayer->IsInvincible() &&
+                enemyBat->IsAttacking() &&
                 m_pPlayer->CheckCollision(*enemyBat))
             {
-                m_pPlayer->TakeDamage(1);
                 if (m_pHurtSound)
                 {
                     m_pFMODSystem->playSound(m_pHurtSound, 0, false, 0);
@@ -440,35 +442,102 @@ void SceneAbyssWalker::Draw(Renderer& renderer)
     if (m_pPlayer)
     {
         m_pPlayer->Draw(renderer);
+
+        // Draw player hitbox
+        if (m_bShowHitboxes)
+        {
+            Vector2 playerPos = m_pPlayer->GetPosition();
+            float playerHalfWidth = Player::PLAYER_SPRITE_WIDTH / 2.0f;
+            float playerHalfHeight = Player::PLAYER_SPRITE_HEIGHT / 2.0f;
+
+            // Draw player collision box in green
+            renderer.DrawDebugRect(
+                playerPos.x - playerHalfWidth,
+                playerPos.y - playerHalfHeight,
+                playerPos.x + playerHalfWidth,
+                playerPos.y + playerHalfHeight,
+                0, 255, 0, 128
+            );
+
+            // Draw attack hitbox in red when attacking
+            if (m_pPlayer->GetCurrentState() == PlayerState::ATTACKING)
+            {
+                AnimatedSprite* playerSprite = m_pPlayer->GetCurrentAnimatedSprite();
+                if (playerSprite)
+                {
+                    int currentFrame = playerSprite->GetCurrentFrame();
+                    bool isHitFrame = (currentFrame >= 2 && currentFrame <= 5);
+
+                    if (isHitFrame)
+                    {
+                        float attackReach = 40.0f;
+                        float pAttackMinX = m_pPlayer->IsFacingRight() ?
+                            playerPos.x :
+                            playerPos.x - (Player::PLAYER_SPRITE_WIDTH / 2.0f + attackReach);
+                        float pAttackMaxX = m_pPlayer->IsFacingRight() ?
+                            playerPos.x + (Player::PLAYER_SPRITE_WIDTH / 2.0f + attackReach) :
+                            playerPos.x;
+                        float pAttackMinY = playerPos.y - (Player::PLAYER_SPRITE_HEIGHT / 2.0f);
+                        float pAttackMaxY = playerPos.y + (Player::PLAYER_SPRITE_HEIGHT / 2.0f);
+
+                        renderer.DrawDebugRect(
+                            pAttackMinX,
+                            pAttackMinY,
+                            pAttackMaxX,
+                            pAttackMaxY,
+                            255, 0, 0, 128
+                        );
+                    }
+                }
+            }
+        }
     }
 
     for (EnemyBat* enemyBat : m_enemyType1)
     {
         enemyBat->Draw(renderer);
+
+        if (m_bShowHitboxes)
+        {
+            Vector2 enemyPos = enemyBat->GetPosition();
+            float enemyRadius = enemyBat->GetRadius();
+
+            renderer.DrawDebugRect(
+                enemyPos.x - enemyRadius,
+                enemyPos.y - enemyRadius,
+                enemyPos.x + enemyRadius,
+                enemyPos.y + enemyRadius,
+                255, 255, 0, 128  // Yellow for enemies
+            );
+        }
     }
 }
 
 void SceneAbyssWalker::DebugDraw()
 {
-    if (m_pPlayer)
+    if (ImGui::CollapsingHeader("Scene Debug"))
     {
-        m_pPlayer->DebugDraw();
-    }
+        ImGui::Checkbox("Show Hitboxes", &m_bShowHitboxes);
 
-    ImGui::Separator();
-    ImGui::Text("Enemies: %zu / %d (Max Total)", m_enemyType1.size(), m_maxEnemies);
-    ImGui::Text("Spawn Timer: %.2f / %.2f", m_spawnTimer, m_spawnInterval);
-
-
-    if (ImGui::CollapsingHeader("Enemy List")) 
-    {
-        for (size_t i = 0; i < m_enemyType1.size(); ++i)
+        if (m_pPlayer)
         {
-            std::string enemyNodeId = "EnemyBat " + std::to_string(i);
-            if (ImGui::TreeNode(enemyNodeId.c_str()))
+            m_pPlayer->DebugDraw();
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Enemies: %zu / %d (Max Total)", m_enemyType1.size(), m_maxEnemies);
+        ImGui::Text("Spawn Timer: %.2f / %.2f", m_spawnTimer, m_spawnInterval);
+
+        if (ImGui::CollapsingHeader("Enemy List"))
+        {
+            for (size_t i = 0; i < m_enemyType1.size(); ++i)
             {
-                m_enemyType1[i]->DebugDraw();
-                ImGui::TreePop();
+                std::string enemyNodeId = "EnemyBat " + std::to_string(i);
+                if (ImGui::TreeNode(enemyNodeId.c_str()))
+                {
+                    m_enemyType1[i]->DebugDraw();
+                    ImGui::TreePop();
+                }
             }
         }
     }

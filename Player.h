@@ -74,6 +74,7 @@ public:
 	AnimatedSprite* GetCurrentAnimatedSprite();
 
 	bool CheckCollision(const Entity& other) const;
+	bool IsInvincible() const { return m_invincibilityTimer > 0.0f; }
 
 protected:
 	// Methods for turn animation
@@ -127,6 +128,11 @@ protected:
 	float m_rollVelocityBeforeRoll;
 	bool m_justRevived;
 	bool m_bAlive;
+	bool m_bIsInvincible;
+
+	// Player I-Frames
+	float m_invincibilityTimer;
+	const float m_invincibilityDuration = 1.0f;
 
 	// Stats
 	float m_maxStamina;

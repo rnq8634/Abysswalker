@@ -17,14 +17,15 @@ EnemyBat::EnemyBat()
     , m_currentState(EnemyBatState::IDLE)
     , m_pTargetPlayer(nullptr)
     , m_bFacingRight(false)
-    , m_damage(10)
+    , m_iDamage(10)
     , m_moveSpeed(120.0f) // Enemy movespeed
     , m_attackRange(60.0f) 
     , m_detectionRange(2000.0f) // For now so that the enemies would find the player straight away
-    , m_attackCooldown(2.5f)
-    , m_timeSinceLastAttack(m_attackCooldown) // Ready to attack initially
+    , m_attackCD(5.0f)
+    , m_timeSinceAttack(m_attackCD) // Ready to attack initially
     , m_attackWindUpTime(0.5f) // Damage applied 0.5s into attack animation
     , m_currentAttackTime(0.0f)
+    , m_bHasDealtDMG(false)
     , m_pStaticEnemy(nullptr)
 {
     SetMaxHealth(50, true); // Enemy specific health
@@ -123,14 +124,15 @@ void EnemyBat::Process(float deltaTime)
     }
 
     // attack timing and damage
-    m_timeSinceLastAttack += deltaTime;
+    m_timeSinceAttack += deltaTime;
     if (m_currentState == EnemyBatState::ATTACKING)
     {
         m_currentAttackTime += deltaTime;
 
-        if (m_currentAttackTime >= m_attackWindUpTime && m_currentAttackTime != -1.0f)
+        if (m_currentAttackTime >= m_attackWindUpTime && !m_bHasDealtDMG)
         {
-            if (m_pTargetPlayer && m_pTargetPlayer->IsAlive())
+            AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
+            if (currentSprite && m_pTargetPlayer && m_pTargetPlayer->IsAlive())
             {
                 Vector2 directionToPlayer = m_pTargetPlayer->GetPosition() - m_position;
                 float distanceToPlayer = directionToPlayer.Length();
@@ -138,21 +140,23 @@ void EnemyBat::Process(float deltaTime)
                 bool playerInFront = (m_bFacingRight && directionToPlayer.x >= 0) ||
                     (!m_bFacingRight && directionToPlayer.x <= 0);
 
-                if (playerInFront && distanceToPlayer < (m_attackRange + m_pTargetPlayer->GetRadius()))
+                if (playerInFront &&
+                    distanceToPlayer < (m_attackRange + m_pTargetPlayer->GetRadius()) &&
+                    m_currentAttackTime <= m_attackWindUpTime + 0.1f)
                 {
-                    m_pTargetPlayer->TakeDamage(m_damage);
+                    m_pTargetPlayer->TakeDamage(m_iDamage);
+                    m_bHasDealtDMG = true;
                     LogManager::GetInstance().Log("Enemy dealt damage to player.");
                 }
             }
-            m_currentAttackTime = -1.0f;
         }
     }
+
     AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
     if (currentSprite)
     {
         UpdateSprite(currentSprite, deltaTime);
-    }
-    
+    } 
 }
 
 void EnemyBat::UpdateAI(float deltaTime)
@@ -174,9 +178,7 @@ void EnemyBat::UpdateAI(float deltaTime)
     Vector2 directionToPlayer = m_pTargetPlayer->GetPosition() - m_position;
     float distanceToPlayerSquared = directionToPlayer.LengthSquared(); // Use squared for performance
 
-    // Face the player
-    if (directionToPlayer.x > 0.1f) m_bFacingRight = true;
-    else if (directionToPlayer.x < -0.1f) m_bFacingRight = false;
+    m_bFacingRight = (directionToPlayer.x < 0.0f);
 
     float effectiveAttackRange = m_attackRange; // Can be adjusted based on player size for more precision
     float detectionRangeSq = m_detectionRange * m_detectionRange;
@@ -184,10 +186,10 @@ void EnemyBat::UpdateAI(float deltaTime)
 
     if (distanceToPlayerSquared <= attackRangeSq)
     {
-        if (m_timeSinceLastAttack >= m_attackCooldown)
+        if (m_timeSinceAttack >= m_attackCD)
         {
             TransitionToState(EnemyBatState::ATTACKING);
-            m_timeSinceLastAttack = 0.0f;
+            m_timeSinceAttack = 0.0f;
             m_currentAttackTime = 0.0f; // Reset wind-up timer
         }
         else if (m_currentState != EnemyBatState::ATTACKING) 
@@ -309,9 +311,10 @@ void EnemyBat::OnAttackAnimationComplete()
 {
     if (m_currentState == EnemyBatState::ATTACKING) 
     {
+        m_currentAttackTime = 0.0f;
+        m_bHasDealtDMG = false;
         TransitionToState(EnemyBatState::IDLE); // Or back to walking if player is still in range but needs cooldown
     }
-    m_currentAttackTime = 0.0f; // Ensure attack timer is reset
 }
 
 
@@ -351,11 +354,11 @@ void EnemyBat::DebugDraw()
         }
             
         ImGui::Text("Facing: %s", m_bFacingRight ? "Right" : "Left");
-        ImGui::SliderInt("Attack Damage", &m_damage, 0, 50);
+        ImGui::SliderInt("Attack Damage", &m_iDamage, 0, 50);
         ImGui::DragFloat("Move Speed", &m_moveSpeed, 1.0f, 0.0f, 300.0f);
         ImGui::DragFloat("Attack Range", &m_attackRange, 1.0f, 0.0f, 200.0f);
         ImGui::DragFloat("Detection Range", &m_detectionRange, 1.0f, 0.0f, 1000.0f);
-        ImGui::Text("Attack Cooldown: %.2f / %.2f", m_timeSinceLastAttack, m_attackCooldown);
+        ImGui::Text("Attack Cooldown: %.2f / %.2f", m_timeSinceAttack, m_attackCD);
         ImGui::Text("Attack Windup Timer: %.2f / %.2f", m_currentAttackTime, m_attackWindUpTime);
 
         if (m_pTargetPlayer) ImGui::Text("Dist to Player: %.2f", (m_pTargetPlayer->GetPosition() - m_position).Length());

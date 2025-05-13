@@ -71,6 +71,7 @@ private:
 
     // member data
 public:
+    // Needs to stay in public
     Player* m_pTargetPlayer;
 
     const float kGroundLevel = 850.0f;
@@ -80,19 +81,22 @@ public:
 
 protected:
     EnemyBatState m_currentState;
-    std::map<EnemyBatState, AnimatedSprite*> m_animatedSprites;
-
-    Sprite* m_pStaticEnemy;
-
     bool m_bFacingRight; // True if facing right, false if facing left
-    int m_damage;
+
+    // Enemy stats
+    int m_iDamage;
     float m_moveSpeed;
     float m_attackRange;
     float m_detectionRange;
-    float m_attackCooldown; // Time between enemy attack
-    float m_timeSinceLastAttack; // Time for attack CD
-    float m_attackWindUpTime; // Time from starting attacking state to deal damage
-    float m_currentAttackTime; // Time for windup on attack
+    float m_attackCD;
+    float m_timeSinceAttack;
+    float m_attackWindUpTime;
+    float m_currentAttackTime;
+    bool m_bHasDealtDMG;
+
+    // SPrites
+    std::map<EnemyBatState, AnimatedSprite*> m_animatedSprites;
+    Sprite* m_pStaticEnemy;
 
 private:
     EnemyBat(const EnemyBat& enemybat) = delete;
