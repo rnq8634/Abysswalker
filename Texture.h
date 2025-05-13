@@ -11,7 +11,7 @@ public:
 	Texture();
 	~Texture();
 
-	bool Initialize(const char* pcFilename);
+	bool Initialise(const char* pcFilename);
 
 	void SetActive();
 

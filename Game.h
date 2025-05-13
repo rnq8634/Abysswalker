@@ -24,6 +24,8 @@ public:
 	//IMGUI
 	void ToggleDebugWindow();
 
+	void SetCurrentScene(int index) { m_iCurrentScene = index; }
+
 protected:
 	void Process(float deltaTime);
 	void Draw(Renderer& renderer);

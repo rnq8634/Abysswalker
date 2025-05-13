@@ -344,7 +344,7 @@ void SceneAbyssWalker::UpdateSpawning(float deltaTime)
         {
             m_spawnTimer = 0.0f;
 
-            if (m_enemyType1.size() < m_maxEnemies)
+            if (m_enemyType1.size() < static_cast<size_t>(m_maxEnemies))
             {
                 int leftCount = 0;
                 int rightCount = 0;

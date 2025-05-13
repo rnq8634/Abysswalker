@@ -1,10 +1,13 @@
 // COMMP710 GP Framework 2025
 // This include:
-#include "sprite.h"
+#include "Sprite.h"
 
 // Local includes:
-#include "renderer.h"
-#include "texture.h"
+#include "Renderer.h"
+#include "Texture.h"
+#include "LogManager.h"
+
+// Lib includes
 #include <cmath>
 
 Sprite::Sprite()
@@ -24,12 +27,10 @@ Sprite::Sprite()
 	, m_tintBlue(1.0f)
 	, m_bFlipHorizontal(false)
 {
-
 }
 
 Sprite::~Sprite()
 {
-
 }
 
 bool Sprite::Initialise(Texture& texture)
@@ -39,12 +40,28 @@ bool Sprite::Initialise(Texture& texture)
 	m_width = m_pTexture->GetWidth();
 	m_height = m_pTexture->GetHeight();
 
+	if (m_width == 0 || m_height == 0)
+	{
+		LogManager::GetInstance().Log("Sprite::Initialise has failed!!");
+	}
+
 	return true;
+}
+
+bool Sprite::InitialiseWithText(Texture& texture, const char* text, const char* fontname, int pointsize)
+{
+	texture.LoadTextTexture(text, fontname, pointsize);
+
+	if (texture.GetWidth() == 0 || texture.GetHeight() == 0)
+	{
+		LogManager::GetInstance().Log("Sprite::InitialiseWithText has failed!");
+	}
+
+	return Initialise(texture);
 }
 
 void Sprite::Process(float deltaTime)
 {
-
 }
 
 void Sprite::SetFlipHorizontal(bool flip)
@@ -59,7 +76,7 @@ bool Sprite::IsFlippedHorizontal() const
 
 void Sprite::Draw(Renderer& renderer)
 {
-	if (m_pTexture)
+	if (m_pTexture && m_pTexture->GetWidth() > 0 && m_pTexture->GetHeight() > 0)
 	{
 		m_pTexture->SetActive();
 		renderer.DrawSprite(*this, m_bFlipHorizontal);
@@ -115,7 +132,7 @@ void Sprite::SetScaleX(float scaleX)
 
 void Sprite::SetScaleY(float scaleY)
 {
-	m_scaleX = scaleY;
+	m_scaleY = scaleY;
 }
 
 float Sprite::GetScaleX() const

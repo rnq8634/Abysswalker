@@ -11,12 +11,14 @@
 #include "InputSystem.h"
 #include "XboxController.h"
 #include "fmod.hpp"
+#include <SDL_ttf.h>
 
 //IMGUI INCLUDES
 #include "imgui/imgui_impl_sdl2.h"
 
 // SCENE INCLUDES
 #include "SceneAbyssWalker.h"
+#include "SceneTitleScreen.h"
 
 // Static Members:
 Game* Game::sm_pInstance = 0;
@@ -49,12 +51,15 @@ Game::Game()
 	, m_iFrameCount(0)
 	, m_iLastTime(0)
 	, m_pCheckerboard(0)
-
+	, m_pChannel(0)
+	, m_pFMODSystem(0)
+	, m_pSound(0)
 {
 }
 
 Game::~Game()
 {
+	TTF_Quit();
 	delete m_pRenderer;
 	delete m_pInputSystem;
 	m_pInputSystem = 0;
@@ -101,20 +106,39 @@ bool Game::Initialise()
 		return false;
 	}
 
-	// Scene Test
-	Scene* pScene = 0;
-	pScene = new SceneAbyssWalker(m_pFMODSystem);
-	if (!pScene->Initialise(*m_pRenderer))
+	if (TTF_Init() == -1)
 	{
-		LogManager::GetInstance().Log("Abysswalker failed to launch!");
+		LogManager::GetInstance().Log("SDL_ttf has failed!");
 		return false;
 	}
 
-	m_scenes.push_back(pScene);
+	// Scene Test
+	m_scenes.push_back(new SceneTitleScreen());
+	m_scenes.push_back(new SceneAbyssWalker(m_pFMODSystem));
+
+	// Initialize title screen
+	if (!m_scenes[0]->Initialise(*m_pRenderer)) {
+		LogManager::GetInstance().Log("Title screen failed to initialise!");
+		return false;
+	}
+
+	// Initialize game scene
+	if (!m_scenes[1]->Initialise(*m_pRenderer)) {
+		LogManager::GetInstance().Log("Game scene failed to initialise!");
+		return false;
+	}
+
+
+	// Start with the title screen
 	m_iCurrentScene = 0; // Only one scene available
 
+	if (!m_scenes[0]->Initialise(*m_pRenderer))
+	{
+		LogManager::GetInstance().Log("Title screen failed to initialise!");
+		return false;
+	}
+
 	return true;
-	
 }
 
 bool Game::DoGameLoop()
@@ -162,16 +186,26 @@ void Game::Process(float deltaTime)
 {
 	ProcessFrameCounting(deltaTime);
 
+	// Check if scene changed via IMGUI
+	static int previousScene = m_iCurrentScene;
+	if (m_iCurrentScene != previousScene)
+	{
+		// Re-initialize the new scene
+		if (!m_scenes[m_iCurrentScene]->Initialise(*m_pRenderer))
+		{
+			LogManager::GetInstance().Log("Failed to initialise scene!");
+			m_iCurrentScene = previousScene;
+		}
+		previousScene = m_iCurrentScene;
+	}
+
 	m_scenes[m_iCurrentScene]->Process(deltaTime, *m_pInputSystem);
 
-	// TODO: Add game objects to process here!
-
-	//Update FMOD system
+	// Update FMOD system
 	if (m_pFMODSystem)
 	{
 		m_pFMODSystem->update();
 	}
-	
 }
 
 void Game::Draw(Renderer& renderer)

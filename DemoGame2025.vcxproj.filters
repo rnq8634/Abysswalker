@@ -123,6 +123,9 @@
     <ClCompile Include="SoundSystem.cpp">
       <Filter>Engine\Audio</Filter>
     </ClCompile>
+    <ClCompile Include="SceneTitleScreen.cpp">
+      <Filter>Engine\Scenes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imgui\imconfig.h">
@@ -217,6 +220,9 @@
     </ClInclude>
     <ClInclude Include="SoundSystem.h">
       <Filter>Engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneTitleScreen.h">
+      <Filter>Engine\Scenes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

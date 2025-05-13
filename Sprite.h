@@ -14,6 +14,7 @@ public:
 	~Sprite();
 
 	bool Initialise(Texture& texture);
+	bool InitialiseWithText(Texture& texture, const char* text, const char* fontname, int pointsize);
 	void Process(float deltaTime);
 	void Draw(Renderer& renderer);
 

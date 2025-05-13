@@ -165,6 +165,7 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SceneAbyssWalker.cpp" />
+    <ClCompile Include="SceneTitleScreen.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="SoundSystem.cpp" />
     <ClCompile Include="Sprite.cpp" />
@@ -196,6 +197,7 @@
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneAbyssWalker.h" />
+    <ClInclude Include="SceneTitleScreen.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="SoundSystem.h" />
     <ClInclude Include="Sprite.h" />

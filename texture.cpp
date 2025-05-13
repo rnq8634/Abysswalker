@@ -30,7 +30,7 @@ Texture::~Texture()
 	}
 }
 
-bool Texture::Initialize(const char* pcFilename)
+bool Texture::Initialise(const char* pcFilename)
 {
 	SDL_Surface* pSurface = IMG_Load(pcFilename);
 
