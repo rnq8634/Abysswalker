@@ -57,6 +57,9 @@ bool Sprite::InitialiseWithText(Texture& texture, const char* text, const char* 
 		LogManager::GetInstance().Log("Sprite::InitialiseWithText has failed!");
 	}
 
+	SetAngle(180.0f);
+	m_bFlipHorizontal = true;
+
 	return Initialise(texture);
 }
 

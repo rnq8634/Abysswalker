@@ -19,7 +19,7 @@ EnemyBat::EnemyBat()
     , m_bFacingRight(false)
     , m_iDamage(10)
     , m_moveSpeed(120.0f) // Enemy movespeed
-    , m_attackRange(60.0f) 
+    , m_attackRange(50.0f) 
     , m_detectionRange(2000.0f) // For now so that the enemies would find the player straight away
     , m_attackCD(5.0f)
     , m_timeSinceAttack(m_attackCD) // Ready to attack initially
@@ -105,7 +105,8 @@ void EnemyBat::Process(float deltaTime)
     if (!m_bAlive)
     {
         AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
-        if (m_currentState == EnemyBatState::DEATH && currentSprite) {
+        if (m_currentState == EnemyBatState::DEATH && currentSprite) 
+        {
             UpdateSprite(currentSprite, deltaTime); // Process death animation
         }
         return;
@@ -142,7 +143,7 @@ void EnemyBat::Process(float deltaTime)
 
                 if (playerInFront &&
                     distanceToPlayer < (m_attackRange + m_pTargetPlayer->GetRadius()) &&
-                    m_currentAttackTime <= m_attackWindUpTime + 0.1f)
+                    m_currentAttackTime <= m_attackWindUpTime + 0.15f)
                 {
                     m_pTargetPlayer->TakeDamage(m_iDamage);
                     m_bHasDealtDMG = true;
@@ -178,7 +179,7 @@ void EnemyBat::UpdateAI(float deltaTime)
     Vector2 directionToPlayer = m_pTargetPlayer->GetPosition() - m_position;
     float distanceToPlayerSquared = directionToPlayer.LengthSquared(); // Use squared for performance
 
-    m_bFacingRight = (directionToPlayer.x < 0.0f);
+    m_bFacingRight = (directionToPlayer.x > 0.0f);
 
     float effectiveAttackRange = m_attackRange; // Can be adjusted based on player size for more precision
     float detectionRangeSq = m_detectionRange * m_detectionRange;
@@ -255,7 +256,7 @@ void EnemyBat::UpdateSprite(AnimatedSprite* sprite, float deltaTime)
     sprite->Process(deltaTime);
     sprite->SetX(static_cast<int>(m_position.x));
     sprite->SetY(static_cast<int>(m_position.y));
-    sprite->SetFlipHorizontal(!m_bFacingRight);
+    sprite->SetFlipHorizontal(m_bFacingRight);
 }
 
 

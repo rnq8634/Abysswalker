@@ -12,6 +12,9 @@
 // IMGUI
 #include "imgui/imgui.h"
 
+// Lib includes
+#include <glew.h>
+
 const char* DEFAULT_FONT_PATH = "assets/fonts/OptimusPrinceps.ttf";
 const int DEFAULT_FONT_SIZE = 20;
 
@@ -26,7 +29,7 @@ SceneTitleScreen::SceneTitleScreen()
     , m_fontSize(DEFAULT_FONT_SIZE)
 {
     // Initialize button properties
-    m_newGameButton = { Vector2(0, 0), Vector2(200, 50), "New Game", false };
+    m_newGameButton = { Vector2(0, 0), Vector2(200, 50), "Start Game", false };
     m_controlsButton = { Vector2(0, 0), Vector2(200, 50), "Controls", false };
     m_quitButton = { Vector2(0, 0), Vector2(200, 50), "Quit Game", false };
 }
@@ -69,13 +72,17 @@ bool SceneTitleScreen::Initialise(Renderer& renderer)
     {
         LogManager::GetInstance().Log("Failed to initialise New Game Text Sprite!!");
     }
-    else
+    if (m_pNewGameTextTexture->GetWidth() > 0 && m_pNewGameTextTexture->GetHeight() > 0)
     {
         float textX = m_newGameButton.position.x - m_pNewGameTextSprite->GetOriginalWidth() / 2.0f;
         float textY = m_newGameButton.position.y - m_pNewGameTextSprite->GetOriginalHeight() / 2.0f;
 
         m_pNewGameTextSprite->SetX(static_cast<int>(textX));
         m_pNewGameTextSprite->SetY(static_cast<int>(textY));
+    }
+    else
+    {
+        LogManager::GetInstance().Log("New Game Text Texture has zero width/height after init.");
     }
 
     // Text for Controls
@@ -127,6 +134,7 @@ void SceneTitleScreen::Process(float deltaTime, InputSystem& inputSystem)
     {
         if (m_newGameButton.isHovered)
         {
+            LogManager::GetInstance().Log("New Game button has been clicked!");
             Game::GetInstance().SetCurrentScene(1); // Switch to game scene
         }
         else if (m_controlsButton.isHovered)
@@ -142,6 +150,9 @@ void SceneTitleScreen::Process(float deltaTime, InputSystem& inputSystem)
 
 void SceneTitleScreen::Draw(Renderer& renderer)
 {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     // Helper lambda to draw a button
     auto DrawButton = [&renderer](const Button& button) 
     {
@@ -161,7 +172,7 @@ void SceneTitleScreen::Draw(Renderer& renderer)
 
     // Draw all buttons
     DrawButton(m_newGameButton);
-    if (m_pNewGameTextSprite)
+    if (m_pNewGameTextSprite && m_pNewGameTextTexture->GetWidth() > 0)
     {
         m_pNewGameTextSprite->Draw(renderer);
     }
@@ -180,10 +191,13 @@ void SceneTitleScreen::Draw(Renderer& renderer)
 
 bool SceneTitleScreen::IsMouseOverButton(const Button& button, const Vector2& mousePos)
 {
-    return (mousePos.x >= button.position.x - button.size.x / 2.0f &&
-        mousePos.x <= button.position.x + button.size.x / 2.0f &&
-        mousePos.y >= button.position.y - button.size.y / 2.0f &&
-        mousePos.y <= button.position.y + button.size.y / 2.0f);
+    float halfWidth = button.size.x / 2.0f;
+    float halfHeight = button.size.y / 2.0f;
+
+    return (mousePos.x >= button.position.x - halfWidth &&
+        mousePos.x <= button.position.x + halfWidth &&
+        mousePos.y >= button.position.y - halfHeight &&
+        mousePos.y <= button.position.y + halfHeight);
 }
 
 void SceneTitleScreen::DebugDraw()

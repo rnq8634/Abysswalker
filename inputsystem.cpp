@@ -102,8 +102,10 @@ InputSystem::ProcessInput()
 	{
 		ImGuiIO& io = ImGui::GetIO();
 
-		// Tell ImGui to hide the mouse cursor:
-		io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+		ImGui_ImplSDL2_ProcessEvent(&event);
+
+		// Cursor be hidden or not
+		//io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
 
 		if (io.WantCaptureMouse || io.WantCaptureKeyboard)
 		{
@@ -160,15 +162,23 @@ InputSystem::ShowMouseCursor(bool show)
 	if (show == true)
 	{
 		SDL_ShowCursor(1);
+		ImGui::GetIO().MouseDrawCursor = false;
 	}
 	else
 	{
 		SDL_ShowCursor(0);
+		ImGui::GetIO().MouseDrawCursor = false;
 	}
 }
 
 const Vector2&
 InputSystem::GetMousePosition() const
+{
+	return m_mousePosition;
+}
+
+const Vector2&
+InputSystem::GetMouseScrollWheel() const
 {
 	return m_mouseWheel;
 }
