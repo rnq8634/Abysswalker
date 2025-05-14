@@ -11,6 +11,7 @@ class InputSystem;
 // Lib includes
 #include <vector>
 #include "fmod.hpp"
+#include <SDL_ttf.h>
 
 class Game
 {

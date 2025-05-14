@@ -59,11 +59,18 @@ Game::Game()
 
 Game::~Game()
 {
-	TTF_Quit();
 	delete m_pRenderer;
 	delete m_pInputSystem;
 	m_pInputSystem = 0;
 	m_pRenderer = 0;
+
+	for (Scene* scene : m_scenes)
+	{
+		delete scene;
+	}
+	m_scenes.clear();
+
+	TTF_Quit();
 }
 
 void Game::Quit()
@@ -93,6 +100,12 @@ bool Game::Initialise()
 	// CHange backgroudn color
 	m_pRenderer->SetClearColor(50, 50, 50);
 
+	if (TTF_Init() == -1)
+	{
+		LogManager::GetInstance().Log("SDL_ttf has failed!");
+		return false;
+	}
+
 	// Initialise FMOD
 	FMOD::System_Create(&m_pFMODSystem);
 	m_pFMODSystem->init(512, FMOD_INIT_NORMAL, 0);
@@ -106,24 +119,20 @@ bool Game::Initialise()
 		return false;
 	}
 
-	if (TTF_Init() == -1)
-	{
-		LogManager::GetInstance().Log("SDL_ttf has failed!");
-		return false;
-	}
-
 	// Scene Test
 	m_scenes.push_back(new SceneTitleScreen());
 	m_scenes.push_back(new SceneAbyssWalker(m_pFMODSystem));
 
 	// Initialize title screen
-	if (!m_scenes[0]->Initialise(*m_pRenderer)) {
+	if (!m_scenes[0]->Initialise(*m_pRenderer)) 
+	{
 		LogManager::GetInstance().Log("Title screen failed to initialise!");
 		return false;
 	}
 
 	// Initialize game scene
-	if (!m_scenes[1]->Initialise(*m_pRenderer)) {
+	if (!m_scenes[1]->Initialise(*m_pRenderer)) 
+	{
 		LogManager::GetInstance().Log("Game scene failed to initialise!");
 		return false;
 	}
