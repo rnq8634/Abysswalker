@@ -15,16 +15,18 @@
 // Lib includes
 #include <glew.h>
 
-const char* DEFAULT_FONT_PATH = "assets/fonts/OptimusPrinceps.ttf";
+const char* DEFAULT_FONT_PATH = "assets/fonts/OptimusPrincepsSemiBold.ttf";
 const int DEFAULT_FONT_SIZE = 20;
 
 SceneTitleScreen::SceneTitleScreen()
     : m_pNewGameTextSprite(nullptr)
     , m_pControlsTextSprite(nullptr)
     , m_pQuitTextSprite(nullptr)
-    , m_pNewGameTextTexture(nullptr)   // Initialize texture pointers
+    , m_pNewGameTextTexture(nullptr)
     , m_pControlsTextTexture(nullptr)
     , m_pQuitTextTexture(nullptr)
+    , m_pTitleScreenTextSprite(nullptr)
+    , m_pTitleScreenTextTexture(nullptr)
     , m_fontPath(DEFAULT_FONT_PATH)
     , m_fontSize(DEFAULT_FONT_SIZE)
 {
@@ -42,7 +44,11 @@ SceneTitleScreen::~SceneTitleScreen()
     m_pControlsTextSprite = nullptr;
     delete m_pQuitTextSprite;
     m_pQuitTextSprite = nullptr;
+    delete m_pTitleScreenTextSprite;
+    m_pTitleScreenTextSprite = nullptr;
 
+    delete m_pTitleScreenTextTexture;
+    m_pTitleScreenTextTexture = nullptr;
     delete m_pNewGameTextTexture;
     m_pNewGameTextTexture = nullptr;
     delete m_pControlsTextTexture;
@@ -67,54 +73,39 @@ bool SceneTitleScreen::Initialise(Renderer& renderer)
     m_pNewGameTextTexture = new Texture();
     m_pNewGameTextSprite = new Sprite();
     if (!m_pNewGameTextTexture || !m_pNewGameTextSprite) { return false; }
-
-    if (!m_pNewGameTextSprite->InitialiseWithText(*m_pNewGameTextTexture, m_newGameButton.text, m_fontPath, m_fontSize))
+    if (m_pNewGameTextSprite->InitialiseWithText(*m_pNewGameTextTexture, m_newGameButton.text, m_fontPath, m_fontSize))
     {
-        LogManager::GetInstance().Log("Failed to initialise New Game Text Sprite!!");
-    }
-    if (m_pNewGameTextTexture->GetWidth() > 0 && m_pNewGameTextTexture->GetHeight() > 0)
-    {
-        float textX = m_newGameButton.position.x - m_pNewGameTextSprite->GetOriginalWidth() / 2.0f;
-        float textY = m_newGameButton.position.y - m_pNewGameTextSprite->GetOriginalHeight() / 2.0f;
-
-        m_pNewGameTextSprite->SetX(static_cast<int>(textX));
-        m_pNewGameTextSprite->SetY(static_cast<int>(textY));
-    }
-    else
-    {
-        LogManager::GetInstance().Log("New Game Text Texture has zero width/height after init.");
+        if (m_pNewGameTextTexture->GetWidth() > 0 && m_pNewGameTextTexture->GetHeight() > 0)
+        {
+            m_pNewGameTextSprite->SetX(static_cast<int>(m_newGameButton.position.x));
+            m_pNewGameTextSprite->SetY(static_cast<int>(m_newGameButton.position.y));
+        }
     }
 
     // Text for Controls
     m_pControlsTextTexture = new Texture();
     m_pControlsTextSprite = new Sprite();
     if (!m_pControlsTextTexture || !m_pControlsTextSprite) { return false; }
-    if (!m_pControlsTextSprite->InitialiseWithText(*m_pControlsTextTexture, m_controlsButton.text, m_fontPath, m_fontSize))
+    if (m_pControlsTextSprite->InitialiseWithText(*m_pControlsTextTexture, m_controlsButton.text, m_fontPath, m_fontSize))
     {
-        LogManager::GetInstance().Log("Failed to initialize Controls text sprite.");
-    }
-    else
-    {
-        float textX = m_controlsButton.position.x - m_pControlsTextSprite->GetOriginalWidth() / 2.0f;
-        float textY = m_controlsButton.position.y - m_pControlsTextSprite->GetOriginalHeight() / 2.0f;
-        m_pControlsTextSprite->SetX(static_cast<int>(textX));
-        m_pControlsTextSprite->SetY(static_cast<int>(textY));
+        if (m_pControlsTextTexture->GetWidth() > 0 && m_pControlsTextTexture->GetHeight() > 0)
+        {
+            m_pControlsTextSprite->SetX(static_cast<int>(m_controlsButton.position.x));
+            m_pControlsTextSprite->SetY(static_cast<int>(m_controlsButton.position.y));
+        }
     }
 
     // Quit Game Text
     m_pQuitTextTexture = new Texture();
     m_pQuitTextSprite = new Sprite();
     if (!m_pQuitTextTexture || !m_pQuitTextSprite) { return false; }
-    if (!m_pQuitTextSprite->InitialiseWithText(*m_pQuitTextTexture, m_quitButton.text, m_fontPath, m_fontSize))
+    if (m_pQuitTextSprite->InitialiseWithText(*m_pQuitTextTexture, m_quitButton.text, m_fontPath, m_fontSize))
     {
-        LogManager::GetInstance().Log("Failed to initialize Quit Game text sprite.");
-    }
-    else
-    {
-        float textX = m_quitButton.position.x - m_pQuitTextSprite->GetOriginalWidth() / 2.0f;
-        float textY = m_quitButton.position.y - m_pQuitTextSprite->GetOriginalHeight() / 2.0f;
-        m_pQuitTextSprite->SetX(static_cast<int>(textX));
-        m_pQuitTextSprite->SetY(static_cast<int>(textY));
+        if (m_pQuitTextTexture->GetWidth() > 0 && m_pQuitTextTexture->GetHeight() > 0)
+        {
+            m_pQuitTextSprite->SetX(static_cast<int>(m_quitButton.position.x));
+            m_pQuitTextSprite->SetY(static_cast<int>(m_quitButton.position.y));
+        }
     }
 
     return true;
@@ -129,17 +120,72 @@ void SceneTitleScreen::Process(float deltaTime, InputSystem& inputSystem)
     m_controlsButton.isHovered = IsMouseOverButton(m_controlsButton, mousePos);
     m_quitButton.isHovered = IsMouseOverButton(m_quitButton, mousePos);
 
+    // Text color change when hovering over text
+    if (m_pNewGameTextSprite)
+    {
+        if (m_newGameButton.isHovered)
+        {
+            // Orange color when text is hovered
+            m_pNewGameTextSprite->SetRedTint(1.0f);
+            m_pNewGameTextSprite->SetGreenTint(0.647f);
+            m_pNewGameTextSprite->SetBlueTint(0.0f);
+        }
+        else
+        {
+            // Text goes back to white
+            m_pNewGameTextSprite->SetRedTint(1.0f);
+            m_pNewGameTextSprite->SetGreenTint(1.0f);
+            m_pNewGameTextSprite->SetBlueTint(1.0f);
+        }
+    }
+
+    if (m_pControlsTextSprite)
+    {
+        if (m_controlsButton.isHovered)
+        {
+            // Orange color when text is hovered
+            m_pControlsTextSprite->SetRedTint(1.0f);
+            m_pControlsTextSprite->SetGreenTint(0.647f);
+            m_pControlsTextSprite->SetBlueTint(0.0f);
+        }
+        else
+        {
+            // Text goes back to white
+            m_pControlsTextSprite->SetRedTint(1.0f);
+            m_pControlsTextSprite->SetGreenTint(1.0f);
+            m_pControlsTextSprite->SetBlueTint(1.0f);
+        }
+    }
+
+    if (m_pQuitTextSprite)
+    {
+        if (m_quitButton.isHovered)
+        {
+            // Orange color when text is hovered
+            m_pQuitTextSprite->SetRedTint(1.0f);
+            m_pQuitTextSprite->SetGreenTint(0.647f);
+            m_pQuitTextSprite->SetBlueTint(0.0f);
+        }
+        else
+        {
+            // Text goes back to white
+            m_pQuitTextSprite->SetRedTint(1.0f);
+            m_pQuitTextSprite->SetGreenTint(1.0f);
+            m_pQuitTextSprite->SetBlueTint(1.0f);
+        }
+    }
+
     // Check clicks
     if (inputSystem.GetMouseButtonState(SDL_BUTTON_LEFT) == BS_PRESSED)
     {
         if (m_newGameButton.isHovered)
         {
-            LogManager::GetInstance().Log("New Game button has been clicked!");
             Game::GetInstance().SetCurrentScene(1); // Switch to game scene
         }
         else if (m_controlsButton.isHovered)
         {
             // Switch to Controls (Controls should have a button that goes back to title screen)
+            // Game::GetInstance().SetCurrentScene(2); // Will switch to controls and player goals
         }
         else if (m_quitButton.isHovered)
         {

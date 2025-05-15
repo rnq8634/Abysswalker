@@ -34,10 +34,12 @@ private:
     Button m_controlsButton;
     Button m_quitButton;
 
+    Sprite* m_pTitleScreenTextSprite;
     Sprite* m_pNewGameTextSprite;
     Sprite* m_pControlsTextSprite;
     Sprite* m_pQuitTextSprite;
 
+    Texture* m_pTitleScreenTextTexture;
     Texture* m_pNewGameTextTexture;
     Texture* m_pControlsTextTexture;
     Texture* m_pQuitTextTexture;
