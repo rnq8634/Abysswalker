@@ -165,9 +165,12 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SceneAbyssWalker.cpp" />
+    <ClCompile Include="SceneControls.cpp" />
+    <ClCompile Include="SceneSplashScreenAUT.cpp" />
     <ClCompile Include="SceneTitleScreen.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="SoundSystem.cpp" />
+    <ClCompile Include="SceneSplashScreenFMOD.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TextureManager.cpp" />
@@ -197,6 +200,9 @@
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneAbyssWalker.h" />
+    <ClInclude Include="SceneControls.h" />
+    <ClInclude Include="SceneSplashScreenAUT.h" />
+    <ClInclude Include="SceneSplashScreenFMOD.h" />
     <ClInclude Include="SceneTitleScreen.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="SoundSystem.h" />

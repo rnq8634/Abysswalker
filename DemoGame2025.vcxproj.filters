@@ -126,6 +126,15 @@
     <ClCompile Include="SceneTitleScreen.cpp">
       <Filter>Engine\Scenes</Filter>
     </ClCompile>
+    <ClCompile Include="SceneControls.cpp">
+      <Filter>Engine\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneSplashScreenFMOD.cpp">
+      <Filter>Engine\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneSplashScreenAUT.cpp">
+      <Filter>Engine\Scenes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imgui\imconfig.h">
@@ -222,6 +231,15 @@
       <Filter>Engine\Audio</Filter>
     </ClInclude>
     <ClInclude Include="SceneTitleScreen.h">
+      <Filter>Engine\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneControls.h">
+      <Filter>Engine\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneSplashScreenFMOD.h">
+      <Filter>Engine\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneSplashScreenAUT.h">
       <Filter>Engine\Scenes</Filter>
     </ClInclude>
   </ItemGroup>

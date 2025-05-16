@@ -8,12 +8,16 @@
 #include "LogManager.h"
 #include "Sprite.h"
 #include "Texture.h"
+#include "SoundSystem.h"
 
 // IMGUI
 #include "imgui/imgui.h"
 
 // Lib includes
 #include <glew.h>
+
+const char* TITLE_BGM_FILEPATH = "assets/sounds/titleScreenBGM.mp3";
+const char* TITLE_BGM_ID = "dmcTitle_bgm";
 
 const char* DEFAULT_FONT_PATH = "assets/fonts/OptimusPrincepsSemiBold.ttf";
 const int DEFAULT_FONT_SIZE = 20;
@@ -27,6 +31,7 @@ SceneTitleScreen::SceneTitleScreen()
     , m_pQuitTextTexture(nullptr)
     , m_pTitleScreenTextSprite(nullptr)
     , m_pTitleScreenTextTexture(nullptr)
+    , m_pBGMChannel(nullptr)
     , m_fontPath(DEFAULT_FONT_PATH)
     , m_fontSize(DEFAULT_FONT_SIZE)
 {
@@ -38,6 +43,12 @@ SceneTitleScreen::SceneTitleScreen()
 
 SceneTitleScreen::~SceneTitleScreen()
 {
+    if (m_pBGMChannel)
+    {
+        SoundSystem::GetInstance().StopChannel(m_pBGMChannel);
+        m_pBGMChannel = nullptr;
+    }
+
     delete m_pNewGameTextSprite;
     m_pNewGameTextSprite = nullptr;
     delete m_pControlsTextSprite;
@@ -60,6 +71,25 @@ SceneTitleScreen::~SceneTitleScreen()
 bool SceneTitleScreen::Initialise(Renderer& renderer)
 {
     renderer.SetClearColor(0, 0, 0); // Black background
+
+    // To load and play the BGM
+    SoundSystem& soundSys = SoundSystem::GetInstance();
+    if (!soundSys.LoadSound(TITLE_BGM_FILEPATH, TITLE_BGM_ID, true, true))
+    {
+        LogManager::GetInstance().Log("Failed to load title screen BGM!");
+    }
+    else
+    {
+        m_pBGMChannel = soundSys.PlaySound(TITLE_BGM_ID);
+        if (m_pBGMChannel)
+        {
+            soundSys.SetChannelVolume(m_pBGMChannel, 0.5f); // NOTE: Volume can be set here!
+        }
+        else
+        {
+            LogManager::GetInstance().Log("Failed to play title screen BGM");
+        }
+    }
 
     const int screenWidth = renderer.GetWidth();
     const int screenHeight = renderer.GetHeight();
@@ -180,7 +210,13 @@ void SceneTitleScreen::Process(float deltaTime, InputSystem& inputSystem)
     {
         if (m_newGameButton.isHovered)
         {
-            Game::GetInstance().SetCurrentScene(1); // Switch to game scene
+            if (m_pBGMChannel)
+            {
+                SoundSystem::GetInstance().StopChannel(m_pBGMChannel);
+                m_pBGMChannel = nullptr;
+            }
+
+            Game::GetInstance().SetCurrentScene(3); // Switch to game scene
         }
         else if (m_controlsButton.isHovered)
         {

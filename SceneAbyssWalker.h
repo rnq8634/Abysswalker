@@ -6,7 +6,6 @@
 #include <vector>
 #include <string>
 #include "Vector2.h"
-#include "fmod.hpp"
 
 // Forward declarations
 class Player;
@@ -19,7 +18,7 @@ class SceneAbyssWalker : public Scene
 {
 	// Member methods
 public:
-	SceneAbyssWalker(FMOD::System* pFMODSystem);
+	SceneAbyssWalker();
 	~SceneAbyssWalker();
 
 	bool Initialise(Renderer& renderer);
@@ -58,17 +57,6 @@ protected:
 	const float m_spawnInterval = 2.0f; // spawns a mob every X secs
 	const int m_maxEnemies = 20; // max enemy limit
 	const int m_maxEnemiesPerSide = 5; // how many enemies spawn on each side
-	
-	// FMOD stuff
-	FMOD::System* m_pFMODSystem;
-	FMOD::Sound* m_pSound;
-	FMOD::Channel* m_pChannel;
-
-	// Sound effects for player
-	FMOD::Sound* m_pJumpSound;
-	FMOD::Sound* m_pAttackSound;
-	FMOD::Sound* m_pRollSound;
-	FMOD::Sound* m_pHurtSound;
 
 	bool m_bShowHitboxes; // for debugging
 

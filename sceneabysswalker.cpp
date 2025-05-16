@@ -9,22 +9,20 @@
 #include "Sprite.h"
 #include "LogManager.h" 
 #include "AnimatedSprite.h" 
-
-// Lib includes
-#include "fmod.hpp"
+#include "SoundSystem.h"
 
 // IMGUI
 #include "imgui/imgui.h"
 
-SceneAbyssWalker::SceneAbyssWalker(FMOD::System* pFMODSystem)
+const char* SF_PLAYER_JUMP = "player_jump";
+const char* SF_PLAYER_ATTACK = "player_jump";
+const char* SF_PLAYER_ROLL = "player_jump";
+const char* SF_PLAYER_HURT = "player_jump";
+const char* BGM_ABYSSWALKER = "player_jump";
+
+
+SceneAbyssWalker::SceneAbyssWalker()
     : m_pPlayer(nullptr)
-    , m_pFMODSystem(pFMODSystem)
-    , m_pSound(0)
-    , m_pChannel(0)
-    , m_pJumpSound(0)
-    , m_pAttackSound(0)
-    , m_pRollSound(0)
-    , m_pHurtSound(0)
     , m_pRenderer(nullptr)
     , m_pmoonBackground(nullptr)
     , m_ptree5Background(nullptr)
@@ -39,13 +37,6 @@ SceneAbyssWalker::SceneAbyssWalker(FMOD::System* pFMODSystem)
 
 SceneAbyssWalker::~SceneAbyssWalker()
 {
-    // FMOD resources
-    if (m_pSound) { m_pSound->release(); m_pSound = nullptr; }
-    if (m_pJumpSound) { m_pJumpSound->release(); m_pJumpSound = nullptr; }
-    if (m_pAttackSound) { m_pAttackSound->release(); m_pAttackSound = nullptr; }
-    if (m_pRollSound) { m_pRollSound->release(); m_pRollSound = nullptr; }
-    if (m_pHurtSound) { m_pHurtSound->release(); m_pHurtSound = nullptr; }
-
     delete m_pPlayer;
     m_pPlayer = nullptr;
 
@@ -277,10 +268,7 @@ void SceneAbyssWalker::HandleCollisions()
                 enemyBat->IsAttacking() &&
                 m_pPlayer->CheckCollision(*enemyBat))
             {
-                if (m_pHurtSound)
-                {
-                    m_pFMODSystem->playSound(m_pHurtSound, 0, false, 0);
-                }
+                SoundSystem::GetInstance().PlaySound(SF_PLAYER_HURT);
             }
 
             // Check for player attacking enemy
@@ -319,7 +307,7 @@ void SceneAbyssWalker::HandleCollisions()
                         if (overlapX && overlapY)
                         {
                             enemyBat->TakeDamage(25); // Player attack damage to enemyBat
-                            LogManager::GetInstance().Log("Player hit Bat!");
+                            // Add sound for here
                         }
                     }
                 }

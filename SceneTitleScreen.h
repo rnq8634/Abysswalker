@@ -5,6 +5,7 @@
 #include "Scene.h"
 #include "Vector2.h"
 #include "Sprite.h"
+#include "fmod.hpp"
 
 // Forward Declarations
 class Texture;
@@ -29,6 +30,8 @@ private:
         const char* text;
         bool isHovered;
     };
+
+    FMOD::Channel* m_pBGMChannel;
 
     Button m_newGameButton;
     Button m_controlsButton;

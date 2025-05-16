@@ -68,11 +68,6 @@ protected:
 
 	bool m_bLooping;
 
-	// FMOD stuff
-	FMOD::Sound* m_pSound;
-	FMOD::System* m_pFMODSystem;
-	FMOD::Channel* m_pChannel;
-
 private:
 
 };

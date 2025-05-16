@@ -12,6 +12,7 @@
 #include "XboxController.h"
 #include "fmod.hpp"
 #include <SDL_ttf.h>
+#include "SoundSystem.h"
 
 //IMGUI INCLUDES
 #include "imgui/imgui_impl_sdl2.h"
@@ -19,10 +20,16 @@
 // SCENE INCLUDES
 #include "SceneAbyssWalker.h"
 #include "SceneTitleScreen.h"
+#include "SceneSplashScreenFMOD.h"
+#include "SceneSplashScreenAUT.h"
+
+const int SCENE_INDEX_FMODSPLASH = 0;
+const int SCENE_INDEX_AUTSPLASH = 1;
+const int SCENE_INDEX_TITLE = 2;
+const int SCENE_INDEX_ABYSSWALKER = 3;
 
 // Static Members:
 Game* Game::sm_pInstance = 0;
-FMOD::System* m_pFMODSystem = nullptr;
 
 Game& Game::GetInstance()
 {
@@ -51,9 +58,6 @@ Game::Game()
 	, m_iFrameCount(0)
 	, m_iLastTime(0)
 	, m_pCheckerboard(0)
-	, m_pChannel(0)
-	, m_pFMODSystem(0)
-	, m_pSound(0)
 {
 }
 
@@ -69,6 +73,8 @@ Game::~Game()
 		delete scene;
 	}
 	m_scenes.clear();
+
+	SoundSystem::DestroyInstance();
 
 	TTF_Quit();
 }
@@ -106,9 +112,11 @@ bool Game::Initialise()
 		return false;
 	}
 
-	// Initialise FMOD
-	FMOD::System_Create(&m_pFMODSystem);
-	m_pFMODSystem->init(512, FMOD_INIT_NORMAL, 0);
+	if (!SoundSystem::GetInstance().Initialise())
+	{
+		LogManager::GetInstance().Log("SoundSystem failed to initialise!");
+		return false;
+	}
 
 	// INPUT SYSTEM
 	m_pInputSystem = new InputSystem();
@@ -120,30 +128,17 @@ bool Game::Initialise()
 	}
 
 	// Scene Test
+	m_scenes.clear();
+	m_scenes.push_back(new SceneSplashScreenFMOD());
+	m_scenes.push_back(new SceneSplashScreenAUT());
 	m_scenes.push_back(new SceneTitleScreen());
-	m_scenes.push_back(new SceneAbyssWalker(m_pFMODSystem));
-
-	// Initialize title screen
-	if (!m_scenes[0]->Initialise(*m_pRenderer)) 
-	{
-		LogManager::GetInstance().Log("Title screen failed to initialise!");
-		return false;
-	}
-
-	// Initialize game scene
-	if (!m_scenes[1]->Initialise(*m_pRenderer)) 
-	{
-		LogManager::GetInstance().Log("Game scene failed to initialise!");
-		return false;
-	}
-
+	m_scenes.push_back(new SceneAbyssWalker());
 
 	// Start with the title screen
-	m_iCurrentScene = 0; // Only one scene available
-
-	if (!m_scenes[0]->Initialise(*m_pRenderer))
+	m_iCurrentScene = SCENE_INDEX_FMODSPLASH; // Only one scene available
+	if (!m_scenes[m_iCurrentScene]->Initialise(*m_pRenderer))
 	{
-		LogManager::GetInstance().Log("Title screen failed to initialise!");
+		LogManager::GetInstance().Log(("Scene " + std::to_string(m_iCurrentScene) + " failed to init!!").c_str());
 		return false;
 	}
 
@@ -195,6 +190,48 @@ void Game::Process(float deltaTime)
 {
 	ProcessFrameCounting(deltaTime);
 
+	static int previousFrameSceneIndex = m_iCurrentScene;
+	Scene* currentActiveScene = m_scenes[m_iCurrentScene];
+
+	if (m_iCurrentScene == SCENE_INDEX_FMODSPLASH)
+	{
+		SceneSplashScreenFMOD* fmodSplash = dynamic_cast<SceneSplashScreenFMOD*>(m_scenes[SCENE_INDEX_FMODSPLASH]);
+		if (fmodSplash && fmodSplash->IsFinished())
+		{
+			m_iCurrentScene = SCENE_INDEX_AUTSPLASH;
+		}
+	}
+
+	else if (m_iCurrentScene == SCENE_INDEX_AUTSPLASH)
+	{
+		SceneSplashScreenAUT* autSplash = dynamic_cast<SceneSplashScreenAUT*>(m_scenes[SCENE_INDEX_AUTSPLASH]);
+		if (autSplash && autSplash->IsFinished())
+		{
+			m_iCurrentScene = SCENE_INDEX_TITLE;
+		}
+	}
+
+	if (m_iCurrentScene != previousFrameSceneIndex)
+	{
+		LogManager::GetInstance().Log(("Transitioning to scene: " + std::to_string(m_iCurrentScene)).c_str());
+		if (m_iCurrentScene >= 0 && m_iCurrentScene < m_scenes.size())
+		{
+			if (!m_scenes[m_iCurrentScene]->Initialise(*m_pRenderer)) // Call Initialise on the NEW scene
+			{
+				LogManager::GetInstance().Log("Failed to initialise new scene! Quitting.");
+				Quit();
+				return; // Exit Process if initialization fails
+			}
+			previousFrameSceneIndex = m_iCurrentScene; // IMPORTANT: Update tracker to the NEW current scene
+		}
+		else
+		{
+			LogManager::GetInstance().Log("Error: Invalid scene index for transition during Game::Process.");
+			Quit();
+			return;
+		}
+	}
+
 	// Check if scene changed via IMGUI
 	static int previousScene = m_iCurrentScene;
 	if (m_iCurrentScene != previousScene)
@@ -208,13 +245,13 @@ void Game::Process(float deltaTime)
 		previousScene = m_iCurrentScene;
 	}
 
-	m_scenes[m_iCurrentScene]->Process(deltaTime, *m_pInputSystem);
+	if (m_iCurrentScene >= 0 && m_iCurrentScene < m_scenes.size())
+	{
+		m_scenes[m_iCurrentScene]->Process(deltaTime, *m_pInputSystem);
+	}
 
 	// Update FMOD system
-	if (m_pFMODSystem)
-	{
-		m_pFMODSystem->update();
-	}
+	SoundSystem::GetInstance().Update();
 }
 
 void Game::Draw(Renderer& renderer)
