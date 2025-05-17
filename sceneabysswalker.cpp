@@ -11,34 +11,52 @@
 #include "LogManager.h" 
 #include "AnimatedSprite.h" 
 #include "SoundSystem.h"
+#include "Game.h"
+#include "Texture.h"
 
 // IMGUI
 #include "imgui/imgui.h"
 
+// Lib includes
+#include <algorithm>
+#include <cstdio>
+
+/*
 // NEED TO COMPLETE THESE
 const char* SF_PLAYER_JUMP = "player_jump";
 const char* SF_PLAYER_ATTACK = "player_jump";
 const char* SF_PLAYER_ROLL = "player_jump";
 const char* SF_PLAYER_HURT = "player_jump";
 const char* BGM_ABYSSWALKER = "player_jump";
-
-// Player attack const for now (Stats UPG need to be added)
-const float PLAYER_ATTACK_REACH = 1.0f;
-const int PLAYER_ATTACK_DAMAGE = 25; // Base dmg
+*/
 
 SceneAbyssWalker::SceneAbyssWalker()
     : m_pPlayer(nullptr)
     , m_pRenderer(nullptr)
-    , m_pmoonBackground(nullptr)
-    , m_ptree5Background(nullptr)
-    , m_ptree4Background(nullptr)
-    , m_ptree3Background(nullptr)
-    , m_ptree2Background(nullptr)
-    , m_ptree1Background(nullptr)
+    , m_pUpgradeMenuTitleSprite(nullptr)
+    , m_pUpgradeMenuTitleTexture(nullptr)
+    , m_pEssenceTextSprite(nullptr)
+    , m_pEssenceTextTexture(nullptr)
+    , m_pGameEndTitleSprite(nullptr)
+    , m_pGameEndTitleTexture(nullptr)
+    , m_pGameEndReviveCostSprite(nullptr)
+    , m_pGameEndReviveCostTexture(nullptr)
     , m_batSpawnTimer(0.0f)
     , m_type2SpawnTimer(0.0f)
     , m_bShowHitboxes(false)
+    , m_currentWaveState(WaveState::PRE_WAVE_DELAY)
+    , m_currentWaveNumber(0)
+    , m_waveTimer(0.0f)
+    , m_intermissionTimer(INTERMISSION_DURATION)
+    , m_enemiesKilledThisWave(0)
+    , m_playerChoseToQuit(false)
 {
+    m_pmoonBackground = nullptr;
+    m_ptree5Background = nullptr;
+    m_ptree4Background = nullptr;
+    m_ptree3Background = nullptr;
+    m_ptree2Background = nullptr;
+    m_ptree1Background = nullptr;
 }
 
 SceneAbyssWalker::~SceneAbyssWalker()
@@ -58,8 +76,6 @@ SceneAbyssWalker::~SceneAbyssWalker()
     }
     m_enemyType2.clear();
 
-    m_pRenderer = nullptr;
-
     // Background
     delete m_pmoonBackground; m_pmoonBackground = nullptr;
     delete m_ptree5Background; m_ptree5Background = nullptr;
@@ -67,6 +83,9 @@ SceneAbyssWalker::~SceneAbyssWalker()
     delete m_ptree3Background; m_ptree3Background = nullptr;
     delete m_ptree2Background; m_ptree2Background = nullptr;
     delete m_ptree1Background; m_ptree1Background = nullptr;
+
+    ClearUpgradeMenuUI();
+    ClearGameEndPromptUI();
 }
 
 void SceneAbyssWalker::fullBackground(Renderer& renderer)
@@ -120,7 +139,6 @@ void SceneAbyssWalker::fullBackground(Renderer& renderer)
 bool SceneAbyssWalker::Initialise(Renderer& renderer)
 {
     m_pRenderer = &renderer;
-
     fullBackground(*m_pRenderer);
 
     // load player
@@ -131,113 +149,688 @@ bool SceneAbyssWalker::Initialise(Renderer& renderer)
         delete m_pPlayer; m_pPlayer = nullptr;
         return false;
     }
+    m_pPlayer->ResetForNewGame();
 
     m_batSpawnTimer = m_batSpawnInterval; // Start ready to spawn enemies
     m_type2SpawnTimer = m_type2SpawnInterval;
 
+    m_currentWaveNumber = 0;
+    m_enemiesKilledThisWave = 0;
+    m_waveTimer = PRE_WAVE_DELAY_DURATION;
+    m_currentWaveState = WaveState::PRE_WAVE_DELAY;
+    m_playerChoseToQuit = false;
+
+    SetupUpgradeMenuUI();
+
     return true;
+}
+
+void SceneAbyssWalker::RestartGame()
+{
+    LogManager::GetInstance().Log("Restarting game...");
+    // Clear existing enemies
+    for (EnemyBat* enemyBat : m_enemyBats) delete enemyBat;
+    m_enemyBats.clear();
+    for (EnemyType2* enemyType2 : m_enemyType2) delete enemyType2;
+    m_enemyType2.clear();
+
+    if (m_pPlayer) m_pPlayer->ResetForNewGame();
+
+    // Reset wave system
+    m_currentWaveNumber = 0;
+    m_enemiesKilledThisWave = 0;
+    m_waveTimer = PRE_WAVE_DELAY_DURATION;
+    m_currentWaveState = WaveState::PRE_WAVE_DELAY;
+    m_intermissionTimer = INTERMISSION_DURATION;
+    m_playerChoseToQuit = false;
 }
 
 void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
 {
     if (!m_pPlayer || !m_pRenderer) return;
-
-    // Player input processing
-    const float moveSpeed = 150.0f;
-    const float rollSpeed = 200.0f;
-    bool isMoving = false;
-
-    if (m_pPlayer->IsAlive())
+    if (m_playerChoseToQuit)
     {
-        // Need to add controller support
-        if (inputSystem.GetKeyState(SDL_SCANCODE_A) == BS_HELD)
-        {
-            m_pPlayer->MoveLeft(moveSpeed);
-            isMoving = true;
-        }
-        else if (inputSystem.GetKeyState(SDL_SCANCODE_D) == BS_HELD)
-        {
-            m_pPlayer->MoveRight(moveSpeed);
-            isMoving = true;
-        }
+        Game::GetInstance().Quit();
+        return;
+    }
 
-        if (inputSystem.GetKeyState(SDL_SCANCODE_SPACE) == BS_PRESSED)
+    ProcessWave(deltaTime, inputSystem);
+
+    if (m_currentWaveState == WaveState::IN_WAVE ||
+        m_currentWaveState == WaveState::INTERMISSION ||
+        m_currentWaveState == WaveState::PRE_WAVE_DELAY)
+    {
+        // Player input processing
+        const float moveSpeed = 150.0f;
+        const float rollSpeed = 200.0f;
+        bool isMoving = false;
+
+        if (m_pPlayer->IsAlive())
         {
-            m_pPlayer->Jump();
-            /*
-            if (m_pJumpSound)
+            // Need to add controller support
+            if (inputSystem.GetKeyState(SDL_SCANCODE_A) == BS_HELD)
             {
-                m_pFMODSystem->playSound(m_pJumpSound, 0, false, 0);
+                m_pPlayer->MoveLeft(moveSpeed);
+                isMoving = true;
             }
-            */
+
+            else if (inputSystem.GetKeyState(SDL_SCANCODE_D) == BS_HELD)
+            {
+                m_pPlayer->MoveRight(moveSpeed);
+                isMoving = true;
+            }
+
+            if (inputSystem.GetKeyState(SDL_SCANCODE_SPACE) == BS_PRESSED)
+            {
+                m_pPlayer->Jump();
+                /*
+                if (m_pJumpSound)
+                {
+                    m_pFMODSystem->playSound(m_pJumpSound, 0, false, 0);
+                }
+                */
+            }
+
+            if (inputSystem.GetKeyState(SDL_SCANCODE_J) == BS_PRESSED)
+            {
+                m_pPlayer->Attack();
+                // add sound ^^^ like jump
+            }
+
+            if (inputSystem.GetKeyState(SDL_SCANCODE_LSHIFT) == BS_PRESSED || inputSystem.GetKeyState(SDL_SCANCODE_Q) == BS_PRESSED)
+            {
+                m_pPlayer->Roll(rollSpeed);
+                // add sound here
+            }
+
+            if (!isMoving &&
+                m_pPlayer->IsAlive() &&
+                m_pPlayer->GetCurrentState() != PlayerState::JUMPING &&
+                m_pPlayer->GetCurrentState() != PlayerState::FALLING &&
+                m_pPlayer->GetCurrentState() != PlayerState::TURNING &&
+                m_pPlayer->GetCurrentState() != PlayerState::ROLLING &&
+                m_pPlayer->GetCurrentState() != PlayerState::HURT &&
+                m_pPlayer->GetCurrentState() != PlayerState::ATTACKING)
+            {
+                m_pPlayer->StopMoving();
+            }
         }
 
-        if (inputSystem.GetKeyState(SDL_SCANCODE_J) == BS_PRESSED)
+        m_pPlayer->Process(deltaTime);
+
+        bool processEnemies = (m_currentWaveState == WaveState::IN_WAVE);
+
+        for (EnemyBat* enemyBat : m_enemyBats) 
         {
-            m_pPlayer->Attack();
-            // add sound ^^^ like jump
-        }
-        if (inputSystem.GetKeyState(SDL_SCANCODE_LSHIFT) == BS_PRESSED || inputSystem.GetKeyState(SDL_SCANCODE_Q) == BS_PRESSED)
-        {
-            m_pPlayer->Roll(rollSpeed);
-            // add sound here
+            if (enemyBat->IsAlive() && processEnemies) 
+            { // Only process AI and movement if wave active
+                if (enemyBat->m_pTargetPlayer == nullptr && m_pPlayer) enemyBat->m_pTargetPlayer = m_pPlayer;
+                enemyBat->Process(deltaTime);
+            }
+            else if (!enemyBat->IsAlive() && enemyBat->GetCurrentState() == EnemyBatState::DEATH) 
+            {
+                // If dead and in death state, just process animation
+                AnimatedSprite* sprite = enemyBat->GetCurrentAnimatedSprite();
+                if (sprite) enemyBat->UpdateSprite(sprite, deltaTime); // Assuming UpdateSprite handles animation process
+            }
         }
 
-        if (!isMoving &&
-            m_pPlayer->IsAlive() &&
-            m_pPlayer->GetCurrentState() != PlayerState::JUMPING &&
-            m_pPlayer->GetCurrentState() != PlayerState::FALLING &&
-            m_pPlayer->GetCurrentState() != PlayerState::TURNING &&
-            m_pPlayer->GetCurrentState() != PlayerState::ROLLING &&
-            m_pPlayer->GetCurrentState() != PlayerState::HURT &&
-            m_pPlayer->GetCurrentState() != PlayerState::ATTACKING)
+        // Similar loop for EnemyType2
+        for (EnemyType2* enemyT2 : m_enemyType2) 
         {
-            m_pPlayer->StopMoving();
+            if (enemyT2->IsAlive() && processEnemies) 
+            {
+                if (enemyT2->m_pTargetPlayer == nullptr && m_pPlayer) enemyT2->m_pTargetPlayer = m_pPlayer;
+                enemyT2->Process(deltaTime);
+            }
+            else if (!enemyT2->IsAlive() && enemyT2->GetCurrentState() == EnemyType2State::DEATH) 
+            {
+                AnimatedSprite* sprite = enemyT2->GetCurrentAnimatedSprite();
+                if (sprite) enemyT2->UpdateSprite(sprite, deltaTime);
+            }
+        }
+
+        if (processEnemies) 
+        {
+            HandleCollisions();
+            if (m_pPlayer->IsAlive()) UpdateSpawning(deltaTime);
+        }
+
+        CleanupDead();
+    }
+}
+
+void SceneAbyssWalker::ProcessWave(float deltaTime, InputSystem& inputSystem)
+{
+    switch (m_currentWaveState)
+    {
+    case WaveState::PRE_WAVE_DELAY:
+        m_waveTimer -= deltaTime;
+        if (m_waveTimer <= 0)
+        {
+            StartNewWave();
+        }
+        break;
+
+    case WaveState::IN_WAVE:
+        if (!m_pPlayer->IsAlive())
+        {
+            LogManager::GetInstance().Log("Player died during wave. Game Prompt will now appear");
+            EndWave();
+            m_currentWaveState = WaveState::GAME_END_PROMPT;
+            SetupGameEndPromptUI("Defeated!");
+            break;
+        }
+
+        m_waveTimer -= deltaTime;
+        if (m_waveTimer <= 0 || m_enemiesKilledThisWave >= KILLS_TO_END_WAVE_EARLY)
+        {
+            EndWave();
+            if (m_currentWaveNumber > MAX_WAVES)
+            {
+                m_currentWaveState = WaveState::GAME_WON;
+                SetupGameEndPromptUI("Victory!");
+            }
+            else
+            {
+                StartIntermission();
+            }
+        }
+        break;
+
+    case WaveState::INTERMISSION:
+        m_intermissionTimer -= deltaTime;
+        UpdateUpgradeMenuUI(inputSystem);
+        if (inputSystem.GetKeyState(SDL_SCANCODE_RETURN) == BS_PRESSED || m_intermissionTimer <= 0) // Press enter if want to skip intermission
+        {
+            LogManager::GetInstance().Log("Intermission has ended.");
+            ClearUpgradeMenuUI();
+            m_waveTimer = PRE_WAVE_DELAY_DURATION;
+            m_currentWaveState = WaveState::PRE_WAVE_DELAY;
+        }
+        break;
+
+    case WaveState::GAME_WON:
+    case WaveState::GAME_END_PROMPT:
+        UpdateGameEndPromptUI(inputSystem);
+
+        break;
+    }
+}
+
+void SceneAbyssWalker::StartNewWave()
+{
+    m_currentWaveNumber++;
+    m_enemiesKilledThisWave = 0;
+    m_waveTimer = WAVE_DURATION;
+    m_currentWaveState = WaveState::IN_WAVE;
+    LogManager::GetInstance().Log(("Starting Wave " + std::to_string(m_currentWaveNumber)).c_str());
+}
+
+void SceneAbyssWalker::EndWave()
+{
+    LogManager::GetInstance().Log(("Wave " + std::to_string(m_currentWaveNumber) + " ended. Kills: " + std::to_string(m_enemiesKilledThisWave)).c_str());
+    // Kill all remaining enemies
+    for (EnemyBat* bat : m_enemyBats)
+    {
+        bat->TransitionToState(EnemyBatState::DEATH);
+        bat->SetDead();
+        AnimatedSprite* sprite = bat->GetCurrentAnimatedSprite();
+        if (sprite && sprite->IsLooping() == false)
+        {
+
+        }
+    }
+    for (EnemyType2* t2 : m_enemyType2)
+    {
+        if (t2->IsAlive())
+        {
+            t2->TransitionToState(EnemyType2State::DEATH);
+            t2->SetDead();
+        }
+    }
+}
+
+void SceneAbyssWalker::StartIntermission()
+{
+    m_intermissionTimer = INTERMISSION_DURATION;
+    m_currentWaveState = WaveState::INTERMISSION;
+    SetupUpgradeMenuUI();
+    LogManager::GetInstance().Log("Starting Intermission.");
+}
+
+void SceneAbyssWalker::ClearUpgradeMenuUI() {
+    for (auto& btn : m_upgradeButtons) {
+        delete btn.textSprite; btn.textSprite = nullptr;
+        delete btn.textTexture; btn.textTexture = nullptr;
+    }
+    m_upgradeButtons.clear();
+
+    delete m_pUpgradeMenuTitleSprite; m_pUpgradeMenuTitleSprite = nullptr;
+    delete m_pUpgradeMenuTitleTexture; m_pUpgradeMenuTitleTexture = nullptr;
+    delete m_pEssenceTextSprite; m_pEssenceTextSprite = nullptr;
+    delete m_pEssenceTextTexture; m_pEssenceTextTexture = nullptr;
+}
+
+void SceneAbyssWalker::SetupUpgradeMenuUI() {
+    if (!m_pRenderer || !m_pPlayer) return;
+    ClearUpgradeMenuUI(); // Clear previous UI elements
+
+    float panelWidth = 300.0f;
+    float menuX = m_pRenderer->GetWidth() - (panelWidth + 20.0f);
+    float menuY = 50.0f;
+    float buttonWidth = panelWidth - 40.0f;
+    float buttonHeight = 30.0f; // Smaller buttons
+    float spacing = 8.0f;
+    float textPaddingX = 10.0f;
+
+    // Title
+    m_pUpgradeMenuTitleTexture = new Texture();
+    m_pUpgradeMenuTitleSprite = new Sprite();
+    if (m_pUpgradeMenuTitleSprite->InitialiseWithText(*m_pUpgradeMenuTitleTexture, "Upgrade Stats", m_uiFontPath, m_uiTitleFontSize)) 
+    {
+        m_pUpgradeMenuTitleSprite->SetX(static_cast<int>(menuX + panelWidth / 2.0f)); // Centered in panel
+        m_pUpgradeMenuTitleSprite->SetY(static_cast<int>(menuY + buttonHeight / 2.0f));
+    }
+    menuY += buttonHeight + spacing * 2;
+
+    // Essence Text
+    PlayerStats& stats = m_pPlayer->GetPlayerStats();
+    AbyssalEssence& essence = m_pPlayer->GetAbyssalEssence();
+    int cost = stats.GetCurrentUpgradeCost();
+    std::string essenceStr = "Essence: " + std::to_string(essence.GetCurrentAmount()) + " | Cost: " + std::to_string(cost);
+    m_pEssenceTextTexture = new Texture();
+    m_pEssenceTextSprite = new Sprite();
+    if (m_pEssenceTextSprite->InitialiseWithText(*m_pEssenceTextTexture, essenceStr.c_str(), m_uiFontPath, m_uiFontSize)) 
+    {
+        m_pEssenceTextSprite->SetX(static_cast<int>(menuX + panelWidth / 2.0f));
+        m_pEssenceTextSprite->SetY(static_cast<int>(menuY + buttonHeight / 2.0f));
+    }
+    menuY += buttonHeight + spacing;
+
+
+    auto createButton = [&](const std::string& baseLabel, StatType type, const std::string& identifier, int currentVal, float currentValF = -1.0f) 
+        {
+        UIButton btn;
+        std::string fullText = baseLabel + " (";
+        char buffer[32];
+        if (currentValF >= 0) 
+        {
+            snprintf(buffer, sizeof(buffer), "%.1f", currentValF);
+            fullText += buffer;
+        }
+        else 
+        {
+            fullText += std::to_string(currentVal);
+        }
+        fullText += ")"; // Cost removed from button text for brevity, shown above
+
+        btn.textTexture = new Texture();
+        btn.textSprite = new Sprite();
+        if (!btn.textSprite->InitialiseWithText(*btn.textTexture, fullText.c_str(), m_uiFontPath, m_uiFontSize)) 
+        {
+            LogManager::GetInstance().Log(("Failed to create text for button: " + fullText).c_str());
+            delete btn.textTexture; btn.textTexture = nullptr;
+            delete btn.textSprite; btn.textSprite = nullptr;
+            // Potentially skip adding this button or handle error
+        }
+
+        btn.rect = { menuX + 20.0f, menuY, buttonWidth, buttonHeight };
+        btn.statToUpgrade = type;
+        btn.identifier = identifier;
+
+        if (btn.textSprite) 
+        { // Position sprite within the rect
+            btn.textSprite->SetX(static_cast<int>(btn.rect.x + textPaddingX + btn.textTexture->GetWidth() / 2.0f));
+            btn.textSprite->SetY(static_cast<int>(btn.rect.y + btn.rect.height / 2.0f));
+        }
+        m_upgradeButtons.push_back(btn);
+        menuY += buttonHeight + spacing;
+        };
+
+    createButton("Attack Damage", StatType::ATTACK_DAMAGE, "upgrade_atk", stats.GetAttackDamage());
+    createButton("Max Health", StatType::MAX_HEALTH, "upgrade_hp", stats.GetMaxHealth());
+    createButton("Health Regen", StatType::HEALTH_REGEN, "upgrade_hpreg", -1, stats.GetHealthRegenRate());
+    createButton("Max Stamina", StatType::MAX_STAMINA, "upgrade_stam", -1, stats.GetMaxStamina());
+    createButton("Stamina Regen", StatType::STAMINA_REGEN, "upgrade_stamreg", -1, stats.GetStaminaRegenRate());
+
+    // "Done" button
+    UIButton doneBtn;
+    doneBtn.textTexture = new Texture();
+    doneBtn.textSprite = new Sprite();
+    if (doneBtn.textSprite->InitialiseWithText(*doneBtn.textTexture, "Done Upgrading", m_uiFontPath, m_uiFontSize)) 
+    {
+        doneBtn.rect = { menuX + 20.0f, menuY + spacing, buttonWidth, buttonHeight };
+        doneBtn.identifier = "done_upgrading";
+        doneBtn.textSprite->SetX(static_cast<int>(doneBtn.rect.x + textPaddingX + doneBtn.textTexture->GetWidth() / 2.0f));
+        doneBtn.textSprite->SetY(static_cast<int>(doneBtn.rect.y + doneBtn.rect.height / 2.0f));
+        m_upgradeButtons.push_back(doneBtn);
+    }
+    else 
+    {
+        delete doneBtn.textTexture; delete doneBtn.textSprite;
+    }
+}
+
+
+void SceneAbyssWalker::UpdateUpgradeMenuUI(InputSystem& inputSystem) 
+{
+    if (!m_pPlayer) return;
+    Vector2 mousePos = inputSystem.GetMousePosition();
+
+    for (auto& btn : m_upgradeButtons) 
+    {
+        btn.isHovered = btn.IsMouseOver(mousePos.x, mousePos.y);
+        if (btn.textSprite) 
+        { // Update text color on hover
+            if (btn.isHovered) 
+            {
+                btn.textSprite->SetRedTint(1.0f); btn.textSprite->SetGreenTint(0.647f); btn.textSprite->SetBlueTint(0.0f); // Orange
+            }
+            else 
+            {
+                btn.textSprite->SetRedTint(1.0f); btn.textSprite->SetGreenTint(1.0f); btn.textSprite->SetBlueTint(1.0f); // White
+            }
         }
     }
 
-    m_pPlayer->Process(deltaTime);
-
-    // Process the bats
-    for (EnemyBat* enemyBat : m_enemyBats)
+    if (inputSystem.GetMouseButtonState(SDL_BUTTON_LEFT) == BS_PRESSED) 
     {
-        if (enemyBat->m_pTargetPlayer == nullptr && m_pPlayer)
+        for (const auto& btn : m_upgradeButtons) 
         {
-            enemyBat->m_pTargetPlayer = m_pPlayer;
+            if (btn.isHovered) 
+            {
+                if (btn.identifier == "done_upgrading") 
+                {
+                    m_intermissionTimer = 0.0f; // End intermission
+                    ClearUpgradeMenuUI();
+                    m_waveTimer = PRE_WAVE_DELAY_DURATION; // Prepare for next wave
+                    m_currentWaveState = WaveState::PRE_WAVE_DELAY;
+                    LogManager::GetInstance().Log("Done upgrading clicked.");
+                }
+                else 
+                {
+                    // Attempt to upgrade stat
+                    if (m_pPlayer->GetPlayerStats().AttemptUpgrade(btn.statToUpgrade, m_pPlayer->GetAbyssalEssence())) 
+                    {
+                        if (btn.statToUpgrade == StatType::MAX_HEALTH) m_pPlayer->UpdateStatsFromPlayerStats();
+                        if (btn.statToUpgrade == StatType::MAX_STAMINA) m_pPlayer->UpdateStatsFromPlayerStats(); // Clamping handled by UseStamina/Regen
+
+                        // Refresh UI to show new values and cost
+                        SetupUpgradeMenuUI();
+                    }
+                    else 
+                    {
+                        LogManager::GetInstance().Log("Upgrade failed (not enough essence or other).");
+                        // Optionally play a "fail" sound
+                    }
+                }
+                SoundSystem::GetInstance().PlaySound("titleButton"); // Assuming you have a generic button click sound
+                break;
+            }
         }
-        enemyBat->Process(deltaTime);
+    }
+}
+
+void SceneAbyssWalker::DrawUpgradeMenu(Renderer& renderer) 
+{
+    if (m_currentWaveState != WaveState::INTERMISSION || !m_pRenderer) return;
+
+    // Draw panel background
+    float panelX = m_pRenderer->GetWidth() - 330.0f;
+    float panelY = 40.0f;
+    float panelWidth = 310.0f;
+    // Calculate panel height dynamically based on buttons, or set a fixed one
+    float panelHeight = 500.0f; // Estimate or calculate from button positions
+    if (!m_upgradeButtons.empty()) 
+    {
+        panelHeight = (m_upgradeButtons.back().rect.y + m_upgradeButtons.back().rect.height + 20.0f) - panelY;
+    }
+    renderer.DrawDebugRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 10, 10, 10, 230); // Darker panel
+
+    if (m_pUpgradeMenuTitleSprite) m_pUpgradeMenuTitleSprite->Draw(renderer);
+    if (m_pEssenceTextSprite) m_pEssenceTextSprite->Draw(renderer);
+
+    for (const auto& btn : m_upgradeButtons) 
+    {
+        // Draw button background rectangle
+        unsigned char r = 40, g = 40, b = 45;
+        if (btn.isHovered) { r = 70; g = 70; b = 75; }
+        renderer.DrawDebugRect(btn.rect.x, btn.rect.y,
+            btn.rect.x + btn.rect.width, btn.rect.y + btn.rect.height,
+            r, g, b, 240);
+        // Draw button text sprite
+        if (btn.textSprite) 
+        {
+            btn.textSprite->Draw(renderer);
+        }
+    }
+}
+
+// --- Game End Prompts (Custom UI) ---
+void SceneAbyssWalker::ClearGameEndPromptUI() 
+{
+    for (auto& btn : m_gameEndButtons) 
+    {
+        delete btn.textSprite; btn.textSprite = nullptr;
+        delete btn.textTexture; btn.textTexture = nullptr;
+    }
+    m_gameEndButtons.clear();
+    delete m_pGameEndTitleSprite; m_pGameEndTitleSprite = nullptr;
+    delete m_pGameEndTitleTexture; m_pGameEndTitleTexture = nullptr;
+    delete m_pGameEndReviveCostSprite; m_pGameEndReviveCostSprite = nullptr;
+    delete m_pGameEndReviveCostTexture; m_pGameEndReviveCostTexture = nullptr;
+}
+
+void SceneAbyssWalker::SetupGameEndPromptUI(const std::string& titleMessage) 
+{
+    if (!m_pRenderer || !m_pPlayer) return;
+    ClearGameEndPromptUI();
+
+    float centerX = m_pRenderer->GetWidth() / 2.0f;
+    float menuY = m_pRenderer->GetHeight() / 2.0f - 100.0f;
+    float buttonWidth = 250.0f;
+    float buttonHeight = 40.0f;
+    float spacing = 15.0f;
+
+    // Title Message
+    m_pGameEndTitleTexture = new Texture();
+    m_pGameEndTitleSprite = new Sprite();
+    if (m_pGameEndTitleSprite->InitialiseWithText(*m_pGameEndTitleTexture, titleMessage.c_str(), m_uiFontPath, m_uiTitleFontSize * 1.2f)) 
+    { // Larger font
+        m_pGameEndTitleSprite->SetX(static_cast<int>(centerX));
+        m_pGameEndTitleSprite->SetY(static_cast<int>(menuY));
+    }
+    menuY += buttonHeight + spacing * 2;
+
+    // Revive Button (if applicable)
+    if (m_currentWaveState == WaveState::GAME_END_PROMPT && m_pPlayer->GetAbyssalEssence().CanRevive()) 
+    {
+        UIButton reviveBtn;
+        std::string reviveText = "Revive (" + std::to_string(AbyssalEssence::DEFAULT_REVIVE_COST) + " Essence)";
+        reviveBtn.textTexture = new Texture();
+        reviveBtn.textSprite = new Sprite();
+        if (reviveBtn.textSprite->InitialiseWithText(*reviveBtn.textTexture, reviveText.c_str(), m_uiFontPath, m_uiFontSize)) 
+        {
+            reviveBtn.rect = { centerX - buttonWidth / 2.0f, menuY, buttonWidth, buttonHeight };
+            reviveBtn.identifier = "revive_player";
+            reviveBtn.textSprite->SetX(static_cast<int>(centerX));
+            reviveBtn.textSprite->SetY(static_cast<int>(menuY + buttonHeight / 2.0f));
+            m_gameEndButtons.push_back(reviveBtn);
+        }
+        else { delete reviveBtn.textSprite; delete reviveBtn.textTexture; }
+        menuY += buttonHeight + spacing;
+    }
+    else if (m_currentWaveState == WaveState::GAME_END_PROMPT) 
+    {
+        // "Not enough essence" text if cannot revive
+        m_pGameEndReviveCostTexture = new Texture();
+        m_pGameEndReviveCostSprite = new Sprite();
+        if (m_pGameEndReviveCostSprite->InitialiseWithText(*m_pGameEndReviveCostTexture, "Not enough essence to revive.", m_uiFontPath, m_uiFontSize)) 
+        {
+            m_pGameEndReviveCostSprite->SetX(static_cast<int>(centerX));
+            m_pGameEndReviveCostSprite->SetY(static_cast<int>(menuY));
+        }
+        menuY += buttonHeight + spacing;
     }
 
-    // Process Type 2's
-    for (EnemyType2* enemyT2 : m_enemyType2)
+    // Restart Button
+    UIButton restartBtn;
+    restartBtn.textTexture = new Texture();
+    restartBtn.textSprite = new Sprite();
+    if (restartBtn.textSprite->InitialiseWithText(*restartBtn.textTexture, "Restart Game", m_uiFontPath, m_uiFontSize)) 
     {
-        if (enemyT2->m_pTargetPlayer == nullptr && m_pPlayer)
-        {
-            enemyT2->m_pTargetPlayer = m_pPlayer;
-        }
-        enemyT2->Process(deltaTime);
+        restartBtn.rect = { centerX - buttonWidth / 2.0f, menuY, buttonWidth, buttonHeight };
+        restartBtn.identifier = "restart_game";
+        restartBtn.textSprite->SetX(static_cast<int>(centerX));
+        restartBtn.textSprite->SetY(static_cast<int>(menuY + buttonHeight / 2.0f));
+        m_gameEndButtons.push_back(restartBtn);
     }
-    
-    HandleCollisions();
-    CleanupDead();
+    else { delete restartBtn.textSprite; delete restartBtn.textTexture; }
+    menuY += buttonHeight + spacing;
 
-    if (m_pPlayer->IsAlive())
+    // Quit to Title Button
+    UIButton quitTitleBtn;
+    quitTitleBtn.textTexture = new Texture();
+    quitTitleBtn.textSprite = new Sprite();
+    if (quitTitleBtn.textSprite->InitialiseWithText(*quitTitleBtn.textTexture, "Quit to Title", m_uiFontPath, m_uiFontSize)) 
     {
-        UpdateSpawning(deltaTime);
+        quitTitleBtn.rect = { centerX - buttonWidth / 2.0f, menuY, buttonWidth, buttonHeight };
+        quitTitleBtn.identifier = "quit_title";
+        quitTitleBtn.textSprite->SetX(static_cast<int>(centerX));
+        quitTitleBtn.textSprite->SetY(static_cast<int>(menuY + buttonHeight / 2.0f));
+        m_gameEndButtons.push_back(quitTitleBtn);
+    }
+    else { delete quitTitleBtn.textSprite; delete quitTitleBtn.textTexture; }
+    menuY += buttonHeight + spacing;
+
+    // Quit Game Button
+    UIButton quitGameBtn;
+    quitGameBtn.textTexture = new Texture();
+    quitGameBtn.textSprite = new Sprite();
+    if (quitGameBtn.textSprite->InitialiseWithText(*quitGameBtn.textTexture, "Quit Game", m_uiFontPath, m_uiFontSize)) 
+    {
+        quitGameBtn.rect = { centerX - buttonWidth / 2.0f, menuY, buttonWidth, buttonHeight };
+        quitGameBtn.identifier = "quit_game";
+        quitGameBtn.textSprite->SetX(static_cast<int>(centerX));
+        quitGameBtn.textSprite->SetY(static_cast<int>(menuY + buttonHeight / 2.0f));
+        m_gameEndButtons.push_back(quitGameBtn);
+    }
+    else { delete quitGameBtn.textSprite; delete quitGameBtn.textTexture; }
+}
+
+void SceneAbyssWalker::UpdateGameEndPromptUI(InputSystem& inputSystem) 
+{
+    if (!m_pPlayer) return;
+    Vector2 mousePos = inputSystem.GetMousePosition();
+
+    for (auto& btn : m_gameEndButtons) 
+    {
+        btn.isHovered = btn.IsMouseOver(mousePos.x, mousePos.y);
+        if (btn.textSprite) 
+        {
+            if (btn.isHovered) 
+            {
+                btn.textSprite->SetRedTint(1.0f); btn.textSprite->SetGreenTint(0.647f); btn.textSprite->SetBlueTint(0.0f);
+            }
+            else 
+            {
+                btn.textSprite->SetRedTint(1.0f); btn.textSprite->SetGreenTint(1.0f); btn.textSprite->SetBlueTint(1.0f);
+            }
+        }
+    }
+
+    if (inputSystem.GetMouseButtonState(SDL_BUTTON_LEFT) == BS_PRESSED) 
+    {
+        for (const auto& btn : m_gameEndButtons) 
+        {
+            if (btn.isHovered) {
+                SoundSystem::GetInstance().PlaySound("titleButton");
+                if (btn.identifier == "revive_player") 
+                {
+                    m_pPlayer->Revive();
+                    if (m_pPlayer->IsAlive()) 
+                    {
+                        ClearGameEndPromptUI();
+                        m_currentWaveState = WaveState::PRE_WAVE_DELAY;
+                        m_waveTimer = PRE_WAVE_DELAY_DURATION;
+                        m_enemiesKilledThisWave = 0;
+                    }
+                    else 
+                    { // Revive failed (e.g. somehow spent essence between check and click)
+                        SetupGameEndPromptUI("Defeated!"); // Refresh prompt
+                    }
+                }
+                else if (btn.identifier == "restart_game") 
+                {
+                    Game::GetInstance().SetCurrentScene(SCENE_INDEX_ABYSSWALKER); // Let Game class re-init the scene
+                }
+                else if (btn.identifier == "quit_title") 
+                {
+                    Game::GetInstance().SetCurrentScene(SCENE_INDEX_TITLE);
+                }
+                else if (btn.identifier == "quit_game") 
+                {
+                    m_playerChoseToQuit = true; // Game::Process will call Game::Quit()
+                }
+                break;
+            }
+        }
+    }
+}
+
+void SceneAbyssWalker::DrawEndGamePrompts(Renderer& renderer) 
+{
+    if (m_currentWaveState != WaveState::GAME_WON && m_currentWaveState != WaveState::GAME_END_PROMPT) return;
+
+    // Draw panel background (optional, could be full screen tint)
+    float panelWidth = 400.0f;
+    float panelHeight = 300.0f;
+    float panelX = m_pRenderer->GetWidth() / 2.0f - panelWidth / 2.0f;
+    float panelY = m_pRenderer->GetHeight() / 2.0f - panelHeight / 2.0f;
+    renderer.DrawDebugRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 15, 15, 15, 235);
+
+    if (m_pGameEndTitleSprite) m_pGameEndTitleSprite->Draw(renderer);
+    if (m_pGameEndReviveCostSprite) m_pGameEndReviveCostSprite->Draw(renderer);
+
+
+    for (const auto& btn : m_gameEndButtons) 
+    {
+        unsigned char r = 40, g = 40, b = 45;
+        if (btn.isHovered) { r = 70; g = 70; b = 75; }
+        renderer.DrawDebugRect(btn.rect.x, btn.rect.y,
+            btn.rect.x + btn.rect.width, btn.rect.y + btn.rect.height,
+            r, g, b, 240);
+        if (btn.textSprite) 
+        {
+            btn.textSprite->Draw(renderer);
+        }
+    }
+}
+
+void SceneAbyssWalker::NotifyEnemyKilled()
+{
+    if (m_currentWaveState == WaveState::IN_WAVE)
+    {
+        m_enemiesKilledThisWave++;
     }
 }
 
 void SceneAbyssWalker::CleanupDead()
 {
     // Cleaning up the enemy bats
-    m_enemyBats.erase(std::remove_if(m_enemyBats.begin(), m_enemyBats.end(), [](EnemyBat* enemyBat)
+    m_enemyBats.erase(std::remove_if(m_enemyBats.begin(), m_enemyBats.end(), [&](EnemyBat* enemyBat)
         {
             if (!enemyBat->IsAlive())
             {
                 AnimatedSprite* sprite = enemyBat->GetCurrentAnimatedSprite();
-                if ((sprite && sprite->IsAnimationComplete()) || !sprite)
+                bool animComplete = (sprite && !sprite->IsLooping() && sprite->IsAnimationComplete());
+                bool noSprite = !sprite;
+                bool forceClean = (m_currentWaveState != WaveState::IN_WAVE && enemyBat->GetCurrentState() == EnemyBatState::DEATH);
+
+                if (animComplete || noSprite || forceClean)
                 {
-                    if (!sprite) LogManager::GetInstance().Log("Dead bats been removed");
+                    LogManager::GetInstance().Log("Cleaning up dead Bat.");
                     delete enemyBat;
                     return true;
                 }
@@ -246,15 +839,20 @@ void SceneAbyssWalker::CleanupDead()
         }), m_enemyBats.end());
 
     // Cleaning up Type 2's
-    m_enemyType2.erase(std::remove_if(m_enemyType2.begin(), m_enemyType2.end(), [](EnemyType2* enemyType2)
+    m_enemyType2.erase(std::remove_if(m_enemyType2.begin(), m_enemyType2.end(),
+        [&](EnemyType2* enemyT2) 
         {
-            if (!enemyType2->IsAlive())
+            if (!enemyT2->IsAlive()) 
             {
-                AnimatedSprite* sprite = enemyType2->GetCurrentAnimatedSprite();
-                if ((sprite && sprite->IsAnimationComplete()) || !sprite)
+                AnimatedSprite* sprite = enemyT2->GetCurrentAnimatedSprite();
+                bool animComplete = (sprite && !sprite->IsLooping() && sprite->IsAnimationComplete());
+                bool noSprite = !sprite;
+                bool forceClean = (m_currentWaveState != WaveState::IN_WAVE && enemyT2->GetCurrentState() == EnemyType2State::DEATH);
+
+                if (animComplete || noSprite || forceClean) 
                 {
-                    if (!sprite) LogManager::GetInstance().Log("Dead bats been removed");
-                    delete enemyType2;
+                    LogManager::GetInstance().Log("Cleaning up dead EnemyType2.");
+                    delete enemyT2;
                     return true;
                 }
             }
@@ -265,6 +863,9 @@ void SceneAbyssWalker::CleanupDead()
 void SceneAbyssWalker::HandleCollisions()
 {
     if (!m_pPlayer || !m_pPlayer->IsAlive()) return;
+
+    const float PLAYER_ATTACK_REACH = 25.0f;
+    int playerAttackDamage = m_pPlayer->GetAttackDamage();
 
     for (EnemyBat* enemyBat : m_enemyBats)
     {
@@ -279,7 +880,7 @@ void SceneAbyssWalker::HandleCollisions()
                 enemyBat->IsAttacking() &&
                 m_pPlayer->CheckCollision(*enemyBat))
             {
-                SoundSystem::GetInstance().PlaySound(SF_PLAYER_HURT);
+                //SoundSystem::GetInstance().PlaySound(SF_PLAYER_HURT);
             }
 
             // Check for player attacking enemy
@@ -318,7 +919,7 @@ void SceneAbyssWalker::HandleCollisions()
                         {
                             if (m_pPlayer->DamageDoneToTarget(enemyBat))
                             {
-                                enemyBat->TakeDamage(PLAYER_ATTACK_DAMAGE); // Player attack damage to enemyBat
+                                enemyBat->TakeDamage(playerAttackDamage); // Player attack damage to enemyBat
                                 // hurt sounds for bats
                             }
                         }
@@ -338,7 +939,7 @@ void SceneAbyssWalker::HandleCollisions()
                 enemyT2->IsAttacking() &&
                 m_pPlayer->CheckCollision(*enemyT2))
             {
-                SoundSystem::GetInstance().PlaySound(SF_PLAYER_HURT);
+                //SoundSystem::GetInstance().PlaySound(SF_PLAYER_HURT);
             }
 
             // Check if player attacks Type2
@@ -367,7 +968,7 @@ void SceneAbyssWalker::HandleCollisions()
                     {
                         if (m_pPlayer->DamageDoneToTarget(enemyT2))
                         {
-                            enemyT2->TakeDamage(PLAYER_ATTACK_DAMAGE);
+                            enemyT2->TakeDamage(playerAttackDamage);
                             // hurt sounds for T2
                         }
                     }
@@ -377,188 +978,63 @@ void SceneAbyssWalker::HandleCollisions()
     }
 }
 
-
 void SceneAbyssWalker::UpdateSpawning(float deltaTime)
 {
-    if (!m_pRenderer) 
-    {
-        LogManager::GetInstance().Log("SceneAbyssWalker::UpdateSpawning - Renderer is null!");
-        return;
-    }
+    if (!m_pRenderer || m_currentWaveState != WaveState::IN_WAVE) return;
 
     size_t totalCurrentEnemies = m_enemyBats.size() + m_enemyType2.size();
 
-    // Check if bats can be spawned
-    if (totalCurrentEnemies < static_cast<size_t>(m_maxEnemies) && m_enemyBats.size() < static_cast<size_t>(m_maxBats))
-    {
+    // Bats
+    if (totalCurrentEnemies < static_cast<size_t>(m_maxEnemies) && m_enemyBats.size() < static_cast<size_t>(m_maxBats)) {
         m_batSpawnTimer += deltaTime;
-        if (m_batSpawnTimer >= m_batSpawnInterval)
+        if (m_batSpawnTimer >= m_batSpawnInterval) 
         {
             m_batSpawnTimer = 0.0f;
-
-            int leftBatCount = 0;
-            int rightBatCount = 0;
-            for (const auto& enemy : m_enemyBats)
-            {
-                if (enemy->GetPosition().x < m_pRenderer->GetWidth() / 2.0f)
-                {
-                    leftBatCount++;
-                }
-                else
-                {
-                    rightBatCount++;
-                }
-            }
-
-            bool trySpawnLeftBat = (leftBatCount <= rightBatCount);
-            if (trySpawnLeftBat && leftBatCount < m_maxBatsPerSide)
-            {
-                SpawnEnemy(EnemySpawnType::BAT, true);
-            }
-            else if (!trySpawnLeftBat && rightBatCount < m_maxBatsPerSide)
-            {
-                SpawnEnemy(EnemySpawnType::BAT, false);
-            }
-            else if (leftBatCount < m_maxBatsPerSide)
-            {
-                SpawnEnemy(EnemySpawnType::BAT, true);
-            }
-            else if (rightBatCount < m_maxBatsPerSide)
-            {
-                SpawnEnemy(EnemySpawnType::BAT, false);
-            }
+            // Simplified: alternate sides for now, or pick random
+            SpawnEnemy(EnemySpawnType::BAT, rand() % 2 == 0);
         }
     }
-
-    totalCurrentEnemies = m_enemyBats.size() + m_enemyType2.size();
-
-    // CHeck if Type 2's can be spawned
-    if (totalCurrentEnemies < static_cast<size_t>(m_maxEnemies) && m_enemyType2.size() < static_cast<size_t>(m_maxType2))
-    {
+    // Type2
+    if (totalCurrentEnemies < static_cast<size_t>(m_maxEnemies) && m_enemyType2.size() < static_cast<size_t>(m_maxType2)) {
         m_type2SpawnTimer += deltaTime;
-        if (m_type2SpawnTimer >= m_type2SpawnInterval)
+        if (m_type2SpawnTimer >= m_type2SpawnInterval) 
         {
             m_type2SpawnTimer = 0.0f;
-
-            int leftT2Count = 0;
-            int rightT2Count = 0;
-            for (const auto& enemy : m_enemyType2)
-            {
-                if (enemy->GetPosition().x < m_pRenderer->GetWidth() / 2.0f)
-                {
-                    leftT2Count++;
-                }
-                else
-                {
-                    rightT2Count++;
-                }
-            }
-
-            bool trySpawnLeft_Type2 = (leftT2Count <= rightT2Count);
-            if (trySpawnLeft_Type2 && leftT2Count < m_maxType2) SpawnEnemy(EnemySpawnType::TYPE2, true);
-            else if (!trySpawnLeft_Type2 && rightT2Count < m_maxType2) SpawnEnemy(EnemySpawnType::TYPE2, false);
-            else if (leftT2Count < m_maxType2) SpawnEnemy(EnemySpawnType::TYPE2, true);
-            else if (rightT2Count < m_maxType2) SpawnEnemy(EnemySpawnType::TYPE2, false);
+            SpawnEnemy(EnemySpawnType::TYPE2, rand() % 2 == 0);
         }
     }
 }
 
 void SceneAbyssWalker::SpawnEnemy(EnemySpawnType type, bool spawnOnLeft)
 {
-    if (!m_pRenderer) 
-    {
-        LogManager::GetInstance().Log("SceneAbyssWalker::SpawnEnemy - Renderer is null!");
-        return;
-    }
-
-    // Enemy bat
-    EnemyBat* newEnemyBat = new EnemyBat();
-    if (!newEnemyBat) 
-    {
-        LogManager::GetInstance().Log("Failed to allocate memory for new enemy.");
-        return;
-    }
-
-    if (!m_pPlayer) 
-    {
-        LogManager::GetInstance().Log("Cannot spawn enemy, player is null.");
-        delete newEnemyBat;
-        return;
-    }
+    if (!m_pRenderer || !m_pPlayer) return;
 
     size_t totalCurrentEnemies = m_enemyBats.size() + m_enemyType2.size();
-    if (totalCurrentEnemies >= static_cast<size_t>(m_maxEnemies))
-    {
-        return;
-    }
+    if (totalCurrentEnemies >= static_cast<size_t>(m_maxEnemies)) return;
 
     Vector2 spawnPos;
-    const float spawnXOffset = 50.0f;
-    if (spawnOnLeft)
-    {
-        spawnPos.x = -spawnXOffset;
-    }
-    else
-    {
-        spawnPos.x = static_cast<float>(m_pRenderer->GetWidth()) + spawnXOffset;
-    }
+    const float spawnXOffset = 100.0f; // Further off-screen
+    spawnPos.x = spawnOnLeft ? -spawnXOffset : static_cast<float>(m_pRenderer->GetWidth()) + spawnXOffset;
 
-    if (type == EnemySpawnType::BAT)
+    if (type == EnemySpawnType::BAT && m_enemyBats.size() < static_cast<size_t>(m_maxBats)) 
     {
-        if (m_enemyBats.size() >= static_cast<size_t>(m_maxBats))
-        {
-            return;
-        }
-
         EnemyBat* newEnemyBat = new EnemyBat();
-
-        if (!newEnemyBat)
-        {
-            LogManager::GetInstance().Log("Failed to allocate memory for new bat");
-            return;
-        }
-
+        if (!newEnemyBat) { LogManager::GetInstance().Log("Failed to allocate Bat"); return; }
+        newEnemyBat->SetSceneReference(this);
         spawnPos.y = newEnemyBat->kGroundLevel;
-
-        if (newEnemyBat->Initialise(*m_pRenderer, spawnPos))
-        {
-            m_enemyBats.push_back(newEnemyBat);
-        }
-        else
-        {
-            LogManager::GetInstance().Log("Failed to init new bat");
-            delete newEnemyBat;
-        }
+        if (newEnemyBat->Initialise(*m_pRenderer, spawnPos)) m_enemyBats.push_back(newEnemyBat);
+        else { LogManager::GetInstance().Log("Failed to init Bat"); delete newEnemyBat; }
     }
-    else if (type == EnemySpawnType::TYPE2)
+    else if (type == EnemySpawnType::TYPE2 && m_enemyType2.size() < static_cast<size_t>(m_maxType2)) 
     {
-        if (m_enemyType2.size() >= static_cast<size_t>(m_maxType2))
-        {
-            return;
-        }
-
         EnemyType2* newEnemyType2 = new EnemyType2();
-
-        if (!newEnemyType2)
-        {
-            LogManager::GetInstance().Log("Failed to allocate memory for Type2");
-            return;
-        }
-
+        if (!newEnemyType2) { LogManager::GetInstance().Log("Failed to allocate Type2"); return; }
+        newEnemyType2->SetSceneReference(this);
         spawnPos.y = newEnemyType2->kGroundLevel;
-
-        if (newEnemyType2->Initialise(*m_pRenderer, spawnPos))
-        {
-            m_enemyType2.push_back(newEnemyType2);
-        }
-        else
-        {
-            LogManager::GetInstance().Log("Failed to init Type 2");
-            delete newEnemyType2;
-        }
+        if (newEnemyType2->Initialise(*m_pRenderer, spawnPos)) m_enemyType2.push_back(newEnemyType2);
+        else { LogManager::GetInstance().Log("Failed to init Type2"); delete newEnemyType2; }
     }
 }
-
 
 void SceneAbyssWalker::Draw(Renderer& renderer)
 {
@@ -568,6 +1044,16 @@ void SceneAbyssWalker::Draw(Renderer& renderer)
     if (m_ptree3Background) m_ptree3Background->Draw(renderer);
     if (m_ptree2Background) m_ptree2Background->Draw(renderer);
     if (m_ptree1Background) m_ptree1Background->Draw(renderer);
+
+    if (m_currentWaveState == WaveState::INTERMISSION)
+    {
+        DrawUpgradeMenu(renderer);
+    }
+
+    if (m_currentWaveState == WaveState::GAME_WON || m_currentWaveState == WaveState::GAME_END_PROMPT)
+    {
+        DrawEndGamePrompts(renderer);
+    }
 
     if (m_pPlayer)
     {

@@ -13,6 +13,11 @@ class InputSystem;
 #include "fmod.hpp"
 #include <SDL_ttf.h>
 
+const int SCENE_INDEX_FMODSPLASH = 0;
+const int SCENE_INDEX_AUTSPLASH = 1;
+const int SCENE_INDEX_TITLE = 2;
+const int SCENE_INDEX_ABYSSWALKER = 3;
+
 class Game
 {
 	// Member methods:
@@ -25,7 +30,8 @@ public:
 	//IMGUI
 	void ToggleDebugWindow();
 
-	void SetCurrentScene(int index) { m_iCurrentScene = index; }
+	void SetCurrentScene(int index);
+	int GetCurrentSceneIndex() const;
 
 protected:
 	void Process(float deltaTime);
@@ -43,7 +49,7 @@ private:
 
 	// Member data:
 public:
-	Sprite* m_pCheckerboard;
+	//Sprite* m_pCheckerboard;
 
 protected:
 	static Game* sm_pInstance;

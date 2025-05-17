@@ -23,11 +23,6 @@
 #include "SceneSplashScreenFMOD.h"
 #include "SceneSplashScreenAUT.h"
 
-const int SCENE_INDEX_FMODSPLASH = 0;
-const int SCENE_INDEX_AUTSPLASH = 1;
-const int SCENE_INDEX_TITLE = 2;
-const int SCENE_INDEX_ABYSSWALKER = 3;
-
 // Static Members:
 Game* Game::sm_pInstance = 0;
 
@@ -57,7 +52,6 @@ Game::Game()
 	, m_iFPS(0)
 	, m_iFrameCount(0)
 	, m_iLastTime(0)
-	, m_pCheckerboard(0)
 {
 }
 
@@ -145,6 +139,23 @@ bool Game::Initialise()
 	return true;
 }
 
+void Game::SetCurrentScene(int index)
+{
+	if (index >= 0 && static_cast<size_t>(index) < m_scenes.size())
+	{
+		m_iCurrentScene = index;
+	}
+	else
+	{
+		LogManager::GetInstance().Log(("Error: Attempted to set invalid scene index: " + std::to_string(index)).c_str());
+	}
+}
+
+int Game::GetCurrentSceneIndex() const
+{
+	return m_iCurrentScene;
+}
+
 bool Game::DoGameLoop()
 {
 	const float stepSize = 1.0f / 60.0f;
@@ -214,7 +225,7 @@ void Game::Process(float deltaTime)
 	if (m_iCurrentScene != previousFrameSceneIndex)
 	{
 		LogManager::GetInstance().Log(("Transitioning to scene: " + std::to_string(m_iCurrentScene)).c_str());
-		if (m_iCurrentScene >= 0 && m_iCurrentScene < m_scenes.size())
+		if (m_iCurrentScene >= 0 && static_cast<size_t>(m_iCurrentScene) < m_scenes.size())
 		{
 			if (!m_scenes[m_iCurrentScene]->Initialise(*m_pRenderer)) // Call Initialise on the NEW scene
 			{
@@ -245,7 +256,7 @@ void Game::Process(float deltaTime)
 		previousScene = m_iCurrentScene;
 	}
 
-	if (m_iCurrentScene >= 0 && m_iCurrentScene < m_scenes.size())
+	if (m_iCurrentScene >= 0 && static_cast<size_t>(m_iCurrentScene) < m_scenes.size())
 	{
 		m_scenes[m_iCurrentScene]->Process(deltaTime, *m_pInputSystem);
 	}

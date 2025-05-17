@@ -5,6 +5,8 @@
 #include "Entity.h"
 #include "vector2.h"
 #include "InputSystem.h"
+#include "AbyssalEssence.h"
+#include "PlayerStats.h"
 
 // Lib includes
 #include <map>
@@ -16,9 +18,6 @@
 class Renderer;
 class AnimatedSprite;
 class Sprite;
-
-const int PLAYER_SPRITE_WIDTH = 120;
-const int PLAYER_SPRITE_HEIGHT = 80;
 
 // enum for player states
 enum class PlayerState
@@ -55,7 +54,15 @@ public:
 
 	// stat getters
 	float GetCurrentStamina() const { return m_currentStamina;  }
-	float GetMaxStamina() const { return m_maxStamina;  }
+
+	// Abyssal Essence
+	const AbyssalEssence& GetAbyssalEssence() const { return m_abyssalEssence; }
+	AbyssalEssence& GetAbyssalEssence() { return m_abyssalEssence; }
+
+	// Player stats
+	const PlayerStats& GetPlayerStats() const { return m_playerStats;  }
+	PlayerStats& GetPlayerStats() { return m_playerStats; }
+	int GetAttackDamage() const;
 
 	// Methods for player movement
 	void MoveLeft(float amount);
@@ -67,10 +74,15 @@ public:
 
 	// stat modifiers
 	void TakeDamage(int amount);
-	bool UseStamina(float amount); // will return false if not enough stamina
+	bool UseStamina(float amount);
 	void Revive();
 	bool WasJustRevived() const { return m_justRevived; }
 	void ClearReviveFlag() { m_justRevived = false; }
+
+	void UpdateStatsFromPlayerStats();
+	void GainEssence(int amount);
+	void ApplyHealthRegen(float deltaTime);
+	void ResetForNewGame();
 
 	// For tracking enemies hit
 	bool DamageDoneToTarget(Entity* target);
@@ -87,7 +99,7 @@ protected:
 	void RollAnimationComplete();
 	void AttackAnimationComplete();
 	void JumpAnimationComplete();
-	void FallOnLand(); // added called when landing on ground
+	void FallOnLand();
 	void HurtAnimationComplete();
 	void DeathAnimationComplete();
 
@@ -140,14 +152,16 @@ protected:
 	const float m_invincibilityDuration = 1.0f;
 
 	// Stats
-	float m_maxStamina;
 	float m_currentStamina;
-	float m_staminaRegenRate;
 
 	// Physics constants
 	const float kGravity = 150.0f; // gravity strengtth
 	const float kJumpForce = 100.0f; // initial jump strength
 	const float kTurnSpeedFactor = 0.2f; // speed multiplier when turning
+
+	// Abyssal Essence
+	AbyssalEssence m_abyssalEssence;
+	PlayerStats m_playerStats;
 
 private:
 

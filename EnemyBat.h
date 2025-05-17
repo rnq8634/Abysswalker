@@ -13,6 +13,7 @@
 // Forward declaration
 class Player;
 class Renderer;
+class SceneAbyssWalker;
 
 enum class EnemyBatState
 {
@@ -37,12 +38,19 @@ public:
     void Draw(Renderer& renderer);
     void DebugDraw();
 
+    void SetSceneReference(SceneAbyssWalker* scene);
+
     Vector2& GetPosition();
 
     void TakeDamage(int amount);
 
     bool IsAttacking() const;
     AnimatedSprite* GetCurrentAnimatedSprite(); // For Scene to check death animation complete
+
+    void TransitionToState(EnemyBatState newState);
+
+    void UpdateSprite(AnimatedSprite* sprite, float deltaTime);
+    EnemyBatState GetCurrentState() const { return m_currentState; }
 
 protected:
     void OnHurtAnimationComplete();
@@ -61,8 +69,6 @@ protected:
         bool loop,
         AnimationCallBack onComplete = nullptr
     );
-    void TransitionToState(EnemyBatState newState);
-    void UpdateSprite(AnimatedSprite* sprite, float deltaTime);
 
     // AI and Combat
     virtual void UpdateAI(float deltaTime); // Made virtual for different enemy types
@@ -80,8 +86,13 @@ public:
     static const int ENEMY_DEFAULT_SPRITE_HEIGHT = 64;
 
 protected:
+    SceneAbyssWalker* m_pSceneRef;
     EnemyBatState m_currentState;
     bool m_bFacingRight; // True if facing right, false if facing left
+
+    // Essence Drops
+    int m_minEssenceDrop;
+    int m_maxEssenceDrop;
 
     // Enemy stats
     int m_iDamage;

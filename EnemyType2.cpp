@@ -6,9 +6,14 @@
 #include "Renderer.h"
 #include "LogManager.h"
 #include "Texture.h" 
+
+// IMGUI
 #include "imgui/imgui.h"
+
+// Lib includes
 #include <algorithm> 
 #include <cmath> 
+#include <cstdlib>
 
 const float ENEMYTYPE2_VISUAL_SCALE = 2.5f;
 
@@ -25,6 +30,9 @@ EnemyType2::EnemyType2()
     , m_timeSinceAttack(m_attackCD) // Ready to attack initially
     , m_bHasDealtDMG(false)
     , m_pStaticEnemy(nullptr)
+    , m_minEssenceDrop(10)
+    , m_maxEssenceDrop(30)
+    , m_pSceneRef(nullptr)
 {
     SetMaxHealth(125, true); // Enemy specific health
 }
@@ -70,15 +78,15 @@ bool EnemyType2::Initialise(Renderer& renderer, const Vector2& startPosition)
     m_strikePhaseRadius = (static_cast<float>(ENEMY_DEFAULT_SPRITE_ATTACKSTRIKE_WIDTH) * ENEMYTYPE2_VISUAL_SCALE) / 2.0f;
     SetRadius(m_baseRadius);
 
-    if (!InitialiseAnimatedSprite(renderer, EnemyType2State::IDLE, "assets/enemyType2/Idle.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.2f, true)) return false;
+    if (!InitialiseAnimatedSprite(renderer, EnemyType2State::IDLE, "assets/enemyType2/Idle.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.1f, true)) return false;
     if (!InitialiseAnimatedSprite(renderer, EnemyType2State::WALKING, "assets/enemyType2/Walk.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.15f, true)) return false;
     // Attack Sequence Section
     if (!InitialiseAnimatedSprite(renderer, EnemyType2State::ATTACKING_WINDUP, "assets/enemyType2/Attack_Windup.png", ENEMY_DEFAULT_SPRITE_ATTACKWINDUP_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.08f, false, [this]() { this->TransitionToState(EnemyType2State::ATTACKING_STRIKE); })) return false;
     if (!InitialiseAnimatedSprite(renderer, EnemyType2State::ATTACKING_STRIKE, "assets/enemyType2/Attack_Strike.png", ENEMY_DEFAULT_SPRITE_ATTACKSTRIKE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.08f, false, [this]() { this->TransitionToState(EnemyType2State::ATTACKING_OVER); })) return false;
     if (!InitialiseAnimatedSprite(renderer, EnemyType2State::ATTACKING_OVER, "assets/enemyType2/Attack_Over.png", ENEMY_DEFAULT_SPRITE_ATTACK_END_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.1f, false, [this]() { this->OnAttackSequenceComplete(); })) return false;
     
-    if (!InitialiseAnimatedSprite(renderer, EnemyType2State::HURT, "assets/enemyType2/Hurt.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.3f, false, [this]() { this->OnHurtAnimationComplete(); })) return false;
-    if (!InitialiseAnimatedSprite(renderer, EnemyType2State::DEATH, "assets/enemyType2/Death.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.15f, false, [this]() { this->OnDeathAnimationComplete(); })) return false;
+    if (!InitialiseAnimatedSprite(renderer, EnemyType2State::HURT, "assets/enemyType2/Hurt.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.1f, false, [this]() { this->OnHurtAnimationComplete(); })) return false;
+    if (!InitialiseAnimatedSprite(renderer, EnemyType2State::DEATH, "assets/enemyType2/Death.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.08f, false, [this]() { this->OnDeathAnimationComplete(); })) return false;
 
     TransitionToState(EnemyType2State::IDLE);
     return true;
@@ -344,26 +352,50 @@ void EnemyType2::TransitionToState(EnemyType2State newState)
     }
 }
 
+void EnemyType2::SetSceneReference(SceneAbyssWalker* scene)
+{
+    m_pSceneRef = scene;
+}
+
 void EnemyType2::TakeDamage(int amount)
 {
-    if (!IsAlive()) return;
+    if (!m_bAlive) return;
 
+    bool wasAlive = m_bAlive;
     bool wasInAnyAttackPhase = (m_currentState == EnemyType2State::ATTACKING_WINDUP ||
                                 m_currentState == EnemyType2State::ATTACKING_STRIKE ||
                                 m_currentState == EnemyType2State::ATTACKING_OVER);
 
     Entity::TakeDamage(amount);
 
-    if (!IsAlive())
+    if (wasAlive && !m_bAlive)
     {
+        TransitionToState(EnemyType2State::DEATH);
+        m_velocity.Set(0.0f, 0.0f);
         if (wasInAnyAttackPhase) 
         {
             SetRadius(m_baseRadius); // Reset radius if died during attack
         }
-        TransitionToState(EnemyType2State::DEATH);
-        m_velocity.Set(0.0f, 0.0f);
-    }
 
+        if (m_pTargetPlayer)
+        {
+            int droppedEssence = 0;
+            if (m_maxEssenceDrop >= m_minEssenceDrop)
+            {
+                droppedEssence = (rand() & (m_maxEssenceDrop - m_minEssenceDrop + 1)) + m_minEssenceDrop;
+            }
+
+            else
+            {
+                droppedEssence = m_minEssenceDrop;
+            }
+
+            if (droppedEssence > 0)
+            {
+                m_pTargetPlayer->GainEssence(droppedEssence);
+            }
+        }
+    }
     else if (amount > 0) // Took damage and still alive
     {
         if (wasInAnyAttackPhase) 

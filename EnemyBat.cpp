@@ -6,9 +6,16 @@
 #include "Renderer.h"
 #include "LogManager.h"
 #include "Texture.h" 
+#include "SceneAbyssWalker.h"
+
+//IMGUI
 #include "imgui/imgui.h"
+
+// Lib includes
+#include <cstdlib>
 #include <algorithm> 
 #include <cmath> 
+#include <ctime>
 
 const float ENEMYBAT_VISUAL_SCALE = 1.5f;
 
@@ -25,8 +32,11 @@ EnemyBat::EnemyBat()
     , m_timeSinceAttack(m_attackCD) // Ready to attack initially
     , m_attackWindUpTime(0.5f) // Damage applied 0.5s into attack animation
     , m_currentAttackTime(0.0f)
+    , m_minEssenceDrop(5)
+    , m_maxEssenceDrop(15)
     , m_bHasDealtDMG(false)
     , m_pStaticEnemy(nullptr)
+    , m_pSceneRef(nullptr)
 {
     SetMaxHealth(50, true); // Enemy specific health
     SetRadius(static_cast<float>(ENEMY_DEFAULT_SPRITE_WIDTH) * ENEMYBAT_VISUAL_SCALE / 2.5f); // Scales sprite
@@ -68,11 +78,11 @@ bool EnemyBat::Initialise(Renderer& renderer, const Vector2& startPosition)
         m_pStaticEnemy->SetScale(ENEMYBAT_VISUAL_SCALE, ENEMYBAT_VISUAL_SCALE);
     }
 
-    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::IDLE, "assets/enemyBat/Bat-IdleFly.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.2f, true)) return false;
-    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::WALKING, "assets/enemyBat/Bat-Run.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.15f, true)) return false;
+    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::IDLE, "assets/enemyBat/Bat-IdleFly.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.15f, true)) return false;
+    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::WALKING, "assets/enemyBat/Bat-Run.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.18f, true)) return false;
     if (!InitialiseAnimatedSprite(renderer, EnemyBatState::ATTACKING, "assets/enemyBat/Bat-Attack1.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.1f, false, [this]() { this->OnAttackAnimationComplete(); })) return false;
-    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::HURT, "assets/enemyBat/Bat-Hurt.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.3f, false, [this]() { this->OnHurtAnimationComplete(); })) return false;
-    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::DEATH, "assets/enemyBat/Bat-Die.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.15f, false, [this]() { this->OnDeathAnimationComplete(); })) return false;
+    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::HURT, "assets/enemyBat/Bat-Hurt.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.1f, false, [this]() { this->OnHurtAnimationComplete(); })) return false;
+    if (!InitialiseAnimatedSprite(renderer, EnemyBatState::DEATH, "assets/enemyBat/Bat-Die.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.1f, false, [this]() { this->OnDeathAnimationComplete(); })) return false;
 
     TransitionToState(EnemyBatState::IDLE);
     return true;
@@ -291,18 +301,47 @@ void EnemyBat::TransitionToState(EnemyBatState newState)
     }
 }
 
+void EnemyBat::SetSceneReference(SceneAbyssWalker* scene)
+{
+    m_pSceneRef = scene;
+}
+
 void EnemyBat::TakeDamage(int amount)
 {
     if (!m_bAlive) return;
 
-    Entity::TakeDamage(amount); // Base class handles health and m_bAlive flag
+    bool wasAlive = m_bAlive;
+    Entity::TakeDamage(amount);
 
-    if (!m_bAlive)
+    if (wasAlive && !m_bAlive)
     {
         TransitionToState(EnemyBatState::DEATH);
         m_velocity.Set(0.0f, 0.0f); // Stop all movement on death
+
+        // Enemy will drop essence
+        if (m_pTargetPlayer)
+        {
+            int droppedEssence = 0;
+            if (m_maxEssenceDrop >= m_minEssenceDrop)
+            {
+                droppedEssence = (rand() % (m_maxEssenceDrop - m_minEssenceDrop + 1)) + m_minEssenceDrop;
+            }
+            else
+            {
+                droppedEssence = m_minEssenceDrop;
+            }
+
+            if (droppedEssence > 0)
+            {
+                m_pTargetPlayer->GainEssence(droppedEssence);
+            }
+        }
+        if (m_pSceneRef)
+        {
+            m_pSceneRef->NotifyEnemyKilled();
+        }
     }
-    else if (amount > 0) // Took damage and if still alive
+    else if (m_bAlive && amount > 0) // Took damage and if still alive
     {
         TransitionToState(EnemyBatState::HURT);
     }

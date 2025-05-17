@@ -13,6 +13,7 @@
 // Forward declaration
 class Player;
 class Renderer;
+class SceneAbyssWalker;
 
 enum class EnemyType2State
 {
@@ -40,12 +41,19 @@ public:
     void Draw(Renderer& renderer);
     void DebugDraw();
 
+    void SetSceneReference(SceneAbyssWalker* scene);
+
     Vector2& GetPosition();
 
     void TakeDamage(int amount);
 
     bool IsAttacking() const;
     AnimatedSprite* GetCurrentAnimatedSprite(); // For Scene to check death animation complete
+
+    void TransitionToState(EnemyType2State newState);
+
+    void UpdateSprite(AnimatedSprite* sprite, float deltaTime);
+    EnemyType2State GetCurrentState() const { return m_currentState; }
 
 protected:
     void OnHurtAnimationComplete();
@@ -64,8 +72,6 @@ protected:
         bool loop,
         AnimationCallBack onComplete = nullptr
     );
-    void TransitionToState(EnemyType2State newState);
-    void UpdateSprite(AnimatedSprite* sprite, float deltaTime);
 
     virtual void UpdateAI(float deltaTime);
 
@@ -74,7 +80,7 @@ protected:
 
 private:
 
-    // member data
+    // Member data
 public:
     // Needs to stay in public
     Player* m_pTargetPlayer;
@@ -106,6 +112,12 @@ protected:
     float m_detectionRange;
     float m_attackCD;
     float m_timeSinceAttack;
+
+    SceneAbyssWalker* m_pSceneRef;
+
+    // Essence drops
+    int m_minEssenceDrop;
+    int m_maxEssenceDrop;
     
     float m_currentPhaseTimer;
 
