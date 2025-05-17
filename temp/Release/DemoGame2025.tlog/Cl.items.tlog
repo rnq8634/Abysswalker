@@ -1,5 +1,7 @@
+C:\Users\nikol\source\repos\DemoGame2025\AbyssalEssence.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\AbyssalEssence.obj
 C:\Users\nikol\source\repos\DemoGame2025\AnimatedSprite.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\AnimatedSprite.obj
-C:\Users\nikol\source\repos\DemoGame2025\Enemy.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\Enemy.obj
+C:\Users\nikol\source\repos\DemoGame2025\EnemyBat.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\EnemyBat.obj
+C:\Users\nikol\source\repos\DemoGame2025\EnemyType2.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\EnemyType2.obj
 C:\Users\nikol\source\repos\DemoGame2025\Entity.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\Entity.obj
 C:\Users\nikol\source\repos\DemoGame2025\Game.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\Game.obj
 C:\Users\nikol\source\repos\DemoGame2025\imgui\imgui.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\imgui.obj
@@ -19,7 +21,12 @@ C:\Users\nikol\source\repos\DemoGame2025\Player.cpp;C:\Users\nikol\source\repos\
 C:\Users\nikol\source\repos\DemoGame2025\Renderer.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\Renderer.obj
 C:\Users\nikol\source\repos\DemoGame2025\Scene.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\Scene.obj
 C:\Users\nikol\source\repos\DemoGame2025\SceneAbyssWalker.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\SceneAbyssWalker.obj
+C:\Users\nikol\source\repos\DemoGame2025\SceneControls.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\SceneControls.obj
+C:\Users\nikol\source\repos\DemoGame2025\SceneSplashScreenAUT.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\SceneSplashScreenAUT.obj
+C:\Users\nikol\source\repos\DemoGame2025\SceneTitleScreen.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\SceneTitleScreen.obj
 C:\Users\nikol\source\repos\DemoGame2025\Shader.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\Shader.obj
+C:\Users\nikol\source\repos\DemoGame2025\SoundSystem.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\SoundSystem.obj
+C:\Users\nikol\source\repos\DemoGame2025\SceneSplashScreenFMOD.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\SceneSplashScreenFMOD.obj
 C:\Users\nikol\source\repos\DemoGame2025\Sprite.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\Sprite.obj
 C:\Users\nikol\source\repos\DemoGame2025\Texture.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\Texture.obj
 C:\Users\nikol\source\repos\DemoGame2025\TextureManager.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Release\TextureManager.obj

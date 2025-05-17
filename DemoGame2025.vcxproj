@@ -142,6 +142,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AbyssalEssence.cpp" />
     <ClCompile Include="AnimatedSprite.cpp" />
     <ClCompile Include="EnemyBat.cpp" />
     <ClCompile Include="EnemyType2.cpp" />
@@ -156,6 +157,7 @@
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="InputSystem.cpp" />
     <ClCompile Include="LogManager.cpp" />
+    <ClInclude Include="AbyssalEssence.h" />
     <ClInclude Include="EnemyBat.h" />
     <ClInclude Include="EnemyType2.h" />
     <ClInclude Include="LogManager.h" />
