@@ -392,24 +392,28 @@ Renderer::CreateStaticText(const char* pText, int pointsize)
 
 void Renderer::DrawDebugRect(float x1, float y1, float x2, float y2, unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 {
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 	GLint previous_program;
 	glGetIntegerv(GL_CURRENT_PROGRAM, &previous_program);
 
-	Matrix4 orthoViewProj;
-	CreateOrthoProjection(orthoViewProj, static_cast<float>(m_iWidth), static_cast<float>(m_iHeight));
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	m_pSpriteShader->SetActive();
+
+	Matrix4 orthoViewProj;
+	CreateOrthoProjection(orthoViewProj, static_cast<float>(m_iWidth), static_cast<float>(m_iHeight));
 	m_pSpriteShader->SetMatrixUniform("uViewProj", orthoViewProj);
 
 	Matrix4 world;
 	SetIdentity(world);
-	world.m[0][0] = x2 - x1;
-	world.m[0][0] = y2 - y1;
-	world.m[0][0] = x1 + (x2 - x1) / 2.0f;
-	world.m[0][0] = y1 + (y2 - y1) / 2.0f;
+
+	float rectWidth = x2 - x1;
+	float rectHeight = y2 - y1;
+
+	world.m[0][0] = rectWidth;
+	world.m[1][1] = rectHeight;
+	world.m[3][0] = x1 + rectWidth / 2.0f;
+	world.m[3][1] = y1 + rectHeight / 2.0f;
 	m_pSpriteShader->SetMatrixUniform("uWorldTransform", world);
 
 	// Set color

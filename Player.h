@@ -10,6 +10,7 @@
 #include <map>
 #include <functional>
 #include <string>
+#include <set>
 
 // Forward Declaration
 class Renderer;
@@ -71,6 +72,10 @@ public:
 	bool WasJustRevived() const { return m_justRevived; }
 	void ClearReviveFlag() { m_justRevived = false; }
 
+	// For tracking enemies hit
+	bool DamageDoneToTarget(Entity* target);
+	void ClearHitEntitiesList();
+
 	AnimatedSprite* GetCurrentAnimatedSprite();
 
 	bool CheckCollision(const Entity& other) const;
@@ -99,6 +104,7 @@ private:
 		AnimationCallBack onComplete = nullptr
 	);
 	void TransitionToState(PlayerState newState);
+	std::set<Entity*> m_hitEntitiesThisAttack;
 
 	void UpdateSprite(AnimatedSprite* sprite, float deltaTime);
 	void StartTurn(float desiredSpeed, bool turnToRight);
@@ -127,7 +133,6 @@ protected:
 	bool m_targetFacingRight;
 	float m_rollVelocityBeforeRoll;
 	bool m_justRevived;
-	bool m_bAlive;
 	bool m_bIsInvincible;
 
 	// Player I-Frames

@@ -9,6 +9,7 @@
 
 // Forward Declarations
 class Texture;
+class SoundSystem;
 
 class SceneTitleScreen : public Scene
 {
@@ -24,7 +25,8 @@ public:
 
     // Member data
 private:
-    struct Button {
+    struct Button 
+    {
         Vector2 position;
         Vector2 size;
         const char* text;
@@ -33,16 +35,19 @@ private:
 
     FMOD::Channel* m_pBGMChannel;
 
+    // ABYSSWALKER IMAGE
+    Sprite* m_pTitleScreenImageSprite;
+    Texture* m_pTitleScreenImageTexture;
+
+    // Buttonz
     Button m_newGameButton;
     Button m_controlsButton;
     Button m_quitButton;
 
-    Sprite* m_pTitleScreenTextSprite;
     Sprite* m_pNewGameTextSprite;
     Sprite* m_pControlsTextSprite;
     Sprite* m_pQuitTextSprite;
 
-    Texture* m_pTitleScreenTextTexture;
     Texture* m_pNewGameTextTexture;
     Texture* m_pControlsTextTexture;
     Texture* m_pQuitTextTexture;

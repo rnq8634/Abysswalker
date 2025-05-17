@@ -32,7 +32,6 @@ Player::Player()
 	, m_currentStamina(100.0f)
 	, m_staminaRegenRate(10.0f)
 	, m_justRevived(false)
-	, m_bAlive(false)
 	, m_invincibilityTimer(0.0f)
 	, m_bIsInvincible(false)
 {
@@ -238,16 +237,6 @@ void Player::Draw(Renderer& renderer)
 	AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
 	if (!m_bAlive && GetCurrentAnimatedSprite() && GetCurrentAnimatedSprite()->IsAnimationComplete()) return;
 
-	/*
-	// Load static image (THIS IS NEEDED OTHERWISE NOTHING WILL BE ON SCREEN)
-	m_pStaticSprite->Draw(renderer);
-
-	// draw the animated sprite for the current state
-	if (currentSprite)
-	{
-		currentSprite->Draw(renderer);
-	}
-	*/
 	if (m_bIsInvincible)
 	{
 		float flashFrequency = 8.0f;
@@ -443,12 +432,15 @@ void Player::Attack()
 		if (UseStamina(staminaCost))
 		{
 			m_velocity.x = 0;
+
+			ClearHitEntitiesList();
+
 			TransitionToState(PlayerState::ATTACKING);
 		}
 		else
 		{
 			LogManager::GetInstance().Log("Not enough stamina!");
-			// Show on the stamina bar
+			// Stamina bar decreases
 		}
 	}
 }
@@ -582,6 +574,7 @@ void Player::AttackAnimationComplete()
 	{
 		m_velocity.x = 0; // Ensure stopped if attack stops movement
 		TransitionToState(PlayerState::IDLE);
+		ClearHitEntitiesList();
 	}
 }
 
@@ -647,6 +640,18 @@ void Player::DeathAnimationComplete()
 	LogManager::GetInstance().Log("Death animation complete.");
 	// add a option if player wants to revive
 	// [Arise] / [Perish]
+}
+
+bool Player::DamageDoneToTarget(Entity* target)
+{
+	if (m_currentState != PlayerState::ATTACKING || !target) return false;
+
+	return m_hitEntitiesThisAttack.insert(target).second;
+}
+
+void Player::ClearHitEntitiesList()
+{
+	m_hitEntitiesThisAttack.clear();
 }
 
 // ------------------------------------------Debugging-------------------------------------------------------

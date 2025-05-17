@@ -3,13 +3,16 @@
 
 // Local includes
 #include "Scene.h"
+#include "Vector2.h"
+
+// Lib Includes
 #include <vector>
 #include <string>
-#include "Vector2.h"
 
 // Forward declarations
 class Player;
 class EnemyBat;
+class EnemyType2;
 class Renderer;
 class InputSystem;
 class Sprite;
@@ -31,8 +34,13 @@ public:
 protected:
 	Player* m_pPlayer;
 	void UpdateSpawning(float deltaTime);
-	void SpawnEnemy(bool spawnOnLeft);
+
+	enum class EnemySpawnType { BAT, TYPE2 };
+
+	void SpawnEnemy(EnemySpawnType, bool spawnOnLeft);
 	void HandleCollisions();
+
+	void CleanupDead();
 
 private:
 	SceneAbyssWalker(const SceneAbyssWalker& scene) = delete;
@@ -42,7 +50,9 @@ private:
 public:
 
 protected:
-	std::vector<EnemyBat*> m_enemyType1;
+	std::vector<EnemyBat*> m_enemyBats;
+	std::vector<EnemyType2*> m_enemyType2;
+
 	Renderer* m_pRenderer;
 
 	Sprite* m_pmoonBackground;
@@ -53,12 +63,23 @@ protected:
 	Sprite* m_ptree1Background;
 
 	// Spawn logic
-	float m_spawnTimer;
-	const float m_spawnInterval = 2.0f; // spawns a mob every X secs
-	const int m_maxEnemies = 20; // max enemy limit
-	const int m_maxEnemiesPerSide = 5; // how many enemies spawn on each side
+	const int m_maxEnemies = 20; // Max enemies limit
 
-	bool m_bShowHitboxes; // for debugging
+	// Bats
+	float m_batSpawnTimer;
+	const float m_batSpawnInterval = 5.0f; // spawns a mob every X secs
+	const int m_maxBats = 10; // Maximum bats allowed
+	const int m_maxBatsPerSide = 5; // how many enemies spawn on each side
+
+	// Type 2
+	float m_type2SpawnTimer;
+	const float m_type2SpawnInterval = 10.0f;
+	const int m_maxType2 = 5;
+	const int m_maxType2PerSide = 3;
+
+	// Type 3
+
+	bool m_bShowHitboxes; // For debugging
 
 private:
 

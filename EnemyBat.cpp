@@ -18,7 +18,7 @@ EnemyBat::EnemyBat()
     , m_pTargetPlayer(nullptr)
     , m_bFacingRight(false)
     , m_iDamage(10)
-    , m_moveSpeed(120.0f) // Enemy movespeed
+    , m_moveSpeed(110.0f) // Enemy movespeed
     , m_attackRange(50.0f) 
     , m_detectionRange(2000.0f) // For now so that the enemies would find the player straight away
     , m_attackCD(5.0f)

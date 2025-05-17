@@ -135,6 +135,9 @@
     <ClCompile Include="SceneSplashScreenAUT.cpp">
       <Filter>Engine\Scenes</Filter>
     </ClCompile>
+    <ClCompile Include="EnemyType2.cpp">
+      <Filter>Engine\GameObjects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imgui\imconfig.h">
@@ -241,6 +244,9 @@
     </ClInclude>
     <ClInclude Include="SceneSplashScreenAUT.h">
       <Filter>Engine\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemyType2.h">
+      <Filter>Engine\GameObjects</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

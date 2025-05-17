@@ -16,11 +16,20 @@
 // Lib includes
 #include <glew.h>
 
+// TITLE BGM
 const char* TITLE_BGM_FILEPATH = "assets/sounds/titleScreenBGM.mp3";
 const char* TITLE_BGM_ID = "dmcTitle_bgm";
 
-const char* DEFAULT_FONT_PATH = "assets/fonts/OptimusPrincepsSemiBold.ttf";
+// TITLE BUTTON SOUND WHEN PRESSED
+const char* TITLE_BUTTONPRESS_SOUND = "assets/sounds/titleScreenButton.mp3";
+const char* TITLE_BUTTONPRESS_ID = "titleButton";
+
+// Fonts
+const char* DEFAULT_FONT_FILEPATH = "assets/fonts/OptimusPrincepsSemiBold.ttf";
 const int DEFAULT_FONT_SIZE = 20;
+
+// Title image
+const char* TITLESCREEN_IMAGE_FILEPATH = "assets/titleScreen/ABYSSWALKER.png";
 
 SceneTitleScreen::SceneTitleScreen()
     : m_pNewGameTextSprite(nullptr)
@@ -29,10 +38,10 @@ SceneTitleScreen::SceneTitleScreen()
     , m_pNewGameTextTexture(nullptr)
     , m_pControlsTextTexture(nullptr)
     , m_pQuitTextTexture(nullptr)
-    , m_pTitleScreenTextSprite(nullptr)
-    , m_pTitleScreenTextTexture(nullptr)
+    , m_pTitleScreenImageSprite(nullptr)
+    , m_pTitleScreenImageTexture(nullptr)
     , m_pBGMChannel(nullptr)
-    , m_fontPath(DEFAULT_FONT_PATH)
+    , m_fontPath(DEFAULT_FONT_FILEPATH)
     , m_fontSize(DEFAULT_FONT_SIZE)
 {
     // Initialize button properties
@@ -55,11 +64,11 @@ SceneTitleScreen::~SceneTitleScreen()
     m_pControlsTextSprite = nullptr;
     delete m_pQuitTextSprite;
     m_pQuitTextSprite = nullptr;
-    delete m_pTitleScreenTextSprite;
-    m_pTitleScreenTextSprite = nullptr;
+    delete m_pTitleScreenImageSprite;
+    m_pTitleScreenImageSprite = nullptr;
 
-    delete m_pTitleScreenTextTexture;
-    m_pTitleScreenTextTexture = nullptr;
+    delete m_pTitleScreenImageTexture;
+    m_pTitleScreenImageTexture = nullptr;
     delete m_pNewGameTextTexture;
     m_pNewGameTextTexture = nullptr;
     delete m_pControlsTextTexture;
@@ -83,7 +92,7 @@ bool SceneTitleScreen::Initialise(Renderer& renderer)
         m_pBGMChannel = soundSys.PlaySound(TITLE_BGM_ID);
         if (m_pBGMChannel)
         {
-            soundSys.SetChannelVolume(m_pBGMChannel, 0.5f); // NOTE: Volume can be set here!
+            soundSys.SetChannelVolume(m_pBGMChannel, 0.8f); // NOTE: Volume can be set here!
         }
         else
         {
@@ -91,8 +100,52 @@ bool SceneTitleScreen::Initialise(Renderer& renderer)
         }
     }
 
+    if (!soundSys.LoadSound(TITLE_BUTTONPRESS_SOUND, TITLE_BUTTONPRESS_ID, false, false))
+    {
+        LogManager::GetInstance().Log("Failed to load button sound!");
+    }
+
+    m_pTitleScreenImageTexture = new Texture();
+    m_pTitleScreenImageSprite = new Sprite();
+
+    if (!m_pTitleScreenImageTexture || !m_pTitleScreenImageSprite)
+    {
+        LogManager::GetInstance().Log("Failed to allocate memory for game title");
+        delete m_pTitleScreenImageTexture; 
+        m_pTitleScreenImageTexture = nullptr;
+        delete m_pTitleScreenImageSprite; 
+        m_pTitleScreenImageSprite = nullptr;
+        return false;
+    }
+
+    if (!m_pTitleScreenImageTexture->Initialise(TITLESCREEN_IMAGE_FILEPATH))
+    {
+        LogManager::GetInstance().Log("Failed to initialise game title image texture from file.");
+        delete m_pTitleScreenImageTexture; 
+        m_pTitleScreenImageTexture = nullptr;
+        delete m_pTitleScreenImageSprite;
+        m_pTitleScreenImageSprite = nullptr;
+        return false;
+    }
+
+    if (!m_pTitleScreenImageSprite->Initialise(*m_pTitleScreenImageTexture))
+    {
+        LogManager::GetInstance().Log("Failed to initialise game title image texture from file.");
+        delete m_pTitleScreenImageTexture; 
+        m_pTitleScreenImageTexture = nullptr;
+        delete m_pTitleScreenImageSprite; 
+        m_pTitleScreenImageSprite = nullptr;
+        return false;
+    }
+
     const int screenWidth = renderer.GetWidth();
     const int screenHeight = renderer.GetHeight();
+
+    // Position the Title screen image
+    m_pTitleScreenImageSprite->SetX(screenWidth / 2);
+    m_pTitleScreenImageSprite->SetY(static_cast<int>(screenHeight * 0.30f));
+    m_pTitleScreenImageSprite->SetFlipHorizontal(true);
+    m_pTitleScreenImageSprite->SetAngle(180.0f);
 
     // Position buttons
     m_newGameButton.position = Vector2(screenWidth / 2.0f, screenHeight / 2.0f);
@@ -208,8 +261,10 @@ void SceneTitleScreen::Process(float deltaTime, InputSystem& inputSystem)
     // Check clicks
     if (inputSystem.GetMouseButtonState(SDL_BUTTON_LEFT) == BS_PRESSED)
     {
+        SoundSystem& soundSys = SoundSystem::GetInstance();
         if (m_newGameButton.isHovered)
         {
+            soundSys.PlaySound(TITLE_BUTTONPRESS_ID);
             if (m_pBGMChannel)
             {
                 SoundSystem::GetInstance().StopChannel(m_pBGMChannel);
@@ -220,11 +275,13 @@ void SceneTitleScreen::Process(float deltaTime, InputSystem& inputSystem)
         }
         else if (m_controlsButton.isHovered)
         {
+            soundSys.PlaySound(TITLE_BUTTONPRESS_ID);
             // Switch to Controls (Controls should have a button that goes back to title screen)
             // Game::GetInstance().SetCurrentScene(2); // Will switch to controls and player goals
         }
         else if (m_quitButton.isHovered)
         {
+            soundSys.PlaySound(TITLE_BUTTONPRESS_ID);
             Game::GetInstance().Quit();
         }
     }
@@ -235,40 +292,14 @@ void SceneTitleScreen::Draw(Renderer& renderer)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // Helper lambda to draw a button
-    auto DrawButton = [&renderer](const Button& button) 
+    if (m_pTitleScreenImageSprite && m_pTitleScreenImageTexture && m_pTitleScreenImageTexture->GetWidth() > 0)
     {
-        // Button background (color changes on hover)
-        unsigned char r = button.isHovered ? 120 : 80;
-        unsigned char g = button.isHovered ? 120 : 80;
-        unsigned char b = button.isHovered ? 120 : 80;
-
-        renderer.DrawDebugRect(
-            button.position.x - button.size.x / 2.0f,
-            button.position.y - button.size.y / 2.0f,
-            button.position.x + button.size.x / 2.0f,
-            button.position.y + button.size.y / 2.0f,
-            r, g, b, 255
-        );  
-    };
-
-    // Draw all buttons
-    DrawButton(m_newGameButton);
-    if (m_pNewGameTextSprite && m_pNewGameTextTexture->GetWidth() > 0)
-    {
-        m_pNewGameTextSprite->Draw(renderer);
+        m_pTitleScreenImageSprite->Draw(renderer);
     }
-    DrawButton(m_controlsButton);
-    if (m_pControlsTextSprite)
-    {
-        m_pControlsTextSprite->Draw(renderer);
-    }
-
-    DrawButton(m_quitButton);
-    if (m_pQuitTextSprite)
-    {
-        m_pQuitTextSprite->Draw(renderer);
-    }
+    
+    m_pNewGameTextSprite->Draw(renderer);
+    m_pControlsTextSprite->Draw(renderer);
+    m_pQuitTextSprite->Draw(renderer);
 }
 
 bool SceneTitleScreen::IsMouseOverButton(const Button& button, const Vector2& mousePos)
