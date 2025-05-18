@@ -36,6 +36,7 @@ Renderer::Renderer()
 	, m_fClearGreen(0.0f)
 	, m_fClearBlue(0.0f)
 	, m_pWindow(nullptr)
+	, m_whitePixelTextureID(0)
 {
 
 }
@@ -55,6 +56,12 @@ Renderer::~Renderer()
 
 	delete m_pTextureManager;
 	m_pTextureManager = 0;
+
+	if (m_whitePixelTextureID != 0)
+	{
+		glDeleteTextures(1, &m_whitePixelTextureID);
+		m_whitePixelTextureID = 0;
+	}
 
 	SDL_DestroyWindow(m_pWindow);
 	IMG_Quit();
@@ -146,6 +153,19 @@ bool Renderer::InitializeOpenGL(int screenWidth, int screenHeight)
 	{
 		return false;
 	}
+
+	glGenTextures(1, &m_whitePixelTextureID);
+	glBindTexture(GL_TEXTURE_2D, m_whitePixelTextureID);
+	unsigned char whiteData[4] = { 255, 255, 255, 255 };
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, whiteData);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// Disable VSYN
 	SDL_GL_SetSwapInterval(0);
@@ -395,6 +415,14 @@ void Renderer::DrawDebugRect(float x1, float y1, float x2, float y2, unsigned ch
 	GLint previous_program;
 	glGetIntegerv(GL_CURRENT_PROGRAM, &previous_program);
 
+	GLint last_active_texture_unit;
+	glGetIntegerv(GL_ACTIVE_TEXTURE, &last_active_texture_unit); // Save current active texture unit
+	glActiveTexture(GL_TEXTURE0);
+
+	GLint last_texture_bound_on_unit0;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture_bound_on_unit0); // Save texture currently bound to unit 0
+	glBindTexture(GL_TEXTURE_2D, m_whitePixelTextureID);
+
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -422,6 +450,9 @@ void Renderer::DrawDebugRect(float x1, float y1, float x2, float y2, unsigned ch
 	// Draw using the sprite vertex data
 	m_pSpriteVertexData->SetActive();
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	glBindTexture(GL_TEXTURE_2D, last_texture_bound_on_unit0); // Restore previously bound texture to unit 0
+	glActiveTexture(last_active_texture_unit);
 
 	// Restore previous shader
 	glUseProgram(previous_program);

@@ -105,6 +105,8 @@ private:
 	void ActivateButtonAction(const std::string& identifier);
 	void ActivateGameEndButtonAction(const std::string& identifier);
 
+	void DrawPlayerUI(Renderer& renderer);
+
 	// Member data
 public:
 
@@ -126,15 +128,13 @@ protected:
 
 	// Bats
 	float m_batSpawnTimer;
-	const float m_batSpawnInterval = 5.0f; // spawns a mob every X secs
+	const float m_batSpawnInterval = 3.5f; // spawns a mob every X secs
 	const int m_maxBats = 10; // Maximum bats allowed
-	//const int m_maxBatsPerSide = 5; // how many enemies spawn on each side
 
 	// Type 2
 	float m_type2SpawnTimer;
-	const float m_type2SpawnInterval = 10.0f;
+	const float m_type2SpawnInterval = 7.0f;
 	const int m_maxType2 = 5;
-	//const int m_maxType2PerSide = 3;
 
 	// Type 3
 

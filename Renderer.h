@@ -13,7 +13,7 @@ class AnimatedSprite;
 
 // Library includes:
 #include <SDL.h>
-
+#include <glew.h>
 
 class Renderer
 {
@@ -52,6 +52,8 @@ protected:
 	void LogSdlError();
 
 	bool SetupSpriteShader();
+
+	GLuint m_whitePixelTextureID;
 
 private:
 	Renderer(const Renderer& renderer);

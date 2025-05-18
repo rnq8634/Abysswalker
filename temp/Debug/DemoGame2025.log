@@ -1,3 +1,19 @@
-﻿  SceneAbyssWalker.cpp
+﻿  AnimatedSprite.cpp
+  EnemyBat.cpp
+  EnemyType2.cpp
+  Entity.cpp
+  Game.cpp
+  InputSystem.cpp
+  Player.cpp
+  Renderer.cpp
+  Scene.cpp
+  SceneAbyssWalker.cpp
 C:\Users\nikol\source\repos\DemoGame2025\SceneAbyssWalker.cpp(696,130): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+  SceneSplashScreenAUT.cpp
+  SceneTitleScreen.cpp
+  SceneSplashScreenFMOD.cpp
+  Sprite.cpp
+  Vector2.cpp
+  XboxController.cpp
+  Generating Code...
   DemoGame2025.vcxproj -> C:\Users\nikol\source\repos\DemoGame2025\game\DemoGame2025_debug.exe
