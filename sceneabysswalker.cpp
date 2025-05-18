@@ -13,6 +13,7 @@
 #include "SoundSystem.h"
 #include "Game.h"
 #include "Texture.h"
+#include "XboxController.h"
 
 // IMGUI
 #include "imgui/imgui.h"
@@ -21,14 +22,9 @@
 #include <algorithm>
 #include <cstdio>
 
-/*
-// NEED TO COMPLETE THESE
-const char* SF_PLAYER_JUMP = "player_jump";
-const char* SF_PLAYER_ATTACK = "player_jump";
-const char* SF_PLAYER_ROLL = "player_jump";
-const char* SF_PLAYER_HURT = "player_jump";
-const char* BGM_ABYSSWALKER = "player_jump";
-*/
+// Player Audio
+const char* PLAYER_WALK_FILEPATH = "assets/sounds/playerWalking.mp3";
+const char* PLAYER_WALK_ID = "walk";
 
 SceneAbyssWalker::SceneAbyssWalker()
     : m_pPlayer(nullptr)
@@ -170,22 +166,30 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
         const float rollSpeed = 200.0f;
         bool isMoving = false;
 
+        XboxController* pController = nullptr;
+        if (inputSystem.GetNumberOfControllersAttached() > 0)
+        {
+            pController = inputSystem.GetController(0);
+        }
+
         if (m_pPlayer->IsAlive())
         {
-            // Need to add controller support
-            if (inputSystem.GetKeyState(SDL_SCANCODE_A) == BS_HELD)
+            // Player Move Left
+            if (inputSystem.GetKeyState(SDL_SCANCODE_A) == BS_HELD || (pController && pController->GetButtonState(SDL_CONTROLLER_BUTTON_DPAD_LEFT) == BS_HELD))
             {
                 m_pPlayer->MoveLeft(moveSpeed);
                 isMoving = true;
             }
 
-            else if (inputSystem.GetKeyState(SDL_SCANCODE_D) == BS_HELD)
+            // Player Move Right
+            else if (inputSystem.GetKeyState(SDL_SCANCODE_D) == BS_HELD || (pController && pController->GetButtonState(SDL_CONTROLLER_BUTTON_DPAD_RIGHT) == BS_HELD))
             {
                 m_pPlayer->MoveRight(moveSpeed);
                 isMoving = true;
             }
 
-            if (inputSystem.GetKeyState(SDL_SCANCODE_SPACE) == BS_PRESSED)
+            // Player Jump
+            if (inputSystem.GetKeyState(SDL_SCANCODE_SPACE) == BS_PRESSED || (pController && pController->GetButtonState(SDL_CONTROLLER_BUTTON_A) == BS_PRESSED))
             {
                 m_pPlayer->Jump();
                 /*
@@ -196,13 +200,15 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
                 */
             }
 
-            if (inputSystem.GetKeyState(SDL_SCANCODE_J) == BS_PRESSED)
+            // Player Attack
+            if (inputSystem.GetKeyState(SDL_SCANCODE_J) == BS_PRESSED || (pController && pController->GetButtonState(SDL_CONTROLLER_BUTTON_X) == BS_PRESSED))
             {
                 m_pPlayer->Attack();
                 // add sound ^^^ like jump
             }
 
-            if (inputSystem.GetKeyState(SDL_SCANCODE_LSHIFT) == BS_PRESSED || inputSystem.GetKeyState(SDL_SCANCODE_Q) == BS_PRESSED)
+            // Player Roll
+            if (inputSystem.GetKeyState(SDL_SCANCODE_Q) == BS_PRESSED || (pController && pController->GetButtonState(SDL_CONTROLLER_BUTTON_B) == BS_PRESSED))
             {
                 m_pPlayer->Roll(rollSpeed);
                 // add sound here

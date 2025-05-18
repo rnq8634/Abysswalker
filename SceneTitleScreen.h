@@ -7,9 +7,13 @@
 #include "Sprite.h"
 #include "fmod.hpp"
 
+// Lib Includes
+#include <vector>
+
 // Forward Declarations
 class Texture;
 class SoundSystem;
+class InputSystem;
 
 class SceneTitleScreen : public Scene
 {
@@ -23,26 +27,27 @@ public:
     void Draw(Renderer& renderer) override;
     void DebugDraw() override;
 
-    // Member data
-private:
-    struct Button 
+    enum class ButtonAction { NEW_GAME, CONTROLS, QUIT };
+    struct Button
     {
         Vector2 position;
         Vector2 size;
         const char* text;
         bool isHovered;
+        Sprite* textSprite;
+        ButtonAction action;
     };
+
+    // Member data
+private:
+    std::vector<Button> m_allButtons;
+    int m_selectedButtonIndex;
 
     FMOD::Channel* m_pBGMChannel;
 
-    // ABYSSWALKER IMAGE
+    // Title screen related stuff
     Sprite* m_pTitleScreenImageSprite;
     Texture* m_pTitleScreenImageTexture;
-
-    // Buttonz
-    Button m_newGameButton;
-    Button m_controlsButton;
-    Button m_quitButton;
 
     Sprite* m_pNewGameTextSprite;
     Sprite* m_pControlsTextSprite;

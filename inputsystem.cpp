@@ -109,7 +109,6 @@ InputSystem::ProcessInput()
 
 		if (io.WantCaptureMouse || io.WantCaptureKeyboard)
 		{
-			ImGui_ImplSDL2_ProcessEvent(&event);
 			continue;
 		}
 

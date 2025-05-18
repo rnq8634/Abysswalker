@@ -9,12 +9,14 @@
 #include "Sprite.h"
 #include "Texture.h"
 #include "SoundSystem.h"
+#include "XboxController.h"
 
 // IMGUI
 #include "imgui/imgui.h"
 
 // Lib includes
 #include <glew.h>
+#include <vector>
 
 // TITLE BGM
 const char* TITLE_BGM_FILEPATH = "assets/sounds/titleScreenBGM.mp3";
@@ -43,11 +45,8 @@ SceneTitleScreen::SceneTitleScreen()
     , m_pBGMChannel(nullptr)
     , m_fontPath(DEFAULT_FONT_FILEPATH)
     , m_fontSize(DEFAULT_FONT_SIZE)
+    , m_selectedButtonIndex(0)
 {
-    // Initialize button properties
-    m_newGameButton = { Vector2(0, 0), Vector2(200, 50), "Start Game", false };
-    m_controlsButton = { Vector2(0, 0), Vector2(200, 50), "Controls", false };
-    m_quitButton = { Vector2(0, 0), Vector2(200, 50), "Quit Game", false };
 }
 
 SceneTitleScreen::~SceneTitleScreen()
@@ -141,27 +140,28 @@ bool SceneTitleScreen::Initialise(Renderer& renderer)
     const int screenWidth = renderer.GetWidth();
     const int screenHeight = renderer.GetHeight();
 
+    Vector2 newGamePos = Vector2(screenWidth / 2.0f, screenHeight / 2.0f);
+    Vector2 controlsPos = Vector2(screenWidth / 2.0f, screenHeight / 2.0f + 70);
+    Vector2 quitPos = Vector2(screenWidth / 2.0f, screenHeight / 2.0f + 140);
+    Vector2 buttonSize = Vector2(200, 50);
+
     // Position the Title screen image
     m_pTitleScreenImageSprite->SetX(screenWidth / 2);
     m_pTitleScreenImageSprite->SetY(static_cast<int>(screenHeight * 0.30f));
     m_pTitleScreenImageSprite->SetFlipHorizontal(true);
     m_pTitleScreenImageSprite->SetAngle(180.0f);
 
-    // Position buttons
-    m_newGameButton.position = Vector2(screenWidth / 2.0f, screenHeight / 2.0f);
-    m_controlsButton.position = Vector2(screenWidth / 2.0f, screenHeight / 2.0f + 70);
-    m_quitButton.position = Vector2(screenWidth / 2.0f, screenHeight / 2.0f + 140);
-
     // Text for New Game
     m_pNewGameTextTexture = new Texture();
     m_pNewGameTextSprite = new Sprite();
     if (!m_pNewGameTextTexture || !m_pNewGameTextSprite) { return false; }
-    if (m_pNewGameTextSprite->InitialiseWithText(*m_pNewGameTextTexture, m_newGameButton.text, m_fontPath, m_fontSize))
+    if (m_pNewGameTextSprite->InitialiseWithText(*m_pNewGameTextTexture, "Start Game", m_fontPath, m_fontSize))
     {
         if (m_pNewGameTextTexture->GetWidth() > 0 && m_pNewGameTextTexture->GetHeight() > 0)
         {
-            m_pNewGameTextSprite->SetX(static_cast<int>(m_newGameButton.position.x));
-            m_pNewGameTextSprite->SetY(static_cast<int>(m_newGameButton.position.y));
+            m_pNewGameTextSprite->SetX(static_cast<int>(newGamePos.x));
+            m_pNewGameTextSprite->SetY(static_cast<int>(newGamePos.y));
+            m_allButtons.push_back({ newGamePos, buttonSize, "Start Game", false, m_pNewGameTextSprite, ButtonAction::NEW_GAME });
         }
     }
 
@@ -169,12 +169,13 @@ bool SceneTitleScreen::Initialise(Renderer& renderer)
     m_pControlsTextTexture = new Texture();
     m_pControlsTextSprite = new Sprite();
     if (!m_pControlsTextTexture || !m_pControlsTextSprite) { return false; }
-    if (m_pControlsTextSprite->InitialiseWithText(*m_pControlsTextTexture, m_controlsButton.text, m_fontPath, m_fontSize))
+    if (m_pControlsTextSprite->InitialiseWithText(*m_pControlsTextTexture, "Controls", m_fontPath, m_fontSize))
     {
         if (m_pControlsTextTexture->GetWidth() > 0 && m_pControlsTextTexture->GetHeight() > 0)
         {
-            m_pControlsTextSprite->SetX(static_cast<int>(m_controlsButton.position.x));
-            m_pControlsTextSprite->SetY(static_cast<int>(m_controlsButton.position.y));
+            m_pControlsTextSprite->SetX(static_cast<int>(controlsPos.x));
+            m_pControlsTextSprite->SetY(static_cast<int>(controlsPos.y));
+            m_allButtons.push_back({ controlsPos, buttonSize, "Controls", false, m_pControlsTextSprite, ButtonAction::CONTROLS });
         }
     }
 
@@ -182,107 +183,119 @@ bool SceneTitleScreen::Initialise(Renderer& renderer)
     m_pQuitTextTexture = new Texture();
     m_pQuitTextSprite = new Sprite();
     if (!m_pQuitTextTexture || !m_pQuitTextSprite) { return false; }
-    if (m_pQuitTextSprite->InitialiseWithText(*m_pQuitTextTexture, m_quitButton.text, m_fontPath, m_fontSize))
+    if (m_pQuitTextSprite->InitialiseWithText(*m_pQuitTextTexture, "Quit Game", m_fontPath, m_fontSize))
     {
         if (m_pQuitTextTexture->GetWidth() > 0 && m_pQuitTextTexture->GetHeight() > 0)
         {
-            m_pQuitTextSprite->SetX(static_cast<int>(m_quitButton.position.x));
-            m_pQuitTextSprite->SetY(static_cast<int>(m_quitButton.position.y));
+            m_pQuitTextSprite->SetX(static_cast<int>(quitPos.x));
+            m_pQuitTextSprite->SetY(static_cast<int>(quitPos.y));
+            m_allButtons.push_back({ quitPos, buttonSize, "Quit Game", false, m_pQuitTextSprite, ButtonAction::QUIT });
         }
     }
+
+    m_selectedButtonIndex = 2;
 
     return true;
 }
 
 void SceneTitleScreen::Process(float deltaTime, InputSystem& inputSystem)
 {
+    XboxController* pController = nullptr;
+    if (inputSystem.GetNumberOfControllersAttached() > 0)
+    {
+        pController = inputSystem.GetController(0);
+    }
+
+    bool controllerNavigated = false;
+    if (pController && !m_allButtons.empty())
+    {
+        if (pController->GetButtonState(SDL_CONTROLLER_BUTTON_DPAD_DOWN) == BS_PRESSED)
+        {
+            m_selectedButtonIndex = (m_selectedButtonIndex + 1) % m_allButtons.size();
+            controllerNavigated = true;
+        }
+
+        if (pController->GetButtonState(SDL_CONTROLLER_BUTTON_DPAD_UP) == BS_PRESSED)
+        {
+            m_selectedButtonIndex = (m_selectedButtonIndex - 1 + m_allButtons.size()) % m_allButtons.size();
+            controllerNavigated = true;
+        }
+    }
+
     Vector2 mousePos = inputSystem.GetMousePosition();
 
-    // Check hover states
-    m_newGameButton.isHovered = IsMouseOverButton(m_newGameButton, mousePos);
-    m_controlsButton.isHovered = IsMouseOverButton(m_controlsButton, mousePos);
-    m_quitButton.isHovered = IsMouseOverButton(m_quitButton, mousePos);
-
-    // Text color change when hovering over text
-    if (m_pNewGameTextSprite)
+    for (size_t i = 0; i < m_allButtons.size(); ++i)
     {
-        if (m_newGameButton.isHovered)
+        Button& btn = m_allButtons[i];
+        btn.isHovered = IsMouseOverButton(btn, mousePos);
+
+        bool isActive = btn.isHovered || (pController && static_cast<int>(i) == m_selectedButtonIndex);
+
+        if (btn.textSprite)
         {
-            // Orange color when text is hovered
-            m_pNewGameTextSprite->SetRedTint(1.0f);
-            m_pNewGameTextSprite->SetGreenTint(0.647f);
-            m_pNewGameTextSprite->SetBlueTint(0.0f);
-        }
-        else
-        {
-            // Text goes back to white
-            m_pNewGameTextSprite->SetRedTint(1.0f);
-            m_pNewGameTextSprite->SetGreenTint(1.0f);
-            m_pNewGameTextSprite->SetBlueTint(1.0f);
+            if (isActive)
+            {
+                // Orange color when hovered
+                btn.textSprite->SetRedTint(1.0f);
+                btn.textSprite->SetGreenTint(0.647f);
+                btn.textSprite->SetBlueTint(0.0f);
+            }
+            else
+            {
+                // White when default
+                btn.textSprite->SetRedTint(1.0f);
+                btn.textSprite->SetGreenTint(1.0f);
+                btn.textSprite->SetBlueTint(1.0f);
+            }
         }
     }
 
-    if (m_pControlsTextSprite)
-    {
-        if (m_controlsButton.isHovered)
-        {
-            // Orange color when text is hovered
-            m_pControlsTextSprite->SetRedTint(1.0f);
-            m_pControlsTextSprite->SetGreenTint(0.647f);
-            m_pControlsTextSprite->SetBlueTint(0.0f);
-        }
-        else
-        {
-            // Text goes back to white
-            m_pControlsTextSprite->SetRedTint(1.0f);
-            m_pControlsTextSprite->SetGreenTint(1.0f);
-            m_pControlsTextSprite->SetBlueTint(1.0f);
-        }
-    }
+    // CHeck for response (mouse or controller)
+    bool buttonActionTriggered = false;
+    ButtonAction actionToPerform = ButtonAction::NEW_GAME;
 
-    if (m_pQuitTextSprite)
-    {
-        if (m_quitButton.isHovered)
-        {
-            // Orange color when text is hovered
-            m_pQuitTextSprite->SetRedTint(1.0f);
-            m_pQuitTextSprite->SetGreenTint(0.647f);
-            m_pQuitTextSprite->SetBlueTint(0.0f);
-        }
-        else
-        {
-            // Text goes back to white
-            m_pQuitTextSprite->SetRedTint(1.0f);
-            m_pQuitTextSprite->SetGreenTint(1.0f);
-            m_pQuitTextSprite->SetBlueTint(1.0f);
-        }
-    }
-
-    // Check clicks
     if (inputSystem.GetMouseButtonState(SDL_BUTTON_LEFT) == BS_PRESSED)
     {
-        SoundSystem& soundSys = SoundSystem::GetInstance();
-        if (m_newGameButton.isHovered)
+        for (const auto& btn : m_allButtons)
         {
-            soundSys.PlaySound(TITLE_BUTTONPRESS_ID);
+            if (btn.isHovered)
+            {
+                actionToPerform = btn.action;
+                buttonActionTriggered = true;
+                break;
+            }
+        }
+    }
+
+    if (!buttonActionTriggered && pController && pController->GetButtonState(SDL_CONTROLLER_BUTTON_A) == BS_PRESSED)
+    {
+        if (m_selectedButtonIndex >= 0 && m_selectedButtonIndex < static_cast<int>(m_allButtons.size()))
+        {
+            actionToPerform = m_allButtons[m_selectedButtonIndex].action;
+            buttonActionTriggered = true;
+        }
+    }
+
+    if (buttonActionTriggered)
+    {
+        SoundSystem::GetInstance().PlaySound(TITLE_BUTTONPRESS_ID);
+        switch (actionToPerform)
+        {
+        case ButtonAction::NEW_GAME:
             if (m_pBGMChannel)
             {
                 SoundSystem::GetInstance().StopChannel(m_pBGMChannel);
                 m_pBGMChannel = nullptr;
             }
+            Game::GetInstance().SetCurrentScene(SCENE_INDEX_ABYSSWALKER);
+            break;
 
-            Game::GetInstance().SetCurrentScene(3); // Switch to game scene
-        }
-        else if (m_controlsButton.isHovered)
-        {
-            soundSys.PlaySound(TITLE_BUTTONPRESS_ID);
-            // Switch to Controls (Controls should have a button that goes back to title screen)
-            // Game::GetInstance().SetCurrentScene(2); // Will switch to controls and player goals
-        }
-        else if (m_quitButton.isHovered)
-        {
-            soundSys.PlaySound(TITLE_BUTTONPRESS_ID);
+        case ButtonAction::CONTROLS:
+            break;
+
+        case ButtonAction::QUIT:
             Game::GetInstance().Quit();
+            break;
         }
     }
 }
@@ -297,9 +310,13 @@ void SceneTitleScreen::Draw(Renderer& renderer)
         m_pTitleScreenImageSprite->Draw(renderer);
     }
     
-    m_pNewGameTextSprite->Draw(renderer);
-    m_pControlsTextSprite->Draw(renderer);
-    m_pQuitTextSprite->Draw(renderer);
+    for (const auto& btn : m_allButtons)
+    {
+        if (btn.textSprite)
+        {
+            btn.textSprite->Draw(renderer);
+        }
+    }
 }
 
 bool SceneTitleScreen::IsMouseOverButton(const Button& button, const Vector2& mousePos)

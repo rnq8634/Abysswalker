@@ -99,7 +99,7 @@
     <ClCompile Include="Vector2.cpp">
       <Filter>Engine\Math Utils</Filter>
     </ClCompile>
-    <ClCompile Include="xboxcontroller.cpp">
+    <ClCompile Include="XboxController.cpp">
       <Filter>Engine\Input Devices</Filter>
     </ClCompile>
     <ClCompile Include="Entity.cpp">
