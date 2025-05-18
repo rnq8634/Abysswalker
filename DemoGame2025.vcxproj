@@ -144,6 +144,7 @@
   <ItemGroup>
     <ClCompile Include="AbyssalEssence.cpp" />
     <ClCompile Include="AnimatedSprite.cpp" />
+    <ClCompile Include="CollisionSystem.cpp" />
     <ClCompile Include="EnemyBat.cpp" />
     <ClCompile Include="EnemySpawner.cpp" />
     <ClCompile Include="EnemyType2.cpp" />
@@ -160,6 +161,7 @@
     <ClCompile Include="InputSystem.cpp" />
     <ClCompile Include="LogManager.cpp" />
     <ClInclude Include="AbyssalEssence.h" />
+    <ClInclude Include="CollisionSystem.h" />
     <ClInclude Include="EnemyBat.h" />
     <ClInclude Include="EnemySpawner.h" />
     <ClInclude Include="EnemyType2.h" />
@@ -170,6 +172,7 @@
     <ClCompile Include="Particle.cpp" />
     <ClCompile Include="ParticleEmitter.cpp" />
     <ClCompile Include="Player.cpp" />
+    <ClCompile Include="PlayerHUD.cpp" />
     <ClCompile Include="PlayerStats.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Scene.cpp" />
@@ -208,6 +211,7 @@
     <ClInclude Include="Particle.h" />
     <ClInclude Include="ParticleEmitter.h" />
     <ClInclude Include="Player.h" />
+    <ClInclude Include="PlayerHUD.h" />
     <ClInclude Include="PlayerStats.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Scene.h" />

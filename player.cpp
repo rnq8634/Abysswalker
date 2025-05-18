@@ -488,7 +488,7 @@ void Player::Jump()
 	if (m_currentState == PlayerState::IDLE || m_currentState == PlayerState::RUNNING)
 	{
 		bool isOnGround = (m_position.y >= kGroundLevel - 0.1f);
-		float staminaCost = 15.0f;
+		float staminaCost = 10.0f;
 
 		if (isOnGround && UseStamina(staminaCost)) // Double check we are on ground
 		{
@@ -508,7 +508,7 @@ void Player::Attack()
 	// Can only attack from ground states (Idle, Running)
 	if (m_currentState == PlayerState::IDLE || m_currentState == PlayerState::RUNNING)
 	{
-		float staminaCost = 10.0f;
+		float staminaCost = 5.0f;
 		if (UseStamina(staminaCost))
 		{
 			m_velocity.x = 0;
@@ -530,7 +530,7 @@ void Player::Roll(float speedBoost)
 	// Can only roll from ground states (Idle, Running)
 	if (m_currentState == PlayerState::IDLE || m_currentState == PlayerState::RUNNING)
 	{
-		float staminaCost = 30.0f;
+		float staminaCost = 15.0f;
 		if (UseStamina(staminaCost))
 		{
 			m_rollVelocityBeforeRoll = m_velocity.x; // Store the current speed
@@ -568,7 +568,7 @@ void Player::TakeDamage(int amount)
 		m_velocity.x = m_bFacingRight ? -50.0f : 50.0f;
 		m_velocity.y = -50.0f;
 		m_bIsInvincible = true;
-		m_invincibilityTimer = m_invincibilityDuration; // Start invincibility period
+		m_invincibilityTimer = m_invincibilityDuration;
 	}
 }
 
@@ -591,22 +591,21 @@ int Player::GetAttackDamage() const
 // Animation Completion Handlers
 void Player::TurnAnimationComplete()
 {
-	if (m_currentState == PlayerState::TURNING) // Ensure we were actually turning
+	if (m_currentState == PlayerState::TURNING)
 	{
-		m_bFacingRight = m_targetFacingRight; // Update facing direction
-		m_velocity.x = m_desiredMoveSpeed;    // Apply desired speed
+		m_bFacingRight = m_targetFacingRight;
+		m_velocity.x = m_desiredMoveSpeed;
 
-		// Decide next state based on whether the player intended to move
 		if (abs(m_desiredMoveSpeed) > 0.01f)
 		{
 			TransitionToState(PlayerState::RUNNING);
 		}
 		else
 		{
-			TransitionToState(PlayerState::IDLE); // Should ideally not happen if turn is only triggered by move keys
+			TransitionToState(PlayerState::IDLE);
 		}
 	}
-	m_isTurning = false; // Ensure flag is reset even if state was wrong
+	m_isTurning = false;
 	m_desiredMoveSpeed = 0;
 }
 

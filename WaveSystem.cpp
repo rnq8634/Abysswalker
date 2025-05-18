@@ -96,7 +96,7 @@ void WaveSystem::ProcessInWave(float deltaTime)
         LogManager::GetInstance().Log("Player died during wave. Game Prompt will now appear");
         m_pScene->EndWaveEnemyCleanup(); 
         TransitionToState(WaveState::GAME_END_PROMPT);
-        m_pScene->SetupGameEndPromptUI("Defeated!");
+        m_pScene->SetupGameEndPromptUI("YOU DIED!");
         return;
     }
 

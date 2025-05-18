@@ -31,12 +31,20 @@ SceneAbyssWalker::SceneAbyssWalker()
     , m_pEnemySpawner(nullptr)
     , m_pGameEndPrompt(nullptr)
     , m_pUpgradeMenu(nullptr)
+    , m_pPlayerHUD(nullptr)
+    , m_pCollisionSystem(nullptr)
 {
     m_pmoonBackground = nullptr;
 }
 
 SceneAbyssWalker::~SceneAbyssWalker()
 {
+    delete m_pCollisionSystem;
+    m_pCollisionSystem = nullptr;
+
+    delete m_pPlayerHUD;
+    m_pPlayerHUD = nullptr;
+
     delete m_pEnemySpawner;
     m_pEnemySpawner = nullptr;
 
@@ -135,6 +143,22 @@ bool SceneAbyssWalker::Initialise(Renderer& renderer)
     if (!m_pEnemySpawner)
     {
         LogManager::GetInstance().Log("Failed to load EnemySpawner!!");
+        return false;
+    }
+
+    // Load the Player HUD
+    m_pPlayerHUD = new PlayerHUD(m_pRenderer, m_pPlayer);
+    if (!m_pPlayerHUD)
+    {
+        LogManager::GetInstance().Log("Failed to load playerHUD!!");
+        return false;
+    }
+
+    // Load the Collision System
+    m_pCollisionSystem = new CollisionSystem();
+    if (!m_pCollisionSystem)
+    {
+        LogManager::GetInstance().Log("Failed to load the Collision Systenm!!");
         return false;
     }
 
@@ -293,7 +317,11 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
         bool proecessEnemies = (currentWaveState == WaveState::IN_WAVE);
         if (processEnemies) 
         {
-            HandleCollisions();
+            if (m_pCollisionSystem && m_pPlayer && m_pPlayer->IsAlive())
+            {
+                m_pCollisionSystem->ProcessCollisions(m_pPlayer, m_enemyBats, m_enemyType2);
+            }
+
             if (m_pPlayer->IsAlive() && m_pEnemySpawner)
             {
                 m_pEnemySpawner->Update(deltaTime, m_enemyBats, m_enemyType2);
@@ -465,217 +493,6 @@ void SceneAbyssWalker::CleanupDead()
         }), m_enemyType2.end());
 }
 
-void SceneAbyssWalker::HandleCollisions()
-{
-    if (!m_pPlayer || !m_pPlayer->IsAlive()) return;
-
-    const float PLAYER_ATTACK_REACH = 25.0f;
-    int playerAttackDamage = m_pPlayer->GetAttackDamage();
-
-    for (EnemyBat* enemyBat : m_enemyBats)
-    {
-        if (!enemyBat->IsAlive()) continue;
-
-        if (m_pPlayer->IsAlive())
-        {
-            // Check for player getting hit by enemy
-            if (m_pPlayer->GetCurrentState() != PlayerState::ROLLING &&
-                m_pPlayer->GetCurrentState() != PlayerState::HURT &&
-                !m_pPlayer->IsInvincible() &&
-                enemyBat->IsAttacking() &&
-                m_pPlayer->CheckCollision(*enemyBat))
-            {
-                //SoundSystem::GetInstance().PlaySound(SF_PLAYER_HURT);
-            }
-
-            // Check for player attacking enemy
-            if (m_pPlayer->GetCurrentState() == PlayerState::ATTACKING)
-            {
-                AnimatedSprite* playerSprite = m_pPlayer->GetCurrentAnimatedSprite();
-                if (playerSprite)
-                {
-                    int currentFrame = playerSprite->GetCurrentFrame();
-                    bool isHitFrame = (currentFrame >= 2 && currentFrame <= 5);
-
-                    if (isHitFrame)
-                    {
-                        Vector2 playerPos = m_pPlayer->GetPosition();
-
-                        float pAttackMinX = m_pPlayer->IsFacingRight() ?
-                            playerPos.x :
-                            playerPos.x - (Player::PLAYER_SPRITE_WIDTH / 2.0f + PLAYER_ATTACK_REACH);
-                        float pAttackMaxX = m_pPlayer->IsFacingRight() ?
-                            playerPos.x + (Player::PLAYER_SPRITE_WIDTH / 2.0f + PLAYER_ATTACK_REACH) :
-                            playerPos.x;
-                        float pAttackMinY = playerPos.y - (Player::PLAYER_SPRITE_HEIGHT / 2.0f);
-                        float pAttackMaxY = playerPos.y + (Player::PLAYER_SPRITE_HEIGHT / 2.0f);
-
-                        Vector2 enemyBatPos = enemyBat->GetPosition();
-                        float enemyRadius = enemyBat->GetRadius();
-                        float eMinX = enemyBatPos.x - enemyRadius;
-                        float eMaxX = enemyBatPos.x + enemyRadius;
-                        float eMinY = enemyBatPos.y - enemyRadius;
-                        float eMaxY = enemyBatPos.y + enemyRadius;
-
-                        bool overlapX = pAttackMinX < eMaxX && pAttackMaxX > eMinX;
-                        bool overlapY = pAttackMinY < eMaxY && pAttackMaxY > eMinY;
-
-                        if (overlapX && overlapY)
-                        {
-                            if (m_pPlayer->DamageDoneToTarget(enemyBat))
-                            {
-                                enemyBat->TakeDamage(playerAttackDamage); // Player attack damage to enemyBat
-                                // hurt sounds for bats
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Collisions for Player Vs EnemyType2
-        for (EnemyType2* enemyT2 : m_enemyType2)
-        {
-            if (!enemyT2->IsAlive()) continue;
-
-            if (m_pPlayer->GetCurrentState() != PlayerState::ROLLING &&
-                m_pPlayer->GetCurrentState() != PlayerState::HURT &&
-                !m_pPlayer->IsInvincible() &&
-                enemyT2->IsAttacking() &&
-                m_pPlayer->CheckCollision(*enemyT2))
-            {
-                //SoundSystem::GetInstance().PlaySound(SF_PLAYER_HURT);
-            }
-
-            // Check if player attacks Type2
-            if (m_pPlayer->GetCurrentState() == PlayerState::ATTACKING)
-            {
-                AnimatedSprite* playerSprite = m_pPlayer->GetCurrentAnimatedSprite();
-                if (playerSprite)
-                {
-                    Vector2 playerPos = m_pPlayer->GetPosition();
-                    float pAttackMinX = m_pPlayer->IsFacingRight() ? playerPos.x : playerPos.x - (Player::PLAYER_SPRITE_WIDTH / 2.0f + PLAYER_ATTACK_REACH);
-                    float pAttackMaxX = m_pPlayer->IsFacingRight() ? playerPos.x + (Player::PLAYER_SPRITE_WIDTH / 2.0f + PLAYER_ATTACK_REACH) : playerPos.x;
-                    float pAttackMinY = playerPos.y - (Player::PLAYER_SPRITE_HEIGHT / 2.0f);
-                    float pAttackMaxY = playerPos.y + (Player::PLAYER_SPRITE_HEIGHT / 2.0f);
-
-                    Vector2 enemyT2Position = enemyT2->GetPosition();
-                    float enemyRadius = enemyT2->GetRadius();
-                    float eMinX = enemyT2Position.x - enemyRadius;
-                    float eMaxX = enemyT2Position.x + enemyRadius;
-                    float eMinY = enemyT2Position.y - enemyRadius;
-                    float eMaxY = enemyT2Position.y + enemyRadius;
-
-                    bool overlapX = pAttackMinX < eMaxX && pAttackMaxX > eMinX;
-                    bool overlapY = pAttackMinY < eMaxY && pAttackMaxY > eMinY;
-
-                    if (overlapX && overlapY)
-                    {
-                        if (m_pPlayer->DamageDoneToTarget(enemyT2))
-                        {
-                            enemyT2->TakeDamage(playerAttackDamage);
-                            // hurt sounds for T2
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// Drawing UI Bars for Player (Health and Stamina)
-void SceneAbyssWalker::DrawPlayerUI(Renderer& renderer)
-{
-    if (!m_pPlayer || !m_pRenderer) return;
-
-    // UI Bar Configs
-    const float BAR_HEIGHT = 20.0f;
-    const float HEALTH_BAR_WIDTH = 300.0f;
-    const float STAMINA_BAR_WIDTH = 200.0f;
-    const float BAR_Y_OFFSET_FROM_BOTTOM = 40.0f;
-    const float BAR_SPACING = 20.0f;
-    const float BORDER_THICKNESS = 5.0f;
-
-    int screenWidth = m_pRenderer->GetWidth();
-    int screenHeight = m_pRenderer->GetHeight();
-
-    // Colors (R, G, B, Alpha)
-    const unsigned char HEALTH_FILL_R = 200, HEALTH_FILL_G = 0, HEALTH_FILL_B = 0, BAR_FILL_A = 220;
-    const unsigned char STAMINA_FILL_R = 200, STAMINA_FILL_G = 200, STAMINA_FILL_B = 0;
-    const unsigned char BAR_BG_R = 50, BAR_BG_G = 50, BAR_BG_B = 50, BAR_BG_A = 200;
-    const unsigned char BAR_BORDER_R = 20, BAR_BORDER_G = 20, BAR_BORDER_B = 20, BAR_BORDER_A = 255;
-
-    // Calculate total width of the UI group (Health + Space + Stamina) to center it
-    float totalUIGroupWidth = HEALTH_BAR_WIDTH + BAR_SPACING + STAMINA_BAR_WIDTH;
-    float groupStartX = (static_cast<float>(screenWidth) - totalUIGroupWidth) / 2.0f;
-
-    // --- Health Bar ---
-    float healthBarX = groupStartX;
-    float healthBarY = static_cast<float>(screenHeight) - BAR_Y_OFFSET_FROM_BOTTOM - BAR_HEIGHT;
-
-    int currentHealth = m_pPlayer->GetCurrentHealth();
-    int maxHealth = m_pPlayer->GetPlayerStats().GetMaxHealth(); // Use PlayerStats for max values
-    float healthRatio = (maxHealth > 0) ? static_cast<float>(currentHealth) / static_cast<float>(maxHealth) : 0.0f;
-    healthRatio = std::max(0.0f, std::min(1.0f, healthRatio)); // Clamp between 0 and 1
-
-    // Health Bar Border
-    renderer.DrawDebugRect(healthBarX - BORDER_THICKNESS, healthBarY - BORDER_THICKNESS,
-        healthBarX + HEALTH_BAR_WIDTH + BORDER_THICKNESS,
-        healthBarY + BAR_HEIGHT + BORDER_THICKNESS,
-        BAR_BORDER_R, BAR_BORDER_G, BAR_BORDER_B, BAR_BORDER_A
-    );
-
-    // Health Bar Background
-    renderer.DrawDebugRect(healthBarX, healthBarY,
-        healthBarX + HEALTH_BAR_WIDTH,
-        healthBarY + BAR_HEIGHT,
-        BAR_BG_R, BAR_BG_G, BAR_BG_B, BAR_BG_A
-    );
-
-    // Health Bar Fill
-    if (healthRatio > 0) 
-    {
-        renderer.DrawDebugRect(healthBarX, healthBarY,
-            healthBarX + (HEALTH_BAR_WIDTH * healthRatio),
-            healthBarY + BAR_HEIGHT,
-            HEALTH_FILL_R, HEALTH_FILL_G, HEALTH_FILL_B, BAR_FILL_A
-        );
-    }
-
-    // --- Stamina Bar ---
-    float staminaBarX = healthBarX + HEALTH_BAR_WIDTH + BAR_SPACING;
-    float staminaBarY = healthBarY;
-
-    float currentStamina = m_pPlayer->GetCurrentStamina();
-    float maxStamina = m_pPlayer->GetPlayerStats().GetMaxStamina();
-    float staminaRatio = (maxStamina > 0.0f) ? currentStamina / maxStamina : 0.0f;
-    staminaRatio = std::max(0.0f, std::min(1.0f, staminaRatio));
-
-    // Stamina Bar Border
-    renderer.DrawDebugRect(staminaBarX - BORDER_THICKNESS, staminaBarY - BORDER_THICKNESS,
-        staminaBarX + STAMINA_BAR_WIDTH + BORDER_THICKNESS,
-        staminaBarY + BAR_HEIGHT + BORDER_THICKNESS,
-        BAR_BORDER_R, BAR_BORDER_G, BAR_BORDER_B, BAR_BORDER_A
-    );
-
-    // Stamina Bar Background
-    renderer.DrawDebugRect(staminaBarX, staminaBarY,
-        staminaBarX + STAMINA_BAR_WIDTH,
-        staminaBarY + BAR_HEIGHT,
-        BAR_BG_R, BAR_BG_G, BAR_BG_B, BAR_BG_A
-    );
-
-    // Stamina Bar Fill
-    if (staminaRatio > 0) 
-    {
-        renderer.DrawDebugRect(staminaBarX, staminaBarY,
-            staminaBarX + (STAMINA_BAR_WIDTH * staminaRatio),
-            staminaBarY + BAR_HEIGHT,
-            STAMINA_FILL_R, STAMINA_FILL_G, STAMINA_FILL_B, BAR_FILL_A
-        );
-    }
-}
-
 void SceneAbyssWalker::Draw(Renderer& renderer)
 {
     if (m_pmoonBackground) m_pmoonBackground->Draw(renderer);
@@ -786,9 +603,16 @@ void SceneAbyssWalker::Draw(Renderer& renderer)
         }
     }
 
-    DrawPlayerUI(renderer);
+    if (m_pPlayerHUD)
+    {
+        m_pPlayerHUD->Draw();
+    }
 
-    // Then draw screen-space UI elements
+    if (m_pWaveSystem)
+    {
+        currentWaveState = m_pWaveSystem->GetCurrentState();
+    }
+
     if (currentWaveState == WaveState::INTERMISSION)
     {
         DrawUpgradeMenu(renderer);

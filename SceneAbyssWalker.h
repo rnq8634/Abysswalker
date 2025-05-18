@@ -11,6 +11,8 @@
 #include "UpgradeMenu.h"
 #include "GameEndPrompt.h"
 #include "EnemySpawner.h"
+#include "PlayerHUD.h"
+#include "CollisionSystem.h"
 
 // Lib Includes
 #include <vector>
@@ -60,8 +62,6 @@ public:
 	void PlayerRequestsQuit() { m_playerChoseToQuit = true; }
 
 protected:
-	void UpdateSpawning(float deltaTime);
-	void HandleCollisions();
 	void CleanupDead();
 
 	
@@ -87,6 +87,8 @@ protected:
 	Sprite* m_pmoonBackground;
 	Renderer* m_pRenderer;
 	EnemySpawner* m_pEnemySpawner;
+	PlayerHUD* m_pPlayerHUD;
+	CollisionSystem* m_pCollisionSystem;
 
 	std::vector<EnemyBat*> m_enemyBats;
 	std::vector<EnemyType2*> m_enemyType2;

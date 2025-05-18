@@ -156,6 +156,12 @@
     <ClCompile Include="EnemySpawner.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
+    <ClCompile Include="PlayerHUD.cpp">
+      <Filter>Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="CollisionSystem.cpp">
+      <Filter>Engine\Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imgui\imconfig.h">
@@ -285,6 +291,12 @@
       <Filter>Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="EnemySpawner.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerHUD.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="CollisionSystem.h">
       <Filter>Engine\Core</Filter>
     </ClInclude>
   </ItemGroup>
