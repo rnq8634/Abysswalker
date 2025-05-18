@@ -5,6 +5,8 @@
 #include "Scene.h"
 #include "Vector2.h"
 #include "PlayerStats.h"
+#include "fmod.hpp"
+#include "Player.h"
 
 // Lib Includes
 #include <vector>
@@ -19,6 +21,7 @@ class Renderer;
 class InputSystem;
 class Sprite;
 class Texture;
+class SoundSystem;
 
 enum class WaveState
 {
@@ -98,6 +101,9 @@ protected:
 	void ClearGameEndPromptUI();
 
 private:
+	void UpdateButtonListUI(std::vector<UIButton>& buttons, int& selectedButtonIndex, InputSystem& inputSystem, bool& actionTriggered, std::string& actionIdentifier);
+	void ActivateButtonAction(const std::string& identifier);
+	void ActivateGameEndButtonAction(const std::string& identifier);
 
 	// Member data
 public:
@@ -109,6 +115,9 @@ protected:
 	std::vector<EnemyBat*> m_enemyBats;
 	std::vector<EnemyType2*> m_enemyType2;
 	Renderer* m_pRenderer;
+
+	int m_selectedUpgradeButtonIndex;
+	int m_selectedGameEndButtonIndex;
 
 	Sprite* m_pmoonBackground;
 

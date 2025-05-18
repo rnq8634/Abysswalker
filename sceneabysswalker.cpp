@@ -22,10 +22,6 @@
 #include <algorithm>
 #include <cstdio>
 
-// Player Audio
-const char* PLAYER_WALK_FILEPATH = "assets/sounds/playerWalking.mp3";
-const char* PLAYER_WALK_ID = "walk";
-
 SceneAbyssWalker::SceneAbyssWalker()
     : m_pPlayer(nullptr)
     , m_pRenderer(nullptr)
@@ -46,6 +42,8 @@ SceneAbyssWalker::SceneAbyssWalker()
     , m_intermissionTimer(INTERMISSION_DURATION)
     , m_enemiesKilledThisWave(0)
     , m_playerChoseToQuit(false)
+    , m_selectedUpgradeButtonIndex(-1)
+    , m_selectedGameEndButtonIndex(-1)
 {
     m_pmoonBackground = nullptr;
 }
@@ -166,13 +164,21 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
         const float rollSpeed = 200.0f;
         bool isMoving = false;
 
+        bool isPlayerAttemptingMove = false;
+        PlayerState stateBeforePlayerInputAndProcess = PlayerState::IDLE;
+
+        if (m_pPlayer)
+        {
+            stateBeforePlayerInputAndProcess = m_pPlayer->GetCurrentState();
+        }
+
         XboxController* pController = nullptr;
         if (inputSystem.GetNumberOfControllersAttached() > 0)
         {
             pController = inputSystem.GetController(0);
         }
 
-        if (m_pPlayer->IsAlive())
+        if (m_pPlayer && m_pPlayer->IsAlive())
         {
             // Player Move Left
             if (inputSystem.GetKeyState(SDL_SCANCODE_A) == BS_HELD || (pController && pController->GetButtonState(SDL_CONTROLLER_BUTTON_DPAD_LEFT) == BS_HELD))
@@ -192,12 +198,6 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
             if (inputSystem.GetKeyState(SDL_SCANCODE_SPACE) == BS_PRESSED || (pController && pController->GetButtonState(SDL_CONTROLLER_BUTTON_A) == BS_PRESSED))
             {
                 m_pPlayer->Jump();
-                /*
-                if (m_pJumpSound)
-                {
-                    m_pFMODSystem->playSound(m_pJumpSound, 0, false, 0);
-                }
-                */
             }
 
             // Player Attack
@@ -312,7 +312,7 @@ void SceneAbyssWalker::ProcessWave(float deltaTime, InputSystem& inputSystem)
     case WaveState::INTERMISSION:
         m_intermissionTimer -= deltaTime;
         UpdateUpgradeMenuUI(inputSystem);
-        if (inputSystem.GetKeyState(SDL_SCANCODE_RETURN) == BS_PRESSED || m_intermissionTimer <= 0) // Press enter if want to skip intermission
+        if (m_intermissionTimer <= 0)
         {
             LogManager::GetInstance().Log("Intermission has ended.");
             ClearUpgradeMenuUI();
@@ -481,64 +481,150 @@ void SceneAbyssWalker::SetupUpgradeMenuUI() {
     {
         delete doneBtn.textTexture; delete doneBtn.textSprite;
     }
+
+    m_selectedUpgradeButtonIndex = m_upgradeButtons.empty() ? -1 : 0;
 }
 
 
 void SceneAbyssWalker::UpdateUpgradeMenuUI(InputSystem& inputSystem) 
 {
-    if (!m_pPlayer) return;
+    if (!m_pPlayer || m_upgradeButtons.empty())
+    {
+        if (m_upgradeButtons.empty()) m_selectedUpgradeButtonIndex = -1;
+        return;
+    }
+    
+    XboxController* pController = nullptr;
+    if (inputSystem.GetNumberOfControllersAttached() > 0)
+    {
+        pController = inputSystem.GetController(0);
+    }
+
+    // For controller navigation
+    if (pController)
+    {
+        if (pController->GetButtonState(SDL_CONTROLLER_BUTTON_DPAD_DOWN) == BS_PRESSED)
+        {
+            if (m_selectedUpgradeButtonIndex < static_cast<int>(m_upgradeButtons.size()) - 1)
+            {
+                m_selectedUpgradeButtonIndex++;
+            }
+            else
+            {
+                m_selectedUpgradeButtonIndex = 0;
+            }
+            // NOTE: Dont forget to add nav sound here!!
+        }
+        if (pController->GetButtonState(SDL_CONTROLLER_BUTTON_DPAD_UP) == BS_PRESSED)
+        {
+            if (m_selectedUpgradeButtonIndex > 0)
+            {
+                m_selectedUpgradeButtonIndex--;
+            }
+            else
+            {
+                m_selectedUpgradeButtonIndex = static_cast<int>(m_upgradeButtons.size()) - 1;
+            }
+            // NOTE: same as top, dont forget to add sound
+        }
+    }
+
     Vector2 mousePos = inputSystem.GetMousePosition();
 
-    for (auto& btn : m_upgradeButtons) 
+    for (size_t i = 0; i < m_upgradeButtons.size(); ++i) 
     {
+        auto& btn = m_upgradeButtons[i];
         btn.isHovered = btn.IsMouseOver(mousePos.x, mousePos.y);
+
+        bool isActive = btn.isHovered || (pController && static_cast<int>(i) == m_selectedUpgradeButtonIndex);
+
         if (btn.textSprite) 
-        { // Update text color on hover
-            if (btn.isHovered) 
+        { 
+            // Update text color on hover
+            if (isActive)
             {
-                btn.textSprite->SetRedTint(1.0f); btn.textSprite->SetGreenTint(0.647f); btn.textSprite->SetBlueTint(0.0f); // Orange
+                // Orange text
+                btn.textSprite->SetRedTint(1.0f); 
+                btn.textSprite->SetGreenTint(0.647f); 
+                btn.textSprite->SetBlueTint(0.0f);
             }
             else 
             {
-                btn.textSprite->SetRedTint(1.0f); btn.textSprite->SetGreenTint(1.0f); btn.textSprite->SetBlueTint(1.0f); // White
+                // White text
+                btn.textSprite->SetRedTint(1.0f); 
+                btn.textSprite->SetGreenTint(1.0f); 
+                btn.textSprite->SetBlueTint(1.0f);
             }
         }
     }
 
-    if (inputSystem.GetMouseButtonState(SDL_BUTTON_LEFT) == BS_PRESSED) 
-    {
-        for (const auto& btn : m_upgradeButtons) 
-        {
-            if (btn.isHovered) 
-            {
-                if (btn.identifier == "done_upgrading") 
-                {
-                    m_intermissionTimer = 0.0f; // End intermission
-                    ClearUpgradeMenuUI();
-                    m_waveTimer = PRE_WAVE_DELAY_DURATION; // Prepare for next wave
-                    m_currentWaveState = WaveState::PRE_WAVE_DELAY;
-                    LogManager::GetInstance().Log("Done upgrading clicked.");
-                }
-                else 
-                {
-                    // Attempt to upgrade stat
-                    if (m_pPlayer->GetPlayerStats().AttemptUpgrade(btn.statToUpgrade, m_pPlayer->GetAbyssalEssence())) 
-                    {
-                        if (btn.statToUpgrade == StatType::MAX_HEALTH) m_pPlayer->UpdateStatsFromPlayerStats();
-                        if (btn.statToUpgrade == StatType::MAX_STAMINA) m_pPlayer->UpdateStatsFromPlayerStats(); // Clamping handled by UseStamina/Regen
+    bool actionTriggered = false;
+    std::string actionIdentifier = "";
 
-                        // Refresh UI to show new values and cost
-                        SetupUpgradeMenuUI();
-                    }
-                    else 
-                    {
-                        LogManager::GetInstance().Log("Upgrade failed (not enough essence or other).");
-                        // Optionally play a "fail" sound
-                    }
-                }
-                SoundSystem::GetInstance().PlaySound("titleButton"); // Assuming you have a generic button click sound
+    // Mouse clicks
+    if (inputSystem.GetMouseButtonState(SDL_BUTTON_LEFT) == BS_PRESSED)
+    {
+        for (const auto& btn : m_upgradeButtons)
+        {
+            if (btn.isHovered)
+            {
+                actionIdentifier = btn.identifier;
+                actionTriggered = true;
                 break;
             }
+        }
+    }
+
+    // Controller cliks
+    if (!actionTriggered && pController && pController->GetButtonState(SDL_CONTROLLER_BUTTON_A) == BS_PRESSED)
+    {
+        if (m_selectedUpgradeButtonIndex >= 0 && m_selectedUpgradeButtonIndex < static_cast<int>(m_upgradeButtons.size()))
+        {
+            actionIdentifier = m_upgradeButtons[m_selectedUpgradeButtonIndex].identifier;
+            actionTriggered = true;
+        }
+    }
+
+    if (actionTriggered && !actionIdentifier.empty())
+    {
+        // Play audio when clicked or interected with
+        SoundSystem::GetInstance().PlaySound("titleButton");
+        ActivateButtonAction(actionIdentifier);
+    }
+}
+
+void SceneAbyssWalker::ActivateButtonAction(const std::string& identifier)
+{
+    if (identifier == "done_upgrading")
+    {
+        m_intermissionTimer = 0.0f; 
+    }
+    else
+    {
+        StatType statToUpgrade = StatType::MAX_HEALTH;
+        bool found = false;
+        for (const auto& btn : m_upgradeButtons) 
+        {
+            if (btn.identifier == identifier) 
+            {
+                statToUpgrade = btn.statToUpgrade;
+                found = true;
+                break;
+            }
+        }
+
+        if (found && m_pPlayer->GetPlayerStats().AttemptUpgrade(statToUpgrade, m_pPlayer->GetAbyssalEssence()))
+        {
+            if (statToUpgrade == StatType::MAX_HEALTH || statToUpgrade == StatType::MAX_STAMINA)
+            {
+                m_pPlayer->UpdateStatsFromPlayerStats();
+            }
+            SetupUpgradeMenuUI(); // Refresh UI
+        }
+        else
+        {
+            // For when the button upgrade fails (not enougn currency)
+            //SoundSystem::GetInstance().PlaySound("ui_fail_sound"); // Placeholder for fail sound
         }
     }
 }
@@ -688,65 +774,143 @@ void SceneAbyssWalker::SetupGameEndPromptUI(const std::string& titleMessage)
         m_gameEndButtons.push_back(quitGameBtn);
     }
     else { delete quitGameBtn.textSprite; delete quitGameBtn.textTexture; }
+
+    m_selectedGameEndButtonIndex = m_gameEndButtons.empty() ? -1 : 0;
 }
 
 void SceneAbyssWalker::UpdateGameEndPromptUI(InputSystem& inputSystem) 
 {
-    if (!m_pPlayer) return;
+    if (!m_pPlayer || m_gameEndButtons.empty())
+    {
+        if (m_gameEndButtons.empty()) m_selectedGameEndButtonIndex = -1;
+        return;
+    }
+
+    XboxController* pController = nullptr;
+    if (inputSystem.GetNumberOfControllersAttached() > 0)
+    {
+        pController = inputSystem.GetController(0);
+    }
+
+    // Controller Navigation
+    if (pController)
+    {
+        if (pController->GetButtonState(SDL_CONTROLLER_BUTTON_DPAD_DOWN) == BS_PRESSED)
+        {
+            if (m_selectedGameEndButtonIndex < static_cast<int>(m_gameEndButtons.size()) - 1)
+            {
+                m_selectedGameEndButtonIndex++;
+            }
+            else
+            {
+                m_selectedGameEndButtonIndex = 0; // Wrap around
+            }
+            // Sound for moving around the buttons
+            //SoundSystem::GetInstance().PlaySound("ui_nav_sound"); // Placeholder
+        }
+        if (pController->GetButtonState(SDL_CONTROLLER_BUTTON_DPAD_UP) == BS_PRESSED)
+        {
+            if (m_selectedGameEndButtonIndex > 0)
+            {
+                m_selectedGameEndButtonIndex--;
+            }
+            else
+            {
+                m_selectedGameEndButtonIndex = static_cast<int>(m_gameEndButtons.size()) - 1;
+            }
+            // Sound for moving around the buttons
+            //SoundSystem::GetInstance().PlaySound("ui_nav_sound"); // Placeholder
+        }
+    }
+
     Vector2 mousePos = inputSystem.GetMousePosition();
 
-    for (auto& btn : m_gameEndButtons) 
+    for (size_t i = 0; i < m_gameEndButtons.size(); ++i)
     {
+        auto& btn = m_gameEndButtons[i];
         btn.isHovered = btn.IsMouseOver(mousePos.x, mousePos.y);
-        if (btn.textSprite) 
+
+        bool isActive = btn.isHovered || (pController && static_cast<int>(i) == m_selectedGameEndButtonIndex);
+
+        if (btn.textSprite)
         {
-            if (btn.isHovered) 
+            if (isActive)
             {
-                btn.textSprite->SetRedTint(1.0f); btn.textSprite->SetGreenTint(0.647f); btn.textSprite->SetBlueTint(0.0f);
+                btn.textSprite->SetRedTint(1.0f); 
+                btn.textSprite->SetGreenTint(0.647f); 
+                btn.textSprite->SetBlueTint(0.0f);
             }
-            else 
+            else
             {
-                btn.textSprite->SetRedTint(1.0f); btn.textSprite->SetGreenTint(1.0f); btn.textSprite->SetBlueTint(1.0f);
+                btn.textSprite->SetRedTint(1.0f); 
+                btn.textSprite->SetGreenTint(1.0f);
+                btn.textSprite->SetBlueTint(1.0f);
             }
         }
     }
 
-    if (inputSystem.GetMouseButtonState(SDL_BUTTON_LEFT) == BS_PRESSED) 
+    bool actionTriggered = false;
+    std::string actionIdentifier = "";
+
+    // Mouse clicks
+    if (inputSystem.GetMouseButtonState(SDL_BUTTON_LEFT) == BS_PRESSED)
     {
-        for (const auto& btn : m_gameEndButtons) 
+        for (const auto& btn : m_gameEndButtons)
         {
             if (btn.isHovered) {
-                SoundSystem::GetInstance().PlaySound("titleButton");
-                if (btn.identifier == "revive_player") 
-                {
-                    m_pPlayer->Revive();
-                    if (m_pPlayer->IsAlive()) 
-                    {
-                        ClearGameEndPromptUI();
-                        m_currentWaveState = WaveState::PRE_WAVE_DELAY;
-                        m_waveTimer = PRE_WAVE_DELAY_DURATION;
-                        m_enemiesKilledThisWave = 0;
-                    }
-                    else 
-                    { // Revive failed (e.g. somehow spent essence between check and click)
-                        SetupGameEndPromptUI("Defeated!"); // Refresh prompt
-                    }
-                }
-                else if (btn.identifier == "restart_game") 
-                {
-                    Game::GetInstance().SetCurrentScene(SCENE_INDEX_ABYSSWALKER); // Let Game class re-init the scene
-                }
-                else if (btn.identifier == "quit_title") 
-                {
-                    Game::GetInstance().SetCurrentScene(SCENE_INDEX_TITLE);
-                }
-                else if (btn.identifier == "quit_game") 
-                {
-                    m_playerChoseToQuit = true; // Game::Process will call Game::Quit()
-                }
+                actionIdentifier = btn.identifier;
+                actionTriggered = true;
                 break;
             }
         }
+    }
+
+    // Controller clicks
+    if (!actionTriggered && pController && pController->GetButtonState(SDL_CONTROLLER_BUTTON_A) == BS_PRESSED)
+    {
+        if (m_selectedGameEndButtonIndex >= 0 && m_selectedGameEndButtonIndex < static_cast<int>(m_gameEndButtons.size()))
+        {
+            actionIdentifier = m_gameEndButtons[m_selectedGameEndButtonIndex].identifier;
+            actionTriggered = true;
+        }
+    }
+
+    if (actionTriggered && !actionIdentifier.empty())
+    {
+        SoundSystem::GetInstance().PlaySound("titleButton");
+        ActivateGameEndButtonAction(actionIdentifier);
+    }
+}
+
+void SceneAbyssWalker::ActivateGameEndButtonAction(const std::string& identifier)
+{
+    if (identifier == "revive_player")
+    {
+        m_pPlayer->Revive();
+        if (m_pPlayer->IsAlive())
+        {
+            ClearGameEndPromptUI();
+            m_selectedGameEndButtonIndex = -1;
+            m_currentWaveState = WaveState::PRE_WAVE_DELAY;
+            m_waveTimer = PRE_WAVE_DELAY_DURATION;
+            m_enemiesKilledThisWave = 0;
+        }
+        else
+        {
+            SetupGameEndPromptUI("Defeated!");
+        }
+    }
+    else if (identifier == "restart_game")
+    {
+        Game::GetInstance().SetCurrentScene(SCENE_INDEX_ABYSSWALKER);
+    }
+    else if (identifier == "quit_title")
+    {
+        Game::GetInstance().SetCurrentScene(SCENE_INDEX_TITLE);
+    }
+    else if (identifier == "quit_game")
+    {
+        m_playerChoseToQuit = true;
     }
 }
 
