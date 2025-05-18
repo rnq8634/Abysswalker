@@ -111,11 +111,6 @@ protected:
 	Renderer* m_pRenderer;
 
 	Sprite* m_pmoonBackground;
-	Sprite* m_ptree5Background;
-	Sprite* m_ptree4Background;
-	Sprite* m_ptree3Background;
-	Sprite* m_ptree2Background;
-	Sprite* m_ptree1Background;
 
 	// Spawn logic
 	const int m_maxEnemies = 20; // Max enemies limit

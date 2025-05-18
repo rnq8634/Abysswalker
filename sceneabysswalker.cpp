@@ -52,11 +52,6 @@ SceneAbyssWalker::SceneAbyssWalker()
     , m_playerChoseToQuit(false)
 {
     m_pmoonBackground = nullptr;
-    m_ptree5Background = nullptr;
-    m_ptree4Background = nullptr;
-    m_ptree3Background = nullptr;
-    m_ptree2Background = nullptr;
-    m_ptree1Background = nullptr;
 }
 
 SceneAbyssWalker::~SceneAbyssWalker()
@@ -77,12 +72,8 @@ SceneAbyssWalker::~SceneAbyssWalker()
     m_enemyType2.clear();
 
     // Background
-    delete m_pmoonBackground; m_pmoonBackground = nullptr;
-    delete m_ptree5Background; m_ptree5Background = nullptr;
-    delete m_ptree4Background; m_ptree4Background = nullptr;
-    delete m_ptree3Background; m_ptree3Background = nullptr;
-    delete m_ptree2Background; m_ptree2Background = nullptr;
-    delete m_ptree1Background; m_ptree1Background = nullptr;
+    delete m_pmoonBackground; 
+    m_pmoonBackground = nullptr;
 
     ClearUpgradeMenuUI();
     ClearGameEndPromptUI();
@@ -91,11 +82,6 @@ SceneAbyssWalker::~SceneAbyssWalker()
 void SceneAbyssWalker::fullBackground(Renderer& renderer)
 {
     m_pmoonBackground = renderer.CreateSprite("assets/backgrounds/main_background.png");
-    m_ptree5Background = renderer.CreateSprite("assets/backgrounds/bgrd_tree5.png");
-    m_ptree4Background = renderer.CreateSprite("assets/backgrounds/bgrd_tree4.png");
-    m_ptree3Background = renderer.CreateSprite("assets/backgrounds/bgrd_tree3.png");
-    m_ptree2Background = renderer.CreateSprite("assets/backgrounds/bgrd_tree2.png");
-    m_ptree1Background = renderer.CreateSprite("assets/backgrounds/bgrd_tree1.png");
 
     const int screenWidth = renderer.GetWidth();
     const int screenHeight = renderer.GetHeight();
@@ -113,27 +99,6 @@ void SceneAbyssWalker::fullBackground(Renderer& renderer)
         m_pmoonBackground->SetFlipHorizontal(true);
         m_pmoonBackground->SetAngle(180.0f);
     }
-
-    auto setupTreeLayer = [&](Sprite* treeSprite, float desiredRelativeHeight)
-        {
-            if (!treeSprite) return;
-            float scaleToScreenWidthX = static_cast<float>(screenWidth) / treeSprite->GetOriginalWidth();
-            float scaleToScreenWidthY = scaleToScreenWidthX;
-
-            treeSprite->SetScale(scaleToScreenWidthX, scaleToScreenWidthY);
-            treeSprite->SetX(screenCenterX);
-
-            float scaledTreeHeight = treeSprite->GetOriginalHeight() * scaleToScreenWidthY;
-            treeSprite->SetY(static_cast<int>(screenBottomY - (scaledTreeHeight / 2.0f)));
-            treeSprite->SetFlipHorizontal(true);
-            treeSprite->SetAngle(180.0f);
-        };
-
-    setupTreeLayer(m_ptree5Background, 1.0f);
-    setupTreeLayer(m_ptree4Background, 1.0f);
-    setupTreeLayer(m_ptree3Background, 1.0f);
-    setupTreeLayer(m_ptree2Background, 1.0f);
-    setupTreeLayer(m_ptree1Background, 1.0f);
 }
 
 bool SceneAbyssWalker::Initialise(Renderer& renderer)
@@ -1039,11 +1004,6 @@ void SceneAbyssWalker::SpawnEnemy(EnemySpawnType type, bool spawnOnLeft)
 void SceneAbyssWalker::Draw(Renderer& renderer)
 {
     if (m_pmoonBackground) m_pmoonBackground->Draw(renderer);
-    if (m_ptree5Background) m_ptree5Background->Draw(renderer);
-    if (m_ptree4Background) m_ptree4Background->Draw(renderer);
-    if (m_ptree3Background) m_ptree3Background->Draw(renderer);
-    if (m_ptree2Background) m_ptree2Background->Draw(renderer);
-    if (m_ptree1Background) m_ptree1Background->Draw(renderer);
 
     if (m_currentWaveState == WaveState::INTERMISSION)
     {

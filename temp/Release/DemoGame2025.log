@@ -1,43 +1,19 @@
 ﻿  AbyssalEssence.cpp
-  AnimatedSprite.cpp
   EnemyBat.cpp
   EnemyType2.cpp
-  Entity.cpp
   Game.cpp
-C:\Users\nikol\source\repos\DemoGame2025\Game.cpp(217,47): warning C4018: '<': signed/unsigned mismatch
-C:\Users\nikol\source\repos\DemoGame2025\Game.cpp(248,46): warning C4018: '<': signed/unsigned mismatch
-  imgui.cpp
-  imgui_demo.cpp
-  imgui_draw.cpp
-  imgui_impl_opengl3.cpp
-  imgui_impl_sdl2.cpp
-  imgui_tables.cpp
-  imgui_widgets.cpp
   InputSystem.cpp
-  LogManager.cpp
   main.cpp
-  Matrix4.cpp
-  Particle.cpp
-  ParticleEmitter.cpp
   Player.cpp
-  Compiling...
-  Renderer.cpp
-  Scene.cpp
+  PlayerStats.cpp
   SceneAbyssWalker.cpp
-  SceneControls.cpp
+C:\Users\nikol\source\repos\DemoGame2025\SceneAbyssWalker.cpp(604,130): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
   SceneSplashScreenAUT.cpp
   SceneTitleScreen.cpp
-  Shader.cpp
-  SoundSystem.cpp
   SceneSplashScreenFMOD.cpp
-  Sprite.cpp
-  Texture.cpp
-  TextureManager.cpp
-  Vector2.cpp
-  VertexArray.cpp
-  xboxcontroller.cpp
   Generating code
-  Previous IPDB not found, fall back to full compilation.
-  All 3238 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  523 of 3339 functions (15.7%) were compiled, the rest were copied from previous compilation.
+    111 functions were new in current compilation
+    150 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   DemoGame2025.vcxproj -> C:\Users\nikol\source\repos\DemoGame2025\game\DemoGame2025.exe
