@@ -1,19 +1,43 @@
-﻿  AnimatedSprite.cpp
+﻿  AbyssalEssence.cpp
+  AnimatedSprite.cpp
   EnemyBat.cpp
   EnemyType2.cpp
   Entity.cpp
   Game.cpp
+  imgui.cpp
+  imgui_demo.cpp
+  imgui_draw.cpp
+  imgui_impl_opengl3.cpp
+  imgui_impl_sdl2.cpp
+  imgui_tables.cpp
+  imgui_widgets.cpp
   InputSystem.cpp
+  LogManager.cpp
+  main.cpp
+  Matrix4.cpp
+  Particle.cpp
+  ParticleEmitter.cpp
   Player.cpp
+  Generating Code...
+  Compiling...
+  PlayerStats.cpp
   Renderer.cpp
   Scene.cpp
   SceneAbyssWalker.cpp
-C:\Users\nikol\source\repos\DemoGame2025\SceneAbyssWalker.cpp(696,130): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\nikol\source\repos\DemoGame2025\SceneAbyssWalker.cpp(366,130): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+  SceneControls.cpp
   SceneSplashScreenAUT.cpp
   SceneTitleScreen.cpp
+  Shader.cpp
+  SoundSystem.cpp
   SceneSplashScreenFMOD.cpp
   Sprite.cpp
+  Texture.cpp
+  TextureManager.cpp
+  UpgradeMenu.cpp
   Vector2.cpp
+  VertexArray.cpp
+  WaveSystem.cpp
   XboxController.cpp
   Generating Code...
   DemoGame2025.vcxproj -> C:\Users\nikol\source\repos\DemoGame2025\game\DemoGame2025_debug.exe

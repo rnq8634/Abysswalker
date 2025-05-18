@@ -179,8 +179,10 @@
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TextureManager.cpp" />
+    <ClCompile Include="UpgradeMenu.cpp" />
     <ClCompile Include="Vector2.cpp" />
     <ClCompile Include="VertexArray.cpp" />
+    <ClCompile Include="WaveSystem.cpp" />
     <ClCompile Include="XboxController.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -215,8 +217,10 @@
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureManager.h" />
+    <ClInclude Include="UpgradeMenu.h" />
     <ClInclude Include="Vector2.h" />
     <ClInclude Include="VertexArray.h" />
+    <ClInclude Include="WaveSystem.h" />
     <ClInclude Include="XboxController.h" />
   </ItemGroup>
   <ItemGroup>

@@ -14,10 +14,8 @@ c:\users\nikol\source\repos\demogame2025\temp\debug\imgui_impl_opengl3.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\imgui_draw.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\imgui_demo.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\imgui.obj
-c:\users\nikol\source\repos\demogame2025\temp\debug\game.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\entity.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\enemytype2.obj
-c:\users\nikol\source\repos\demogame2025\temp\debug\enemybat.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\animatedsprite.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\abyssalessence.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\xboxcontroller.obj
@@ -28,10 +26,10 @@ c:\users\nikol\source\repos\demogame2025\temp\debug\texture.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\sprite.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\scenesplashscreenfmod.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\soundsystem.obj
+c:\users\nikol\source\repos\demogame2025\temp\debug\shader.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\scenetitlescreen.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\scenesplashscreenaut.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\scenecontrols.obj
-c:\users\nikol\source\repos\demogame2025\temp\debug\sceneabysswalker.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\scene.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\renderer.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\playerstats.obj
