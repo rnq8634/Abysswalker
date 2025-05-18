@@ -1,9 +1,11 @@
 C:\Users\nikol\source\repos\DemoGame2025\AbyssalEssence.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\AbyssalEssence.obj
 C:\Users\nikol\source\repos\DemoGame2025\AnimatedSprite.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\AnimatedSprite.obj
 C:\Users\nikol\source\repos\DemoGame2025\EnemyBat.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\EnemyBat.obj
+C:\Users\nikol\source\repos\DemoGame2025\EnemySpawner.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\EnemySpawner.obj
 C:\Users\nikol\source\repos\DemoGame2025\EnemyType2.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\EnemyType2.obj
 C:\Users\nikol\source\repos\DemoGame2025\Entity.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\Entity.obj
 C:\Users\nikol\source\repos\DemoGame2025\Game.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\Game.obj
+C:\Users\nikol\source\repos\DemoGame2025\GameEndPrompt.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\GameEndPrompt.obj
 C:\Users\nikol\source\repos\DemoGame2025\imgui\imgui.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\imgui.obj
 C:\Users\nikol\source\repos\DemoGame2025\imgui\imgui_demo.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\imgui_demo.obj
 C:\Users\nikol\source\repos\DemoGame2025\imgui\imgui_draw.cpp;C:\Users\nikol\source\repos\DemoGame2025\temp\Debug\imgui_draw.obj

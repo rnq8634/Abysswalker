@@ -3,8 +3,7 @@
 #define __UPGRADEMENU_H__
 
 // Local includes
-#include "PlayerStats.h" 
-#include "Vector2.h"
+#include "UITypes.h"
 
 // Lib incldes
 #include <vector>
@@ -13,39 +12,8 @@
 // Forward Declarations
 class Renderer;
 class InputSystem;
-class Sprite;
-class Texture;
 class Player; 
 class SceneAbyssWalker; 
-
-struct UIElemRect
-{
-    float x, y, width, height;
-};
-
-struct UIButton
-{
-    UIElemRect rect;
-    StatType statToUpgrade;
-    bool isHovered;
-    std::string identifier;
-
-    Sprite* textSprite;
-    Texture* textTexture;
-
-    UIButton() : textSprite(nullptr), textTexture(nullptr), isHovered(false) {}
-
-    bool IsMouseOver(float mouseX, float mouseY) const
-    {
-        return mouseX >= rect.x && mouseX <= rect.x + rect.width &&
-            mouseY >= rect.y && mouseY <= rect.y + rect.height;
-    }
-
-    ~UIButton() 
-    {
-    }
-};
-
 
 class UpgradeMenu
 {

@@ -9,6 +9,8 @@
 #include "Player.h"
 #include "WaveSystem.h"
 #include "UpgradeMenu.h"
+#include "GameEndPrompt.h"
+#include "EnemySpawner.h"
 
 // Lib Includes
 #include <vector>
@@ -52,14 +54,13 @@ public:
 
 	void ClearGameEndPromptUI();
 
-	std::vector<UIButton> m_gameEndButtons;
+	void AddEnemy(EnemyBat* bat);
+	void AddEnemy(EnemyType2* type2);
+
+	void PlayerRequestsQuit() { m_playerChoseToQuit = true; }
 
 protected:
 	void UpdateSpawning(float deltaTime);
-
-	enum class EnemySpawnType { BAT, TYPE2 };
-
-	void SpawnEnemy(EnemySpawnType, bool spawnOnLeft);
 	void HandleCollisions();
 	void CleanupDead();
 
@@ -70,8 +71,6 @@ protected:
 	void UpdateGameEndPromptUI(InputSystem& inputSystem);
 
 private:
-	void ActivateGameEndButtonAction(const std::string& identifier);
-
 	void DrawPlayerUI(Renderer& renderer);
 
 	// Member data
@@ -84,38 +83,17 @@ protected:
 	WaveSystem* m_pWaveSystem;
 	Player* m_pPlayer;
 	UpgradeMenu* m_pUpgradeMenu;
+	GameEndPrompt* m_pGameEndPrompt;
+	Sprite* m_pmoonBackground;
+	Renderer* m_pRenderer;
+	EnemySpawner* m_pEnemySpawner;
 
 	std::vector<EnemyBat*> m_enemyBats;
 	std::vector<EnemyType2*> m_enemyType2;
-	Renderer* m_pRenderer;
-
-	int m_selectedUpgradeButtonIndex;
-	int m_selectedGameEndButtonIndex;
-
-	Sprite* m_pmoonBackground;
-
-	// Spawn logic
-	const int m_maxEnemies = 20; // Max enemies limit
-
-	// Bats
-	float m_batSpawnTimer;
-	const float m_batSpawnInterval = 3.5f; // spawns a mob every X secs
-	const int m_maxBats = 10; // Maximum bats allowed
-
-	// Type 2
-	float m_type2SpawnTimer;
-	const float m_type2SpawnInterval = 7.0f;
-	const int m_maxType2 = 5;
 
 	bool m_bShowHitboxes; // For debugging
 
 	bool m_playerChoseToQuit;
-
-	// Custom UI Elements for Game End Prompts
-	Sprite* m_pGameEndTitleSprite;
-	Texture* m_pGameEndTitleTexture;
-	Sprite* m_pGameEndReviveCostSprite; // Optional, if showing revive cost
-	Texture* m_pGameEndReviveCostTexture;
 
 	// Font details for custom UI
 	const char* m_uiFontPath = "assets/fonts/OptimusPrinceps.ttf";

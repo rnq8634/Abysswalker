@@ -150,6 +150,12 @@
     <ClCompile Include="UpgradeMenu.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
+    <ClCompile Include="GameEndPrompt.cpp">
+      <Filter>Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="EnemySpawner.cpp">
+      <Filter>Engine\Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imgui\imconfig.h">
@@ -270,6 +276,15 @@
       <Filter>Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="UpgradeMenu.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="UITypes.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="GameEndPrompt.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemySpawner.h">
       <Filter>Engine\Core</Filter>
     </ClInclude>
   </ItemGroup>

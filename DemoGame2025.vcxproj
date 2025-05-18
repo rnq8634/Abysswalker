@@ -145,9 +145,11 @@
     <ClCompile Include="AbyssalEssence.cpp" />
     <ClCompile Include="AnimatedSprite.cpp" />
     <ClCompile Include="EnemyBat.cpp" />
+    <ClCompile Include="EnemySpawner.cpp" />
     <ClCompile Include="EnemyType2.cpp" />
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="GameEndPrompt.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
@@ -159,7 +161,9 @@
     <ClCompile Include="LogManager.cpp" />
     <ClInclude Include="AbyssalEssence.h" />
     <ClInclude Include="EnemyBat.h" />
+    <ClInclude Include="EnemySpawner.h" />
     <ClInclude Include="EnemyType2.h" />
+    <ClInclude Include="GameEndPrompt.h" />
     <ClInclude Include="LogManager.h" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Matrix4.cpp" />
@@ -217,6 +221,7 @@
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureManager.h" />
+    <ClInclude Include="UITypes.h" />
     <ClInclude Include="UpgradeMenu.h" />
     <ClInclude Include="Vector2.h" />
     <ClInclude Include="VertexArray.h" />
