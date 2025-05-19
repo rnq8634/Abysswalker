@@ -50,11 +50,9 @@ private:
     Texture* m_pTitleScreenImageTexture;
 
     Sprite* m_pNewGameTextSprite;
-    Sprite* m_pControlsTextSprite;
     Sprite* m_pQuitTextSprite;
 
     Texture* m_pNewGameTextTexture;
-    Texture* m_pControlsTextTexture;
     Texture* m_pQuitTextTexture;
 
     // FOnt settings

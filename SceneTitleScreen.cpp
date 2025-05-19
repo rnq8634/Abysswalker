@@ -35,10 +35,8 @@ const char* TITLESCREEN_IMAGE_FILEPATH = "assets/titleScreen/ABYSSWALKER.png";
 
 SceneTitleScreen::SceneTitleScreen()
     : m_pNewGameTextSprite(nullptr)
-    , m_pControlsTextSprite(nullptr)
     , m_pQuitTextSprite(nullptr)
     , m_pNewGameTextTexture(nullptr)
-    , m_pControlsTextTexture(nullptr)
     , m_pQuitTextTexture(nullptr)
     , m_pTitleScreenImageSprite(nullptr)
     , m_pTitleScreenImageTexture(nullptr)
@@ -59,8 +57,6 @@ SceneTitleScreen::~SceneTitleScreen()
 
     delete m_pNewGameTextSprite;
     m_pNewGameTextSprite = nullptr;
-    delete m_pControlsTextSprite;
-    m_pControlsTextSprite = nullptr;
     delete m_pQuitTextSprite;
     m_pQuitTextSprite = nullptr;
     delete m_pTitleScreenImageSprite;
@@ -70,8 +66,6 @@ SceneTitleScreen::~SceneTitleScreen()
     m_pTitleScreenImageTexture = nullptr;
     delete m_pNewGameTextTexture;
     m_pNewGameTextTexture = nullptr;
-    delete m_pControlsTextTexture;
-    m_pControlsTextTexture = nullptr;
     delete m_pQuitTextTexture;
     m_pQuitTextTexture = nullptr;
 }
@@ -141,8 +135,7 @@ bool SceneTitleScreen::Initialise(Renderer& renderer)
     const int screenHeight = renderer.GetHeight();
 
     Vector2 newGamePos = Vector2(screenWidth / 2.0f, screenHeight / 2.0f);
-    Vector2 controlsPos = Vector2(screenWidth / 2.0f, screenHeight / 2.0f + 70);
-    Vector2 quitPos = Vector2(screenWidth / 2.0f, screenHeight / 2.0f + 140);
+    Vector2 quitPos = Vector2(screenWidth / 2.0f, screenHeight / 2.0f + 70);
     Vector2 buttonSize = Vector2(200, 50);
 
     // Position the Title screen image
@@ -165,20 +158,6 @@ bool SceneTitleScreen::Initialise(Renderer& renderer)
         }
     }
 
-    // Text for Controls
-    m_pControlsTextTexture = new Texture();
-    m_pControlsTextSprite = new Sprite();
-    if (!m_pControlsTextTexture || !m_pControlsTextSprite) { return false; }
-    if (m_pControlsTextSprite->InitialiseWithText(*m_pControlsTextTexture, "Controls", m_fontPath, m_fontSize))
-    {
-        if (m_pControlsTextTexture->GetWidth() > 0 && m_pControlsTextTexture->GetHeight() > 0)
-        {
-            m_pControlsTextSprite->SetX(static_cast<int>(controlsPos.x));
-            m_pControlsTextSprite->SetY(static_cast<int>(controlsPos.y));
-            m_allButtons.push_back({ controlsPos, buttonSize, "Controls", false, m_pControlsTextSprite, ButtonAction::CONTROLS });
-        }
-    }
-
     // Quit Game Text
     m_pQuitTextTexture = new Texture();
     m_pQuitTextSprite = new Sprite();
@@ -193,7 +172,7 @@ bool SceneTitleScreen::Initialise(Renderer& renderer)
         }
     }
 
-    m_selectedButtonIndex = 2;
+    m_selectedButtonIndex = 1;
 
     return true;
 }
@@ -206,19 +185,19 @@ void SceneTitleScreen::Process(float deltaTime, InputSystem& inputSystem)
         pController = inputSystem.GetController(0);
     }
 
-    bool controllerNavigated = false;
+    //bool controllerNavigated = false;
     if (pController && !m_allButtons.empty())
     {
         if (pController->GetButtonState(SDL_CONTROLLER_BUTTON_DPAD_DOWN) == BS_PRESSED)
         {
             m_selectedButtonIndex = (m_selectedButtonIndex + 1) % m_allButtons.size();
-            controllerNavigated = true;
+            //controllerNavigated = true;
         }
 
         if (pController->GetButtonState(SDL_CONTROLLER_BUTTON_DPAD_UP) == BS_PRESSED)
         {
             m_selectedButtonIndex = (m_selectedButtonIndex - 1 + m_allButtons.size()) % m_allButtons.size();
-            controllerNavigated = true;
+            //controllerNavigated = true;
         }
     }
 
@@ -288,9 +267,6 @@ void SceneTitleScreen::Process(float deltaTime, InputSystem& inputSystem)
                 m_pBGMChannel = nullptr;
             }
             Game::GetInstance().SetCurrentScene(SCENE_INDEX_ABYSSWALKER);
-            break;
-
-        case ButtonAction::CONTROLS:
             break;
 
         case ButtonAction::QUIT:

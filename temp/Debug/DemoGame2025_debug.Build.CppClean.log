@@ -20,6 +20,7 @@ c:\users\nikol\source\repos\demogame2025\temp\debug\collisionsystem.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\boss.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\animatedsprite.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\abyssalessence.obj
+c:\users\nikol\source\repos\demogame2025\temp\debug\vertexarray.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\vector2.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\upgrademenu.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\texturemanager.obj
@@ -30,7 +31,7 @@ c:\users\nikol\source\repos\demogame2025\temp\debug\soundsystem.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\shader.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\scenetitlescreen.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\scenesplashscreenaut.obj
-c:\users\nikol\source\repos\demogame2025\temp\debug\scenecontrols.obj
+c:\users\nikol\source\repos\demogame2025\temp\debug\sceneabysswalker.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\scene.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\renderer.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\playerstats.obj
@@ -41,8 +42,15 @@ c:\users\nikol\source\repos\demogame2025\temp\debug\particle.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\matrix4.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\xboxcontroller.obj
 c:\users\nikol\source\repos\demogame2025\temp\debug\wavesystem.obj
-c:\users\nikol\source\repos\demogame2025\temp\debug\vertexarray.obj
+c:\users\nikol\source\repos\demogame2025\game\demogame2025_debug.exe
+c:\users\nikol\source\repos\demogame2025\game\demogame2025_debug.pdb
+c:\users\nikol\source\repos\demogame2025\temp\debug\demogame2025_debug.ilk
 c:\users\nikol\source\repos\demogame2025\temp\debug\demogame2025.vcxproj.filelistabsolute.txt
 c:\users\nikol\source\repos\demogame2025\temp\debug\demogame2025.tlog\cl.command.1.tlog
+c:\users\nikol\source\repos\demogame2025\temp\debug\demogame2025.tlog\cl.items.tlog
 c:\users\nikol\source\repos\demogame2025\temp\debug\demogame2025.tlog\cl.read.1.tlog
 c:\users\nikol\source\repos\demogame2025\temp\debug\demogame2025.tlog\cl.write.1.tlog
+c:\users\nikol\source\repos\demogame2025\temp\debug\demogame2025.tlog\link.command.1.tlog
+c:\users\nikol\source\repos\demogame2025\temp\debug\demogame2025.tlog\link.read.1.tlog
+c:\users\nikol\source\repos\demogame2025\temp\debug\demogame2025.tlog\link.secondary.1.tlog
+c:\users\nikol\source\repos\demogame2025\temp\debug\demogame2025.tlog\link.write.1.tlog

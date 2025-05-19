@@ -52,12 +52,17 @@ Game::Game()
 	, m_iFPS(0)
 	, m_iFrameCount(0)
 	, m_iLastTime(0)
+	, m_pCurrentScenePtr(nullptr)
 {
-	m_bForceScene = false;
 }
 
 Game::~Game()
 {
+	if (m_pCurrentScenePtr)
+	{
+	}
+	m_pCurrentScenePtr = nullptr;
+
 	delete m_pRenderer;
 	delete m_pInputSystem;
 	m_pInputSystem = 0;
@@ -129,30 +134,30 @@ bool Game::Initialise()
 	m_scenes.push_back(new SceneTitleScreen());
 	m_scenes.push_back(new SceneAbyssWalker());
 
-	// Start with the title screen
-	m_iCurrentScene = SCENE_INDEX_FMODSPLASH; // Only one scene available
-	if (!m_scenes[m_iCurrentScene]->Initialise(*m_pRenderer))
-	{
-		LogManager::GetInstance().Log(("Scene " + std::to_string(m_iCurrentScene) + " failed to init!!").c_str());
-		return false;
-	}
+	return SetCurrentScene(SCENE_INDEX_FMODSPLASH, true);
 
 	return true;
 }
 
-void Game::SetCurrentScene(int index)
+bool Game::SetCurrentScene(int index, bool forceInitialise)
 {
 	if (index >= 0 && static_cast<size_t>(index) < m_scenes.size())
 	{
-		if (m_iCurrentScene == index)
-		{
-			m_bForceScene = true;
-		}
 		m_iCurrentScene = index;
+		m_pCurrentScenePtr = m_scenes[m_iCurrentScene];
+
+		if (!m_pCurrentScenePtr->Initialise(*m_pRenderer))
+		{
+			LogManager::GetInstance().Log(("Scene " + std::to_string(m_iCurrentScene) + " failed to init!!").c_str());
+			Quit();
+			return false;
+		}
+		return true;
 	}
 	else
 	{
 		LogManager::GetInstance().Log(("Error: Attempted to set invalid scene index: " + std::to_string(index)).c_str());
+		return false;
 	}
 }
 
@@ -206,15 +211,14 @@ void Game::Process(float deltaTime)
 {
 	ProcessFrameCounting(deltaTime);
 
-	static int previousFrameSceneIndex = m_iCurrentScene;
-	Scene* currentActiveScene = m_scenes[m_iCurrentScene];
+	int sceneIndexBeforeAutoTransition = m_iCurrentScene;
 
 	if (m_iCurrentScene == SCENE_INDEX_FMODSPLASH)
 	{
 		SceneSplashScreenFMOD* fmodSplash = dynamic_cast<SceneSplashScreenFMOD*>(m_scenes[SCENE_INDEX_FMODSPLASH]);
 		if (fmodSplash && fmodSplash->IsFinished())
 		{
-			m_iCurrentScene = SCENE_INDEX_AUTSPLASH;
+			SetCurrentScene(SCENE_INDEX_AUTSPLASH);
 		}
 	}
 
@@ -223,48 +227,19 @@ void Game::Process(float deltaTime)
 		SceneSplashScreenAUT* autSplash = dynamic_cast<SceneSplashScreenAUT*>(m_scenes[SCENE_INDEX_AUTSPLASH]);
 		if (autSplash && autSplash->IsFinished())
 		{
-			m_iCurrentScene = SCENE_INDEX_TITLE;
+			SetCurrentScene(SCENE_INDEX_TITLE);
 		}
 	}
 
-	if (m_iCurrentScene != previousFrameSceneIndex || m_bForceScene)
+	if (m_pCurrentScenePtr)
 	{
-		LogManager::GetInstance().Log(("Transitioning to scene: " + std::to_string(m_iCurrentScene)).c_str());
-		if (m_iCurrentScene >= 0 && static_cast<size_t>(m_iCurrentScene) < m_scenes.size())
-		{
-			if (!m_scenes[m_iCurrentScene]->Initialise(*m_pRenderer)) // Call Initialise on the NEW scene
-			{
-				LogManager::GetInstance().Log("Failed to initialise new scene! Quitting.");
-				Quit();
-				return; // Exit Process if initialization fails
-			}
-			previousFrameSceneIndex = m_iCurrentScene;
-			m_bForceScene = false;
-		}
-		else
-		{
-			LogManager::GetInstance().Log("Error: Invalid scene index for transition during Game::Process.");
-			Quit();
-			return;
-		}
+		m_pCurrentScenePtr->Process(deltaTime, *m_pInputSystem);
 	}
-
-	// Check if scene changed via IMGUI
-	static int previousScene = m_iCurrentScene;
-	if (m_iCurrentScene != previousScene)
+	else
 	{
-		// Re-initialize the new scene
-		if (!m_scenes[m_iCurrentScene]->Initialise(*m_pRenderer))
-		{
-			LogManager::GetInstance().Log("Failed to initialise scene!");
-			m_iCurrentScene = previousScene;
-		}
-		previousScene = m_iCurrentScene;
-	}
-
-	if (m_iCurrentScene >= 0 && static_cast<size_t>(m_iCurrentScene) < m_scenes.size())
-	{
-		m_scenes[m_iCurrentScene]->Process(deltaTime, *m_pInputSystem);
+		LogManager::GetInstance().Log("Error: m_pCurrentScenePtr is null in Game::Process. Quitting.");
+		Quit();
+		return;
 	}
 
 	// Update FMOD system
@@ -277,7 +252,10 @@ void Game::Draw(Renderer& renderer)
 
 	renderer.Clear();
 
-	m_scenes[m_iCurrentScene]->Draw(renderer);
+	if (m_pCurrentScenePtr)
+	{
+		m_pCurrentScenePtr->Draw(renderer);
+	}
 
 	// TODO: Add game objects to draw here!
 

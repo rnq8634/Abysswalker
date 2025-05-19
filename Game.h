@@ -4,14 +4,11 @@
 
 // Forward delcarations:
 class Renderer;
-class Sprite;
 class Scene;
 class InputSystem;
 
 // Lib includes
 #include <vector>
-#include "fmod.hpp"
-#include <SDL_ttf.h>
 
 const int SCENE_INDEX_FMODSPLASH = 0;
 const int SCENE_INDEX_AUTSPLASH = 1;
@@ -30,7 +27,7 @@ public:
 	//IMGUI
 	void ToggleDebugWindow();
 
-	void SetCurrentScene(int index);
+	bool SetCurrentScene(int index, bool forceInitialise = false);
 	int GetCurrentSceneIndex() const;
 
 protected:
@@ -57,7 +54,6 @@ protected:
 	InputSystem* m_pInputSystem;
 
 	bool m_bShowDebugWindow;
-	bool m_bForceScene;
 
 	__int64 m_iLastTime;
 	float m_fExecutionTime;
@@ -67,6 +63,8 @@ protected:
 
 	std::vector<Scene*> m_scenes;
 	int m_iCurrentScene;
+
+	Scene* m_pCurrentScenePtr;
 
 #ifdef USE_LAG
 	float m_mfLag;

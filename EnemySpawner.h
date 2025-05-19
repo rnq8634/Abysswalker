@@ -37,10 +37,10 @@ private:
     const int m_maxBats = 10;
 
     float m_type2SpawnTimer;
-    const float m_type2SpawnInterval = 7.0f;
+    const float m_type2SpawnInterval = 6.0f;
     const int m_maxType2 = 5;
 
-    const int m_maxEnemies = 20; 
+    const int m_maxEnemies = 30; 
 };
 
 #endif // __ENEMYSPAWNER_H__

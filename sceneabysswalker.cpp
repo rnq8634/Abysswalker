@@ -14,6 +14,8 @@
 #include "Game.h"
 #include "Texture.h"
 #include "XboxController.h"
+#include "PlayerStats.h"
+#include "SoundSystem.h"
 
 // IMGUI
 #include "imgui/imgui.h"
@@ -22,10 +24,14 @@
 #include <algorithm>
 #include <cstdio>
 
+const std::string BGM_FIGHT_1_ID = "DMC4";
+const std::string BGM_FIGHT_2_ID = "DMC3";
+const char* BGM_FIGHT_1_FILEPATH = "assets/sounds/fightBGM_1.mp3";
+const char* BGM_FIGHT_2_FILEPATH = "assets/sounds/fightBGM_2.mp3";
+
 SceneAbyssWalker::SceneAbyssWalker()
     : m_pPlayer(nullptr)
     , m_pRenderer(nullptr)
-    , m_bShowHitboxes(false)
     , m_playerChoseToQuit(false)
     , m_pWaveSystem(nullptr)
     , m_pEnemySpawner(nullptr)
@@ -40,11 +46,20 @@ SceneAbyssWalker::SceneAbyssWalker()
     , m_lastWaveTimerStr("")
     , m_lastWaveCountStr("")
     , m_pmoonBackground(nullptr)
+    , m_pCurrentBGMChannel(nullptr)
+    , m_currentBGMState(CurrentPlayingBGM::NONE)
+    , m_bInitialised(false)
 {
 }
 
 SceneAbyssWalker::~SceneAbyssWalker()
 {
+    if (m_pCurrentBGMChannel)
+    {
+        SoundSystem::GetInstance().StopChannel(m_pCurrentBGMChannel);
+        m_pCurrentBGMChannel = nullptr;
+    }
+
     delete m_pWaveCountTextTexture;
     m_pWaveCountTextTexture = nullptr;
 
@@ -97,12 +112,13 @@ SceneAbyssWalker::~SceneAbyssWalker()
 
 void SceneAbyssWalker::fullBackground(Renderer& renderer)
 {
+    if (m_pmoonBackground) return;
+
     m_pmoonBackground = renderer.CreateSprite("assets/backgrounds/main_background.png");
 
     const int screenWidth = renderer.GetWidth();
     const int screenHeight = renderer.GetHeight();
     const int screenCenterX = screenWidth / 2;
-    const int screenBottomY = screenHeight;
 
     if (m_pmoonBackground)
     {
@@ -125,8 +141,11 @@ bool SceneAbyssWalker::Initialise(Renderer& renderer)
         fullBackground(*m_pRenderer);
     }
 
+    // Bats
     for (EnemyBat* enemyBat : m_enemyBats) delete enemyBat;
     m_enemyBats.clear();
+
+    // Type 2
     for (EnemyType2* enemyType2 : m_enemyType2) delete enemyType2;
     m_enemyType2.clear();
 
@@ -136,6 +155,7 @@ bool SceneAbyssWalker::Initialise(Renderer& renderer)
         LogManager::GetInstance().Log("SceneAbyssWalker::Initialise - Player exists, calling ResetForNewGame.");
         m_pPlayer->ResetForNewGame();
     }
+
     else 
     {
         LogManager::GetInstance().Log("SceneAbyssWalker::Initialise - Player is NULL, creating new.");
@@ -144,65 +164,147 @@ bool SceneAbyssWalker::Initialise(Renderer& renderer)
         {
             delete m_pPlayer; 
             m_pPlayer = nullptr;
+            m_bInitialised = false;
             return false;
         }
     }
 
-    // Load Upgrade Menu prompt (Shows up at the end of each wave)
-    m_pUpgradeMenu = new UpgradeMenu(m_pRenderer, m_pPlayer, this);
-    if (!m_pUpgradeMenu)
+    if (!m_pUpgradeMenu) m_pUpgradeMenu = new UpgradeMenu(m_pRenderer, m_pPlayer, this);
+    if (!m_pUpgradeMenu) { LogManager::GetInstance().Log("Failed to create/load UpgradeMenu!!"); m_bInitialised = false; return false; }
+
+    if (!m_pGameEndPrompt) m_pGameEndPrompt = new GameEndPrompt(m_pRenderer, m_pPlayer, this);
+    if (!m_pGameEndPrompt) { LogManager::GetInstance().Log("Failed to create/load Game End Prompt Menu!!"); m_bInitialised = false; return false; }
+
+    if (!m_pWaveSystem) m_pWaveSystem = new WaveSystem(this, m_pPlayer);
+    if (!m_pWaveSystem) { LogManager::GetInstance().Log("Failed to create/load WaveManager!!"); m_bInitialised = false; return false; }
+    m_pWaveSystem->ResetForNewGame(); 
+
+    if (!m_pEnemySpawner) m_pEnemySpawner = new EnemySpawner(this, m_pPlayer, m_pRenderer);
+    if (!m_pEnemySpawner) { LogManager::GetInstance().Log("Failed to create/load EnemySpawner!!"); m_bInitialised = false; return false; }
+    m_pEnemySpawner->Reset(); 
+
+    if (!m_pPlayerHUD) m_pPlayerHUD = new PlayerHUD(m_pRenderer, m_pPlayer);
+    if (!m_pPlayerHUD) { LogManager::GetInstance().Log("Failed to create/load playerHUD!!"); m_bInitialised = false; return false; }
+
+    if (!m_pCollisionSystem) m_pCollisionSystem = new CollisionSystem();
+    if (!m_pCollisionSystem) { LogManager::GetInstance().Log("Failed to create/load Collision System!!"); m_bInitialised = false; return false; }
+
+    // Load BGMs (SoundSystem handles "already loaded" gracefully)
+    SoundSystem& soundSys = SoundSystem::GetInstance();
+    if (!soundSys.LoadSound(BGM_FIGHT_1_FILEPATH, BGM_FIGHT_1_ID, false, false))
     {
-        LogManager::GetInstance().Log("Failed to load UpgradeMenu!!");
-        return false;
+        LogManager::GetInstance().Log(("Failed to load BGM: " + std::string(BGM_FIGHT_1_FILEPATH)).c_str());
+    }
+    if (!soundSys.LoadSound(BGM_FIGHT_2_FILEPATH, BGM_FIGHT_2_ID, false, false))
+    {
+        LogManager::GetInstance().Log(("Failed to load BGM: " + std::string(BGM_FIGHT_2_FILEPATH)).c_str());
     }
 
-    // End Game Prompt (When player dies or loses)
-    m_pGameEndPrompt = new GameEndPrompt(m_pRenderer, m_pPlayer, this);
-    if (!m_pGameEndPrompt)
-    {
-        LogManager::GetInstance().Log("Failed to load Game End Prompt Menu!!");
-        return false;
-    }
-
-    // Load Wave System
-    m_pWaveSystem = new WaveSystem(this, m_pPlayer);
-    if (!m_pWaveSystem)
-    {
-        LogManager::GetInstance().Log("Failed to load WaveManager!!");
-        return false;
-    }
-
-    // Load Enemy Spawner
-    m_pEnemySpawner = new EnemySpawner(this, m_pPlayer, m_pRenderer);
-    if (!m_pEnemySpawner)
-    {
-        LogManager::GetInstance().Log("Failed to load EnemySpawner!!");
-        return false;
-    }
-
-    // Load the Player HUD
-    m_pPlayerHUD = new PlayerHUD(m_pRenderer, m_pPlayer);
-    if (!m_pPlayerHUD)
-    {
-        LogManager::GetInstance().Log("Failed to load playerHUD!!");
-        return false;
-    }
-
-    // Load the Collision System
-    m_pCollisionSystem = new CollisionSystem();
-    if (!m_pCollisionSystem)
-    {
-        LogManager::GetInstance().Log("Failed to load the Collision Systenm!!");
-        return false;
-    }
-
-    if (m_pWaveSystem) m_pWaveSystem->ResetForNewGame();
-    if (m_pEnemySpawner) m_pEnemySpawner->Reset();
     m_playerChoseToQuit = false;
+    
+    if (m_pUpgradeMenu) m_pUpgradeMenu->SetActive(false); 
+    if (m_pGameEndPrompt) m_pGameEndPrompt->SetActive(false);
 
-    SetupUpgradeMenuUI();
+    StartBGM(); // BGM starts when scene starts
 
+    LogManager::GetInstance().Log("SceneAbyssWalker::Initialise successful.");
+    m_bInitialised = true;
     return true;
+}
+
+void SceneAbyssWalker::StartBGM()
+{
+    SoundSystem& soundSys = SoundSystem::GetInstance();
+    if (m_pCurrentBGMChannel)
+    {
+        soundSys.StopChannel(m_pCurrentBGMChannel);
+        m_pCurrentBGMChannel = nullptr;
+    }
+
+    // BGM 1
+    m_pCurrentBGMChannel = soundSys.PlaySound(BGM_FIGHT_1_ID);
+    if (m_pCurrentBGMChannel)
+    {
+        soundSys.SetChannelVolume(m_pCurrentBGMChannel, 0.5f);
+        m_currentBGMState = CurrentPlayingBGM::BGM1;
+    }
+    else
+    {
+        m_currentBGMState = CurrentPlayingBGM::NONE;
+        LogManager::GetInstance().Log("Failed to play BGM 1!!!");
+    }
+}
+
+void SceneAbyssWalker::ProcessBGMTransition()
+{
+    if (m_currentBGMState == CurrentPlayingBGM::NONE && m_pCurrentBGMChannel) 
+    {
+        SoundSystem::GetInstance().StopChannel(m_pCurrentBGMChannel);
+        m_pCurrentBGMChannel = nullptr;
+    }
+
+    if (!m_pCurrentBGMChannel)
+    {
+        if (m_currentBGMState != CurrentPlayingBGM::NONE)
+        {
+            LogManager::GetInstance().Log("BGM channel was null but state was not NONE. Attempting to restart BGM sequence.");
+            StartBGM();
+        }
+        return;
+    }
+
+    bool isPlaying = false;
+    FMOD_RESULT result = m_pCurrentBGMChannel->isPlaying(&isPlaying);
+
+    if (result == FMOD_OK && !isPlaying)
+    {
+        SoundSystem& soundSys = SoundSystem::GetInstance();
+        LogManager::GetInstance().Log(("Current BGM (State: " + std::to_string(static_cast<int>(m_currentBGMState)) + ") finished playing.").c_str());
+        m_pCurrentBGMChannel = nullptr;
+
+        if (m_currentBGMState == CurrentPlayingBGM::BGM1)
+        {
+            m_pCurrentBGMChannel = soundSys.PlaySound(BGM_FIGHT_2_ID);
+            if (m_pCurrentBGMChannel)
+            {
+                soundSys.SetChannelVolume(m_pCurrentBGMChannel, 0.5f);
+                m_currentBGMState = CurrentPlayingBGM::BGM2;
+                LogManager::GetInstance().Log(("Transitioned to BGM 2 (ID: " + BGM_FIGHT_2_ID + ")").c_str());
+            }
+            else
+            {
+                m_currentBGMState = CurrentPlayingBGM::NONE;
+                LogManager::GetInstance().Log(("Failed to play BGM 2 (ID: " + BGM_FIGHT_2_ID + ") after BGM 1 finished.").c_str());
+            }
+        }
+        else if (m_currentBGMState == CurrentPlayingBGM::BGM2)
+        {
+            m_pCurrentBGMChannel = soundSys.PlaySound(BGM_FIGHT_1_ID);
+            if (m_pCurrentBGMChannel)
+            {
+                soundSys.SetChannelVolume(m_pCurrentBGMChannel, 0.5f);
+                m_currentBGMState = CurrentPlayingBGM::BGM1;
+                LogManager::GetInstance().Log(("Looped back to BGM 1 (ID: " + BGM_FIGHT_1_ID + ")").c_str());
+            }
+            else
+            {
+                m_currentBGMState = CurrentPlayingBGM::NONE;
+                LogManager::GetInstance().Log(("Failed to loop back to BGM 1 (ID: " + BGM_FIGHT_1_ID + ")").c_str());
+            }
+        }
+        else
+        {
+            LogManager::GetInstance().Log("BGM finished but was in unexpected state. Restarting BGM sequence.");
+            StartBGM();
+        }
+    }
+    else if (result != FMOD_OK)
+    {
+        LogManager::GetInstance().Log(("FMOD Error checking BGM: " + std::to_string(result) + ". Stopping BGM.").c_str());
+        SoundSystem::GetInstance().StopChannel(m_pCurrentBGMChannel);
+        m_pCurrentBGMChannel = nullptr;
+        m_currentBGMState = CurrentPlayingBGM::NONE;
+    }
 }
 
 void SceneAbyssWalker::RestartGame()
@@ -223,6 +325,8 @@ void SceneAbyssWalker::RestartGame()
     if (m_pPlayer) m_pPlayer->ResetForNewGame();
 
     m_playerChoseToQuit = false;
+
+    StartBGM();
 }
 
 void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
@@ -233,6 +337,8 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
         Game::GetInstance().Quit();
         return;
     }
+
+    ProcessBGMTransition();
 
     m_pWaveSystem->Process(deltaTime, inputSystem);
     WaveState currentWaveState = m_pWaveSystem->GetCurrentState();
@@ -496,10 +602,10 @@ void SceneAbyssWalker::CleanupDead()
             {
                 AnimatedSprite* sprite = enemyBat->GetCurrentAnimatedSprite();
                 bool animComplete = (sprite && !sprite->IsLooping() && sprite->IsAnimationComplete());
-                bool noSprite = !sprite;
+                //bool noSprite = !sprite;
                 bool forceClean = (currentWaveState != WaveState::IN_WAVE && enemyBat->GetCurrentState() == EnemyBatState::DEATH);
 
-                if (animComplete || noSprite || forceClean)
+                if (animComplete || forceClean)
                 {
                     LogManager::GetInstance().Log("Cleaning up dead Bat.");
                     delete enemyBat;
@@ -517,10 +623,10 @@ void SceneAbyssWalker::CleanupDead()
             {
                 AnimatedSprite* sprite = enemyT2->GetCurrentAnimatedSprite();
                 bool animComplete = (sprite && !sprite->IsLooping() && sprite->IsAnimationComplete());
-                bool noSprite = !sprite;
+                //bool noSprite = !sprite;
                 bool forceClean = (currentWaveState != WaveState::IN_WAVE && enemyT2->GetCurrentState() == EnemyType2State::DEATH);
 
-                if (animComplete || noSprite || forceClean) 
+                if (animComplete || forceClean) 
                 {
                     LogManager::GetInstance().Log("Cleaning up dead EnemyType2.");
                     delete enemyT2;
@@ -556,93 +662,22 @@ void SceneAbyssWalker::Draw(Renderer& renderer)
         DrawEndGamePrompts(renderer);
     }
 
+    // Draws player
     if (m_pPlayer)
     {
         m_pPlayer->Draw(renderer);
-
-        // Draw player hitbox
-        if (m_bShowHitboxes)
-        {
-            Vector2 playerPos = m_pPlayer->GetPosition();
-            float playerHalfWidth = Player::PLAYER_SPRITE_WIDTH / 2.0f;
-            float playerHalfHeight = Player::PLAYER_SPRITE_HEIGHT / 2.0f;
-
-            // Draw player collision box in green
-            renderer.DrawDebugRect(
-                playerPos.x - playerHalfWidth,
-                playerPos.y - playerHalfHeight,
-                playerPos.x + playerHalfWidth,
-                playerPos.y + playerHalfHeight,
-                0, 255, 0, 128
-            );
-
-            // Draw attack hitbox in red when attacking
-            if (m_pPlayer->GetCurrentState() == PlayerState::ATTACKING)
-            {
-                AnimatedSprite* playerSprite = m_pPlayer->GetCurrentAnimatedSprite();
-                if (playerSprite)
-                {
-                    int currentFrame = playerSprite->GetCurrentFrame();
-                    bool isHitFrame = (currentFrame >= 2 && currentFrame <= 5);
-
-                    if (isHitFrame)
-                    {
-                        float attackReach = 40.0f;
-                        float pAttackMinX = m_pPlayer->IsFacingRight() ?
-                            playerPos.x :
-                            playerPos.x - (Player::PLAYER_SPRITE_WIDTH / 2.0f + attackReach);
-                        float pAttackMaxX = m_pPlayer->IsFacingRight() ?
-                            playerPos.x + (Player::PLAYER_SPRITE_WIDTH / 2.0f + attackReach) :
-                            playerPos.x;
-                        float pAttackMinY = playerPos.y - (Player::PLAYER_SPRITE_HEIGHT / 2.0f);
-                        float pAttackMaxY = playerPos.y + (Player::PLAYER_SPRITE_HEIGHT / 2.0f);
-
-                        renderer.DrawDebugRect(
-                            pAttackMinX,
-                            pAttackMinY,
-                            pAttackMaxX,
-                            pAttackMaxY,
-                            255, 0, 0, 128
-                        );
-                    }
-                }
-            }
-        }
     }
 
+    // Draws bats
     for (EnemyBat* enemyBat : m_enemyBats)
     {
         enemyBat->Draw(renderer);
-
-        if (m_bShowHitboxes)
-        {
-            Vector2 enemyPos = enemyBat->GetPosition();
-            float enemyRadius = enemyBat->GetRadius();
-
-            renderer.DrawDebugRect(
-                enemyPos.x - enemyRadius,
-                enemyPos.y - enemyRadius,
-                enemyPos.x + enemyRadius,
-                enemyPos.y + enemyRadius,
-                255, 255, 0, 128  // Yellow for enemies
-            );
-        }
     }
 
     // Draw EnemyType2
     for (EnemyType2* enemyT2 : m_enemyType2)
     {
         enemyT2->Draw(renderer);
-        if (m_bShowHitboxes)
-        {
-            Vector2 enemyPos = enemyT2->GetPosition();
-            float enemyRadius = enemyT2->GetRadius();
-            renderer.DrawDebugRect(
-                enemyPos.x - enemyRadius, enemyPos.y - enemyRadius,
-                enemyPos.x + enemyRadius, enemyPos.y + enemyRadius,
-                255, 165, 0, 128  // Orange
-            );
-        }
     }
 
     if (m_pPlayerHUD)
@@ -746,12 +781,11 @@ void SceneAbyssWalker::Draw(Renderer& renderer)
                 float panelWidth = textWidth + 20.0f;
                 float panelHeight = 30.0f;
 
-                // Use getters from PlayerHUD for precise positioning
                 float groupStartX = m_pPlayerHUD->GetHealthBarStartX(renderer.GetWidth());
                 float barsY = m_pPlayerHUD->GetBarsYPosition();
 
                 float panelX = groupStartX - panelWidth - m_pPlayerHUD->GetBarSpacing();
-                float panelY = barsY; // Align top of wave count panel with top of health/stamina bars
+                float panelY = barsY;
 
                 renderer.DrawDebugRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 30, 30, 30, 200);
                 m_pWaveCountTextSprite->SetX(static_cast<int>(panelX + panelWidth / 2.0f));
@@ -795,8 +829,6 @@ void SceneAbyssWalker::DebugDraw()
 {
     if (ImGui::CollapsingHeader("Scene Debug"))
     {
-        ImGui::Checkbox("Show Hitboxes", &m_bShowHitboxes);
-
         if (m_pPlayer)
         {
             m_pPlayer->DebugDraw();

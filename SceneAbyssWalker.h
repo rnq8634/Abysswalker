@@ -4,7 +4,6 @@
 // Local includes
 #include "Scene.h"
 #include "Vector2.h"
-#include "PlayerStats.h"
 #include "fmod.hpp"
 #include "Player.h"
 #include "WaveSystem.h"
@@ -17,7 +16,6 @@
 // Lib Includes
 #include <vector>
 #include <string>
-#include <map>
 
 // Forward declarations
 class Player;
@@ -27,7 +25,6 @@ class Renderer;
 class InputSystem;
 class Sprite;
 class Texture;
-class SoundSystem;
 
 class SceneAbyssWalker : public Scene
 {
@@ -64,11 +61,15 @@ public:
 protected:
 	void CleanupDead();
 
-	
+	// UI Tingz
 	void UpdateUpgradeMenuUI(InputSystem& inputSystem);
 	void DrawUpgradeMenu(Renderer& renderer);
 	void DrawEndGamePrompts(Renderer& renderer);
 	void UpdateGameEndPromptUI(InputSystem& inputSystem);
+
+	// Sound Tingz
+	void StartBGM();
+	void ProcessBGMTransition();
 
 private:
 	// Wave Info Display
@@ -79,6 +80,10 @@ private:
 	Sprite* m_pWaveCountTextSprite;
 	Texture* m_pWaveCountTextTexture;
 	std::string m_lastWaveCountStr;
+
+	FMOD::Channel* m_pCurrentBGMChannel;
+	enum class CurrentPlayingBGM { NONE, BGM1, BGM2 };
+	CurrentPlayingBGM m_currentBGMState;
 
 	// Member data
 public:
@@ -100,9 +105,8 @@ protected:
 	std::vector<EnemyBat*> m_enemyBats;
 	std::vector<EnemyType2*> m_enemyType2;
 
-	bool m_bShowHitboxes; // For debugging
-
 	bool m_playerChoseToQuit;
+	bool m_bInitialised;
 
 	// Font details for custom UI
 	const char* m_uiFontPath = "assets/fonts/OptimusPrinceps.ttf";
