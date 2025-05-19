@@ -71,7 +71,14 @@ protected:
 	void UpdateGameEndPromptUI(InputSystem& inputSystem);
 
 private:
-	void DrawPlayerUI(Renderer& renderer);
+	// Wave Info Display
+	Sprite* m_pWaveTimerTextSprite;
+	Texture* m_pWaveTimerTextTexture;
+	std::string m_lastWaveTimerStr;
+
+	Sprite* m_pWaveCountTextSprite;
+	Texture* m_pWaveCountTextTexture;
+	std::string m_lastWaveCountStr;
 
 	// Member data
 public:

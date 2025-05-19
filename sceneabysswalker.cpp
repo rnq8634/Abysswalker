@@ -33,12 +33,30 @@ SceneAbyssWalker::SceneAbyssWalker()
     , m_pUpgradeMenu(nullptr)
     , m_pPlayerHUD(nullptr)
     , m_pCollisionSystem(nullptr)
+    , m_pWaveCountTextTexture(nullptr)
+    , m_pWaveCountTextSprite(nullptr)
+    , m_pWaveTimerTextTexture(nullptr)
+    , m_pWaveTimerTextSprite(nullptr)
+    , m_lastWaveTimerStr("")
+    , m_lastWaveCountStr("")
+    , m_pmoonBackground(nullptr)
 {
-    m_pmoonBackground = nullptr;
 }
 
 SceneAbyssWalker::~SceneAbyssWalker()
 {
+    delete m_pWaveCountTextTexture;
+    m_pWaveCountTextTexture = nullptr;
+
+    delete m_pWaveCountTextSprite;
+    m_pWaveCountTextSprite = nullptr;
+
+    delete m_pWaveTimerTextSprite;
+    m_pWaveTimerTextSprite = nullptr;
+
+    delete m_pWaveTimerTextTexture;
+    m_pWaveTimerTextTexture = nullptr;
+
     delete m_pCollisionSystem;
     m_pCollisionSystem = nullptr;
 
@@ -518,10 +536,14 @@ void SceneAbyssWalker::Draw(Renderer& renderer)
     if (m_pmoonBackground) m_pmoonBackground->Draw(renderer);
 
     WaveState currentWaveState = WaveState::PRE_WAVE_DELAY;
+    int currentWaveNum = 0;
+    float waveTimer = 0.0f;
 
     if (m_pWaveSystem)
     {
         currentWaveState = m_pWaveSystem->GetCurrentState();
+        currentWaveNum = m_pWaveSystem->GetCurrentWaveNumber();
+        waveTimer = m_pWaveSystem->GetWaveTimer();
     }
 
     if (currentWaveState == WaveState::INTERMISSION)
@@ -628,6 +650,131 @@ void SceneAbyssWalker::Draw(Renderer& renderer)
         m_pPlayerHUD->Draw();
     }
 
+    if (currentWaveState == WaveState::IN_WAVE || currentWaveState == WaveState::PRE_WAVE_DELAY) 
+    {
+        char timerBuffer[64];
+
+        if (currentWaveState == WaveState::PRE_WAVE_DELAY) 
+        {
+            if (currentWaveNum == 0) 
+            {
+                snprintf(timerBuffer, sizeof(timerBuffer), "Wave 1 Starting: %.0fs", std::max(0.0f, waveTimer));
+            }
+
+            else 
+            {
+                snprintf(timerBuffer, sizeof(timerBuffer), "Wave %d Starting: %.0fs", currentWaveNum + 1, std::max(0.0f, waveTimer));
+            }
+        }
+
+        else 
+        {
+            snprintf(timerBuffer, sizeof(timerBuffer), "Time Left: %.0fs", std::max(0.0f, waveTimer));
+        }
+        std::string timerStr(timerBuffer);
+
+        if (m_lastWaveTimerStr != timerStr || !m_pWaveTimerTextSprite) 
+        {
+            delete m_pWaveTimerTextSprite; m_pWaveTimerTextSprite = nullptr;
+            delete m_pWaveTimerTextTexture; m_pWaveTimerTextTexture = nullptr;
+
+            m_pWaveTimerTextTexture = new Texture();
+            m_pWaveTimerTextSprite = new Sprite();
+
+            if (m_pWaveTimerTextSprite->InitialiseWithText(*m_pWaveTimerTextTexture, timerStr.c_str(), m_uiFontPath, m_uiFontSize)) 
+            {
+                m_lastWaveTimerStr = timerStr;
+            }
+        }
+
+        if (m_pWaveTimerTextSprite) 
+        {
+            float panelWidth = static_cast<float>(m_pWaveTimerTextTexture->GetWidth()) + 20.0f;
+            float panelHeight = 30.0f;
+            float panelX = (renderer.GetWidth() / 2.0f) - (panelWidth / 2.0f);
+            float panelY = 20.0f;
+            renderer.DrawDebugRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 30, 30, 30, 200);
+            m_pWaveTimerTextSprite->SetX(static_cast<int>(panelX + panelWidth / 2.0f));
+            m_pWaveTimerTextSprite->SetY(static_cast<int>(panelY + panelHeight / 2.0f));
+            m_pWaveTimerTextSprite->Draw(renderer);
+        }
+    }
+
+    else if (m_pWaveTimerTextSprite) 
+    {
+        delete m_pWaveTimerTextSprite; m_pWaveTimerTextSprite = nullptr;
+        delete m_pWaveTimerTextTexture; m_pWaveTimerTextTexture = nullptr;
+        m_lastWaveTimerStr = "";
+    }
+
+    // Wave count
+    if (currentWaveState != WaveState::GAME_END_PROMPT && currentWaveState != WaveState::GAME_WON && m_pPlayerHUD) 
+    {
+        std::string countStr;
+        if (currentWaveNum == 0 && currentWaveState == WaveState::PRE_WAVE_DELAY) {
+            countStr = "Wave: 1";
+        }
+
+        else if (currentWaveState == WaveState::PRE_WAVE_DELAY && currentWaveNum > 0) 
+        {
+            countStr = "Wave: " + std::to_string(currentWaveNum + 1);
+        }
+
+        else if (currentWaveState == WaveState::IN_WAVE || currentWaveState == WaveState::INTERMISSION) 
+        {
+            countStr = "Wave: " + std::to_string(std::max(1, currentWaveNum));
+        }
+
+        if (!countStr.empty()) 
+        {
+            if (m_lastWaveCountStr != countStr || !m_pWaveCountTextSprite) 
+            {
+                delete m_pWaveCountTextSprite; m_pWaveCountTextSprite = nullptr;
+                delete m_pWaveCountTextTexture; m_pWaveCountTextTexture = nullptr;
+                m_pWaveCountTextTexture = new Texture();
+                m_pWaveCountTextSprite = new Sprite();
+
+                if (m_pWaveCountTextSprite->InitialiseWithText(*m_pWaveCountTextTexture, countStr.c_str(), m_uiFontPath, m_uiFontSize)) 
+                {
+                    m_lastWaveCountStr = countStr;
+                }
+            }
+
+            if (m_pWaveCountTextSprite) 
+            {
+                float textWidth = static_cast<float>(m_pWaveCountTextTexture->GetWidth());
+                float panelWidth = textWidth + 20.0f;
+                float panelHeight = 30.0f;
+
+                // Use getters from PlayerHUD for precise positioning
+                float groupStartX = m_pPlayerHUD->GetHealthBarStartX(renderer.GetWidth());
+                float barsY = m_pPlayerHUD->GetBarsYPosition();
+
+                float panelX = groupStartX - panelWidth - m_pPlayerHUD->GetBarSpacing();
+                float panelY = barsY; // Align top of wave count panel with top of health/stamina bars
+
+                renderer.DrawDebugRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 30, 30, 30, 200);
+                m_pWaveCountTextSprite->SetX(static_cast<int>(panelX + panelWidth / 2.0f));
+                m_pWaveCountTextSprite->SetY(static_cast<int>(panelY + panelHeight / 2.0f));
+                m_pWaveCountTextSprite->Draw(renderer);
+            }
+        }
+
+        else if (m_pWaveCountTextSprite) 
+        {
+            delete m_pWaveCountTextSprite; m_pWaveCountTextSprite = nullptr;
+            delete m_pWaveCountTextTexture; m_pWaveCountTextTexture = nullptr;
+            m_lastWaveCountStr = "";
+        }
+    }
+
+    else if (m_pWaveCountTextSprite) 
+    {
+        delete m_pWaveCountTextSprite; m_pWaveCountTextSprite = nullptr;
+        delete m_pWaveCountTextTexture; m_pWaveCountTextTexture = nullptr;
+        m_lastWaveCountStr = "";
+    }
+
     if (m_pWaveSystem)
     {
         currentWaveState = m_pWaveSystem->GetCurrentState();
@@ -635,12 +782,12 @@ void SceneAbyssWalker::Draw(Renderer& renderer)
 
     if (currentWaveState == WaveState::INTERMISSION)
     {
-        DrawUpgradeMenu(renderer);
+        if (m_pUpgradeMenu) m_pUpgradeMenu->Draw(renderer);
     }
 
     if (currentWaveState == WaveState::GAME_WON || currentWaveState == WaveState::GAME_END_PROMPT)
     {
-        DrawEndGamePrompts(renderer);
+        if (m_pGameEndPrompt) m_pGameEndPrompt->Draw(renderer);
     }
 }
 
