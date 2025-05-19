@@ -24,7 +24,7 @@ EnemyType2::EnemyType2()
     , m_bFacingRight(false)
     , m_iDamage(25)
     , m_moveSpeed(60.0f) // Enemy movespeed
-    , m_attackRange(50.0f)
+    , m_attackRange(70.0f)
     , m_detectionRange(2000.0f) // For now so that the enemies would find the player straight away
     , m_attackCD(5.0f)
     , m_timeSinceAttack(m_attackCD) // Ready to attack initially
@@ -67,7 +67,7 @@ bool EnemyType2::Initialise(Renderer& renderer, const Vector2& startPosition)
         m_bFacingRight = false;
     }
 
-    m_pStaticEnemy = renderer.CreateSprite("assets/enemyBat/Bat-IdleFly.png");
+    m_pStaticEnemy = renderer.CreateSprite("assets/enemyType2/Idle.png");
     if (m_pStaticEnemy)
     {
         m_pStaticEnemy->SetScale(ENEMYTYPE2_VISUAL_SCALE, ENEMYTYPE2_VISUAL_SCALE);

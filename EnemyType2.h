@@ -84,9 +84,8 @@ private:
 public:
     // Needs to stay in public
     Player* m_pTargetPlayer;
-    const float kGroundLevel = 850.0f;
+    const float kGroundLevel = 820.0f;
 
-    // Sprite dimensions for EnemyType2 (ALWAYS DOUBLE CHECK)
     static const int ENEMY_DEFAULT_SPRITE_HEIGHT = 93;
     static const int ENEMY_DEFAULT_SPRITE_WIDTH = 70;
 

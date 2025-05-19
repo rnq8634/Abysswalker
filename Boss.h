@@ -14,15 +14,19 @@
 class Player;
 class Renderer;
 class SceneAbyssWalker;
+class Texture;
 
 enum class BossState
 {
     IDLE,
     WALKING,
-    ATTACKING_WINDUP, // 70
-    ATTACKING_STRIKE, // 140
-    ATTACKING_OVER, // 70
-    SPELL,
+    ATTACKING_WINDUP, // 70 x 93
+    ATTACKING_STRIKE, // 140 x 93
+    ATTACKING_OVER, // 70 x 93
+    CASTING, // 70 x 93
+    SPELL_WINDUP, // 40 x 30
+    SPELL_STRIKE, // 40 x 30
+    SPELL_OVER, // 40 x 30
     HURT,
     DEATH
 };
@@ -42,16 +46,14 @@ public:
     void DebugDraw();
 
     void SetSceneReference(SceneAbyssWalker* scene);
-
     Vector2& GetPosition();
 
     void TakeDamage(int amount);
-
     bool IsAttacking() const;
+    bool IsCastingSpell() const;
     AnimatedSprite* GetCurrentAnimatedSprite(); // For Scene to check death animation complete
 
     void TransitionToState(BossState newState);
-
     void UpdateSprite(AnimatedSprite* sprite, float deltaTime);
     BossState GetCurrentState() const { return m_currentState; }
 
@@ -59,6 +61,9 @@ protected:
     void OnHurtAnimationComplete();
     void OnDeathAnimationComplete();
     void OnAttackSequenceComplete();
+
+    // Spell animation
+    void OnCastingAnimComplete();
 
     void MoveToPlayer(float deltaTime);
 
@@ -84,7 +89,7 @@ private:
 public:
     // Needs to stay in public
     Player* m_pTargetPlayer;
-    const float kGroundLevel = 850.0f;
+    static const float kGroundLevel;
 
     // Sprite dimensions for EnemyType2 (ALWAYS DOUBLE CHECK)
     static const int BOSS_DEFAULT_SPRITE_HEIGHT = 93;
@@ -110,11 +115,17 @@ public:
     static const int BOSS_DEFAULT_SPRITE_CAST_END_WIDTH = 40;
     static const int BOSS_DEFAULT_SPRITE_CAST_END_HEIGHT = 30;
 
+    static const float BOSS_SPELL_EFFECT_VISUAL_SCALE;
+
+    static const float BOSS_SPELL_WINDUP_DURATION;
+    static const float BOSS_SPELL_STRIKE_DURATION;
+    static const float BOSS_SPELL_OVER_DURATION;
+
 protected:
     BossState m_currentState;
     bool m_bFacingRight; // True if facing right, false if facing left
 
-    // Enemy stats
+    // Boss Attack stats
     int m_iDamage;
     float m_moveSpeed;
     float m_attackRange;
@@ -122,12 +133,29 @@ protected:
     float m_attackCD;
     float m_timeSinceAttack;
 
+    // Boss Spell Stats
+    float m_spellCastRange;
+    float m_spellAttackCD;
+    float m_timeSinceSpellAttack;
+    int m_spellDamage;
+
+    // Textures & Sprites for spell
+    AnimatedSprite* m_pSpellEffectSprite;       
+    Texture* m_pSpellEffectTexture_Windup;
+    Texture* m_pSpellEffectTexture_Strike;
+    Texture* m_pSpellEffectTexture_Over;
+
+    // Where the spell will try and target
+    Vector2 m_spellTargetPosition;
+
+    float m_spellPhaseTimer;           
+    bool m_bSpellDamageDealtThisCast;
+
     SceneAbyssWalker* m_pSceneRef;
 
     // Essence drops
     int m_minEssenceDrop;
     int m_maxEssenceDrop;
-
     float m_currentPhaseTimer;
 
     bool m_bHasDealtDMG;

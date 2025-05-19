@@ -51,6 +51,7 @@ SceneAbyssWalker::SceneAbyssWalker()
     , m_currentBGMState(CurrentPlayingBGM::NONE)
     , m_bInitialised(false)
     , m_pBoss(nullptr)
+    , m_bBossHasSpawned(false)
 {
 }
 
@@ -154,6 +155,10 @@ bool SceneAbyssWalker::Initialise(Renderer& renderer)
     for (EnemyType2* enemyType2 : m_enemyType2) delete enemyType2;
     m_enemyType2.clear();
 
+    delete m_pBoss;
+    m_pBoss = nullptr;
+    m_bBossHasSpawned = false;
+
     // Load Player 
     if (m_pPlayer) 
     {
@@ -215,6 +220,54 @@ bool SceneAbyssWalker::Initialise(Renderer& renderer)
     LogManager::GetInstance().Log("SceneAbyssWalker::Initialise successful.");
     m_bInitialised = true;
     return true;
+}
+
+void SceneAbyssWalker::SpawnBoss()
+{
+    if (!m_pRenderer || !m_pPlayer)
+    {
+        LogManager::GetInstance().Log("SceneAbyssWalker::SpawnBoss - Renderer or Player is null. Cannot spawn boss.");
+        return;
+    }
+
+    if (m_bBossHasSpawned && m_pBoss && m_pBoss->IsAlive())
+    {
+        LogManager::GetInstance().Log("SceneAbyssWalker::SpawnBoss - Boss already spawned and alive.");
+        return;
+    }
+
+    if (m_pBoss)
+    {
+        LogManager::GetInstance().Log("SceneAbyssWalker::SpawnBoss - Previous boss instance exists, deleting it.");
+        delete m_pBoss;
+        m_pBoss = nullptr;
+    }
+
+    m_pBoss = new Boss();
+    if (!m_pBoss)
+    {
+        LogManager::GetInstance().Log("SceneAbyssWalker::SpawnBoss - Failed to allocate Boss object.");
+        return;
+    }
+
+    Vector2 bossSpawnPosition;
+    bossSpawnPosition.x = static_cast<float>(m_pRenderer->GetWidth()) / 2.0f;
+    bossSpawnPosition.y = Boss::kGroundLevel;
+
+    if (m_pBoss->Initialise(*m_pRenderer, bossSpawnPosition))
+    {
+        m_pBoss->m_pTargetPlayer = m_pPlayer;
+        m_pBoss->SetSceneReference(this);
+        m_bBossHasSpawned = true;
+        LogManager::GetInstance().Log("SceneAbyssWalker::SpawnBoss - Boss spawned successfully.");
+    }
+    else
+    {
+        LogManager::GetInstance().Log("SceneAbyssWalker::SpawnBoss - Boss->Initialise() failed.");
+        delete m_pBoss;
+        m_pBoss = nullptr;
+        m_bBossHasSpawned = false;
+    }
 }
 
 void SceneAbyssWalker::StartBGM()
@@ -320,6 +373,10 @@ void SceneAbyssWalker::RestartGame()
     m_enemyBats.clear();
     for (EnemyType2* enemyType2 : m_enemyType2) delete enemyType2;
     m_enemyType2.clear();
+
+    delete m_pBoss;
+    m_pBoss = nullptr;
+    m_bBossHasSpawned = false;
 
     if (m_pWaveSystem) m_pWaveSystem->ResetForNewGame();
     if (m_pEnemySpawner) m_pEnemySpawner->Reset();
@@ -477,7 +534,25 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
             }
         }
 
+        if (m_pBoss && m_pBoss->IsAlive())
+        {
+            if (m_pBoss->m_pTargetPlayer == nullptr && m_pPlayer) m_pBoss->m_pTargetPlayer = m_pPlayer;
+            m_pBoss->Process(deltaTime);
+        }
+
+        if (proecessEnemies && m_pEnemySpawner) // Enemy Spawner only active during IN_WAVE
+        {
+            if (m_pPlayer->IsAlive()) // Only spawn if player is alive
+            {
+                m_pEnemySpawner->Update(deltaTime, m_enemyBats, m_enemyType2);
+            }
+        }
         CleanupDead();
+
+        if (m_pCollisionSystem && m_pPlayer && m_pPlayer->IsAlive())
+        {
+            m_pCollisionSystem->ProcessCollisions(m_pPlayer, m_enemyBats, m_enemyType2);
+        }
     }
 }
 
@@ -685,6 +760,12 @@ void SceneAbyssWalker::Draw(Renderer& renderer)
         enemyT2->Draw(renderer);
     }
 
+    // Draw the Boss
+    if (m_pBoss)
+    {
+        m_pBoss->Draw(renderer);
+    }
+
     if (m_pPlayerHUD)
     {
         m_pPlayerHUD->Draw();
@@ -834,12 +915,27 @@ void SceneAbyssWalker::DebugDraw()
 {
     if (ImGui::CollapsingHeader("Scene Debug"))
     {
+        if (ImGui::Button("Force Spawn Boss"))
+        {
+            SpawnBoss();
+        }
+
         if (m_pPlayer)
         {
             m_pPlayer->DebugDraw();
         }
 
-        if (ImGui::CollapsingHeader("Enemy List"))
+        if (m_pBoss)
+        {
+            if (ImGui::CollapsingHeader("Boss Info"))
+            {
+                m_pBoss->DebugDraw();
+                ImGui::Text("Boss Spawned: %s", m_bBossHasSpawned ? "Yes" : "No");
+                ImGui::Text("Boss Alive: %s", m_pBoss->IsAlive() ? "Yes" : "No");
+            }
+        }
+
+        if (ImGui::CollapsingHeader("Enemy Bat List"))
         {
             for (size_t i = 0; i < m_enemyBats.size(); ++i)
             {

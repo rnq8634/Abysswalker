@@ -6,6 +6,10 @@
 #include "Renderer.h"
 #include "LogManager.h"
 #include "Texture.h" 
+#include "SceneAbyssWalker.h"
+#include "AnimatedSprite.h"
+#include "PlayerStats.h"
+#include "TextureManager.h"
 
 // IMGUI
 #include "imgui/imgui.h"
@@ -16,6 +20,11 @@
 #include <cstdlib>
 
 const float BOSS_VISUAL_SCALE = 5.0f;
+const float Boss::kGroundLevel = 700.0f;
+const float Boss::BOSS_SPELL_EFFECT_VISUAL_SCALE = 2.0f;
+const float Boss::BOSS_SPELL_WINDUP_DURATION = 0.7f;
+const float Boss::BOSS_SPELL_STRIKE_DURATION = 0.5f;
+const float Boss::BOSS_SPELL_OVER_DURATION = 0.8f;
 
 Boss::Boss()
     : Entity()
@@ -23,16 +32,31 @@ Boss::Boss()
     , m_pTargetPlayer(nullptr)
     , m_bFacingRight(false)
     , m_iDamage(80)
-    , m_moveSpeed(50.0f) // Enemy movespeed
-    , m_attackRange(100.0f)
-    , m_detectionRange(2000.0f) // For now so that the enemies would find the player straight away
-    , m_attackCD(5.0f)
-    , m_timeSinceAttack(m_attackCD) // Ready to attack initially
+    , m_moveSpeed(50.0f)
+    , m_attackRange(200.0f)
+    , m_detectionRange(2000.0f)
+    , m_attackCD(3.0f)
+    , m_timeSinceAttack(m_attackCD) // Ready for melee
     , m_bHasDealtDMG(false)
     , m_pStaticEnemy(nullptr)
     , m_minEssenceDrop(50)
     , m_maxEssenceDrop(900)
     , m_pSceneRef(nullptr)
+    , m_currentPhaseTimer(0.0f) // Timer for current boss animation phase (melee or casting)
+    , m_baseRadius(0.0f)
+    , m_strikePhaseRadius(0.0f)
+    // Spell members
+    , m_spellCastRange(600.0f)
+    , m_spellAttackCD(10.0f)
+    , m_timeSinceSpellAttack(m_spellAttackCD) // Ready to cast spell initially
+    , m_spellDamage(60)
+    , m_pSpellEffectSprite(nullptr)
+    , m_pSpellEffectTexture_Windup(nullptr)
+    , m_pSpellEffectTexture_Strike(nullptr)
+    , m_pSpellEffectTexture_Over(nullptr)
+    , m_spellTargetPosition()
+    , m_spellPhaseTimer(0.0f) // Timer for the duration of SPELL_WINDUP, SPELL_STRIKE, SPELL_OVER states
+    , m_bSpellDamageDealtThisCast(false)
 {
     SetMaxHealth(1500, true); // Enemy specific health
 }
@@ -48,6 +72,7 @@ Boss::~Boss()
     }
     m_animatedSprites.clear();
     m_pTargetPlayer = nullptr;
+    m_pSceneRef = nullptr;
 }
 
 bool Boss::Initialise(Renderer& renderer, const Vector2& startPosition)
@@ -67,7 +92,7 @@ bool Boss::Initialise(Renderer& renderer, const Vector2& startPosition)
         m_bFacingRight = false;
     }
 
-    m_pStaticEnemy = renderer.CreateSprite("assets/enemyBat/Bat-IdleFly.png");
+    m_pStaticEnemy = renderer.CreateSprite("assets/boss/Idle.png");
     if (m_pStaticEnemy)
     {
         m_pStaticEnemy->SetScale(BOSS_VISUAL_SCALE, BOSS_VISUAL_SCALE);
@@ -78,6 +103,10 @@ bool Boss::Initialise(Renderer& renderer, const Vector2& startPosition)
     m_strikePhaseRadius = (static_cast<float>(BOSS_DEFAULT_SPRITE_ATTACKSTRIKE_WIDTH) * BOSS_VISUAL_SCALE) / 2.0f;
     SetRadius(m_baseRadius);
 
+    for (auto& pair : m_animatedSprites) { delete pair.second; }
+    m_animatedSprites.clear();
+
+    // -- Loading Boss Anims --
     if (!InitialiseAnimatedSprite(renderer, BossState::IDLE, "assets/boss/Idle.png", BOSS_DEFAULT_SPRITE_WIDTH, BOSS_DEFAULT_SPRITE_HEIGHT, 0.1f, true)) return false;
     if (!InitialiseAnimatedSprite(renderer, BossState::WALKING, "assets/boss/Walk.png", BOSS_DEFAULT_SPRITE_WIDTH, BOSS_DEFAULT_SPRITE_HEIGHT, 0.15f, true)) return false;
     
@@ -86,15 +115,47 @@ bool Boss::Initialise(Renderer& renderer, const Vector2& startPosition)
     if (!InitialiseAnimatedSprite(renderer, BossState::ATTACKING_STRIKE, "assets/boss/Attack_Strike.png", BOSS_DEFAULT_SPRITE_ATTACKSTRIKE_WIDTH, BOSS_DEFAULT_SPRITE_HEIGHT, 0.08f, false, [this]() { this->TransitionToState(BossState::ATTACKING_OVER); })) return false;
     if (!InitialiseAnimatedSprite(renderer, BossState::ATTACKING_OVER, "assets/boss/Attack_Over.png", BOSS_DEFAULT_SPRITE_ATTACK_END_WIDTH, BOSS_DEFAULT_SPRITE_HEIGHT, 0.1f, false, [this]() { this->OnAttackSequenceComplete(); })) return false;
 
-    // Cast Sequence Section
+    // Cast Animation
+    if (!InitialiseAnimatedSprite(renderer, BossState::CASTING, "assets/boss/Cast.png", BOSS_DEFAULT_SPRITE_CAST_WIDTH, BOSS_DEFAULT_SPRITE_HEIGHT, 0.1f, false, [this]() { this->OnCastingAnimComplete(); })) return false;
 
+    // Hurt and Death
     if (!InitialiseAnimatedSprite(renderer, BossState::HURT, "assets/Boss/Hurt.png", BOSS_DEFAULT_SPRITE_WIDTH, BOSS_DEFAULT_SPRITE_HEIGHT, 0.1f, false, [this]() { this->OnHurtAnimationComplete(); })) return false;
     if (!InitialiseAnimatedSprite(renderer, BossState::DEATH, "assets/Boss/Death.png", BOSS_DEFAULT_SPRITE_WIDTH, BOSS_DEFAULT_SPRITE_HEIGHT, 0.08f, false, [this]() { this->OnDeathAnimationComplete(); })) return false;
+
+    // Spell
+    if (renderer.GetTextureManager()) 
+    {
+        m_pSpellEffectTexture_Windup = renderer.GetTextureManager()->GetTexture("assets/boss/Cast_Windup.png");
+        m_pSpellEffectTexture_Strike = renderer.GetTextureManager()->GetTexture("assets/boss/Cast_Strike.png");
+        m_pSpellEffectTexture_Over = renderer.GetTextureManager()->GetTexture("assets/boss/Cast_End.png");
+
+        if (!m_pSpellEffectTexture_Windup || !m_pSpellEffectTexture_Strike || !m_pSpellEffectTexture_Over) 
+        {
+            LogManager::GetInstance().Log("Boss::Initialise - WARNING: Failed to load one or more spell effect textures via TextureManager. Spell visuals might not work.");
+        }
+    }
+    else 
+    {
+        LogManager::GetInstance().Log("Boss::Initialise - Renderer's TextureManager is null. Cannot load spell effect textures.");
+        return false; // Or handle differently
+    }
+
+    delete m_pSpellEffectSprite; // Delete if re-initializing
+    m_pSpellEffectSprite = new AnimatedSprite();
+    if (!m_pSpellEffectSprite) 
+    {
+        LogManager::GetInstance().Log("Boss::Initialise - Failed to new AnimatedSprite for spell effect.");
+        return false;
+    }
+
+    m_timeSinceAttack = m_attackCD;
+    m_timeSinceSpellAttack = m_spellAttackCD;
+    SetMaxHealth(1500, true); // Reset health on initialise
+    m_bAlive = true;
 
     TransitionToState(BossState::IDLE);
     return true;
 }
-
 
 bool Boss::InitialiseAnimatedSprite(Renderer& renderer, BossState state, const char* pcFilename,
     int frameWidth, int frameHeight, float frameDuration, bool loop, AnimationCallBack onComplete)
@@ -122,12 +183,19 @@ void Boss::Process(float deltaTime)
     if (!m_bAlive)
     {
         AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
-        if (m_currentState == BossState::DEATH && currentSprite)
+        // Only process death animation if it's not yet complete
+        if (m_currentState == BossState::DEATH && currentSprite && !currentSprite->IsAnimationComplete())
         {
             UpdateSprite(currentSprite, deltaTime);
         }
         return;
     }
+
+    // Update general timers
+    m_timeSinceAttack += deltaTime;
+    m_timeSinceSpellAttack += deltaTime;
+    m_currentPhaseTimer += deltaTime;
+
 
     UpdateAI(deltaTime);
 
@@ -136,45 +204,97 @@ void Boss::Process(float deltaTime)
         MoveToPlayer(deltaTime);
     }
 
-    if (m_position.y > kGroundLevel) { // Basic ground clamping
+    if (m_position.y > kGroundLevel) 
+    {
         m_position.y = kGroundLevel;
         m_velocity.y = 0;
     }
 
-    m_timeSinceAttack += deltaTime; // CD for attack seqeuence
-
-
-    if (m_currentState == BossState::ATTACKING_WINDUP ||
-        m_currentState == BossState::ATTACKING_STRIKE ||
-        m_currentState == BossState::ATTACKING_OVER)
-    {
-        m_currentPhaseTimer += deltaTime;
-    }
-
-    // DMG for ATTACK_STRIKE phase
+    // --- MELEE ATTACK DAMAGE LOGIC ---
     if (m_currentState == BossState::ATTACKING_STRIKE)
     {
-        const float damageStart = 0.05f;
-        const float damageEnd = 0.25f;
+        AnimatedSprite* attackSprite = GetCurrentAnimatedSprite();
+        bool isDamageFrame = false;
+        if (attackSprite) 
+        {
+            if (attackSprite->GetCurrentFrame() == 2) 
+            {
+                isDamageFrame = true;
+            }
+        }
 
-        if (!m_bHasDealtDMG && m_currentPhaseTimer >= damageStart && m_currentPhaseTimer <= damageEnd)
+        if (!m_bHasDealtDMG && isDamageFrame)
         {
             if (m_pTargetPlayer && m_pTargetPlayer->IsAlive())
             {
                 Vector2 directionToPlayer = m_pTargetPlayer->GetPosition() - m_position;
-
                 float distanceToPlayer = directionToPlayer.Length();
                 bool playerInFront = (m_bFacingRight && directionToPlayer.x >= 0) || (!m_bFacingRight && directionToPlayer.x <= 0);
 
-                if (playerInFront && distanceToPlayer < (m_attackRange + m_pTargetPlayer->GetRadius()))
+                float effectiveMeleeRange = GetRadius() + m_pTargetPlayer->GetRadius();
+
+                if (playerInFront && distanceToPlayer < effectiveMeleeRange)
                 {
                     m_pTargetPlayer->TakeDamage(m_iDamage);
-                    m_bHasDealtDMG = true; // Ensure damage is dealt only once per strike
-                    LogManager::GetInstance().Log("Boss (STRIKE) dealt damage to player.");
+                    m_bHasDealtDMG = true;
+                    LogManager::GetInstance().Log("Boss (MELEE STRIKE) dealt damage to player.");
                 }
             }
         }
     }
+
+    // --- SPELL EFFECT PROCESSING (Boss is in SPELL_WINDUP, SPELL_STRIKE, or SPELL_OVER state) ---
+    if (m_currentState == BossState::SPELL_WINDUP || m_currentState == BossState::SPELL_STRIKE || m_currentState == BossState::SPELL_OVER)
+    {
+        m_spellPhaseTimer += deltaTime; 
+
+        if (m_pSpellEffectSprite) 
+        {
+            m_pSpellEffectSprite->Process(deltaTime); 
+        }
+
+        if (m_currentState == BossState::SPELL_WINDUP) 
+        {
+            if (m_spellPhaseTimer >= BOSS_SPELL_WINDUP_DURATION || (m_pSpellEffectSprite && m_pSpellEffectSprite->IsAnimationComplete())) 
+            {
+                TransitionToState(BossState::SPELL_STRIKE);
+            }
+        }
+        else if (m_currentState == BossState::SPELL_STRIKE) 
+        {
+            // Damage logic
+            if (!m_bSpellDamageDealtThisCast) 
+            {
+                if (m_pTargetPlayer && m_pTargetPlayer->IsAlive()) 
+                {
+                    float spellAOERadius = BOSS_DEFAULT_SPRITE_CASTSTRIKE_WIDTH * BOSS_SPELL_EFFECT_VISUAL_SCALE / 2.0f;
+                    float playerRadius = m_pTargetPlayer->GetRadius();
+                    float combinedRadius = playerRadius + spellAOERadius;
+                    float distanceToSpellCenterSq = (m_pTargetPlayer->GetPosition() - m_spellTargetPosition).LengthSquared();
+
+                    if (distanceToSpellCenterSq < (combinedRadius * combinedRadius)) 
+                    {
+                        m_pTargetPlayer->TakeDamage(m_spellDamage);
+                        m_bSpellDamageDealtThisCast = true;
+                        LogManager::GetInstance().Log("Boss Spell Effect dealt damage to player.");
+                    }
+                }
+            }
+            if (m_spellPhaseTimer >= BOSS_SPELL_STRIKE_DURATION || (m_pSpellEffectSprite && m_pSpellEffectSprite->IsAnimationComplete())) 
+            {
+                TransitionToState(BossState::SPELL_OVER);
+            }
+        }
+        else if (m_currentState == BossState::SPELL_OVER) 
+        {
+            if (m_spellPhaseTimer >= BOSS_SPELL_OVER_DURATION || (m_pSpellEffectSprite && m_pSpellEffectSprite->IsAnimationComplete())) 
+            {
+                LogManager::GetInstance().Log("Spell effect finished. Boss transitioning to IDLE.");
+                TransitionToState(BossState::IDLE);
+            }
+        }
+    }
+
 
     AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
     if (currentSprite)
@@ -185,56 +305,69 @@ void Boss::Process(float deltaTime)
 
 void Boss::UpdateAI(float deltaTime)
 {
-    bool isCurrentlyInAttackSequence = (m_currentState == BossState::ATTACKING_WINDUP ||
-        m_currentState == BossState::ATTACKING_STRIKE ||
-        m_currentState == BossState::ATTACKING_OVER);
+    if (!m_bAlive) return;
 
-    if (!m_pTargetPlayer || !m_pTargetPlayer->IsAlive() ||
-        isCurrentlyInAttackSequence ||
-        m_currentState == BossState::HURT ||
-        m_currentState == BossState::DEATH)
+    if (m_currentState == BossState::HURT ||
+        m_currentState == BossState::DEATH ||
+        IsAttacking() || 
+        m_currentState == BossState::CASTING || 
+        m_currentState == BossState::SPELL_WINDUP || 
+        m_currentState == BossState::SPELL_STRIKE ||
+        m_currentState == BossState::SPELL_OVER)
     {
-        if (!isCurrentlyInAttackSequence &&
-            m_currentState != BossState::HURT &&
-            m_currentState == BossState::WALKING &&
-            m_currentState != BossState::DEATH)
+        if ((m_currentState == BossState::IDLE || m_currentState == BossState::WALKING) && (!m_pTargetPlayer || !m_pTargetPlayer->IsAlive())) 
         {
             TransitionToState(BossState::IDLE);
         }
         return;
     }
 
-    Vector2 directionToPlayer = m_pTargetPlayer->GetPosition() - m_position;
-    float distanceToPlayerSquared = directionToPlayer.LengthSquared(); // Use squared for performance
-
-    m_bFacingRight = (directionToPlayer.x > 0.0f);
-
-    float effectiveAttackRange = m_attackRange; // Can be adjusted based on player size for more precision
-    float detectionRangeSq = m_detectionRange * m_detectionRange;
-    float attackRangeSq = effectiveAttackRange * effectiveAttackRange;
-
-    if (distanceToPlayerSquared <= attackRangeSq)
+    if (!m_pTargetPlayer || !m_pTargetPlayer->IsAlive())
     {
-        if (m_timeSinceAttack >= m_attackCD)
+        if (m_currentState == BossState::WALKING) TransitionToState(BossState::IDLE);
+        return;
+    }
+
+    Vector2 directionToPlayer = m_pTargetPlayer->GetPosition() - m_position;
+    float distanceToPlayer = directionToPlayer.Length();
+
+    if (std::abs(directionToPlayer.x) > 1.0f)
+    {
+        m_bFacingRight = (directionToPlayer.x > 0.0f);
+    }
+
+    bool canMelee = m_timeSinceAttack >= m_attackCD;
+    bool canSpell = m_timeSinceSpellAttack >= m_spellAttackCD;
+
+    // AI Decision Making:
+    if (canSpell && distanceToPlayer <= m_spellCastRange && distanceToPlayer > (m_attackRange + 50.0f))
+    {
+        if (rand() % 2 == 0) // 50% chance to cast spell
         {
-            TransitionToState(BossState::ATTACKING_WINDUP);
-            m_timeSinceAttack = 0.0f;
-        }
-        else if (!isCurrentlyInAttackSequence)
-        {
-            TransitionToState(BossState::IDLE);
+            LogManager::GetInstance().Log("Boss AI: Choosing SPELL attack. Transitioning to CASTING.");
+            m_spellTargetPosition = m_pTargetPlayer->GetPosition();
+            TransitionToState(BossState::CASTING);
+            m_timeSinceSpellAttack = 0.0f;
+            return;
         }
     }
-    else if (distanceToPlayerSquared <= detectionRangeSq) // if the player is in detection range but not in attacking range
+
+    if (canMelee && distanceToPlayer <= m_attackRange)
     {
-        if (m_currentState != BossState::WALKING && !isCurrentlyInAttackSequence)
+        LogManager::GetInstance().Log("Boss AI: Choosing MELEE attack.");
+        TransitionToState(BossState::ATTACKING_WINDUP);
+        m_timeSinceAttack = 0.0f;
+    }
+    else if (distanceToPlayer <= m_detectionRange)
+    {
+        if (m_currentState != BossState::WALKING)
         {
             TransitionToState(BossState::WALKING);
         }
     }
     else
     {
-        if (m_currentState == BossState::WALKING)
+        if (m_currentState == BossState::WALKING || m_currentState != BossState::IDLE)
         {
             TransitionToState(BossState::IDLE);
         }
@@ -263,7 +396,8 @@ void Boss::MoveToPlayer(float deltaTime)
 void Boss::Draw(Renderer& renderer)
 {
     AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
-    if (!m_bAlive && m_currentState == BossState::DEATH && currentSprite && currentSprite->IsAnimationComplete()) {
+    if (!m_bAlive && m_currentState == BossState::DEATH && currentSprite && currentSprite->IsAnimationComplete()) 
+    {
         return; // Dead and animation finished, scene will clean up
     }
 
@@ -271,8 +405,13 @@ void Boss::Draw(Renderer& renderer)
     {
         currentSprite->Draw(renderer);
     }
-    else
+    
+    if (m_pSpellEffectSprite &&
+        (m_currentState == BossState::SPELL_WINDUP ||
+            m_currentState == BossState::SPELL_STRIKE ||
+            m_currentState == BossState::SPELL_OVER))
     {
+        m_pSpellEffectSprite->Draw(renderer);
     }
 }
 
@@ -280,11 +419,25 @@ void Boss::UpdateSprite(AnimatedSprite* sprite, float deltaTime)
 {
     if (!sprite) return;
     sprite->Process(deltaTime);
+
+    if (m_bAlive)
+    {
+        float tintFactor = 0.2f;
+        sprite->SetRedTint(tintFactor);
+        sprite->SetGreenTint(tintFactor);
+        sprite->SetBlueTint(tintFactor);
+    }
+    else
+    {
+        sprite->SetRedTint(1.0f);
+        sprite->SetGreenTint(1.0f);
+        sprite->SetBlueTint(1.0f);
+    }
+
     sprite->SetX(static_cast<int>(m_position.x));
     sprite->SetY(static_cast<int>(m_position.y));
     sprite->SetFlipHorizontal(m_bFacingRight);
 }
-
 
 AnimatedSprite* Boss::GetCurrentAnimatedSprite()
 {
@@ -300,56 +453,159 @@ AnimatedSprite* Boss::GetCurrentAnimatedSprite()
 
 void Boss::TransitionToState(BossState newState)
 {
-    bool wasInAnyAttackPhase = (m_currentState == BossState::ATTACKING_WINDUP ||
-        m_currentState == BossState::ATTACKING_STRIKE ||
-        m_currentState == BossState::ATTACKING_OVER);
-
-    bool willBeInAnyAttackPhase = (newState == BossState::ATTACKING_WINDUP ||
-        newState == BossState::ATTACKING_STRIKE ||
-        newState == BossState::ATTACKING_OVER);
-
-    if (m_currentState == newState && newState != BossState::ATTACKING_WINDUP)
+    // Basic state transition guards
+    if (m_currentState == newState &&
+        newState != BossState::ATTACKING_WINDUP && 
+        newState != BossState::CASTING)
     {
         AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
-        if (currentSprite && currentSprite->IsAnimating() && !currentSprite->IsLooping())
+        if (currentSprite && currentSprite->IsAnimating() && !currentSprite->IsLooping() && !currentSprite->IsAnimationComplete()) 
         {
             return;
         }
     }
-    if (m_currentState == BossState::DEATH && newState != BossState::DEATH) return; // Cannot leave death state
-    if (m_currentState == BossState::HURT && GetCurrentAnimatedSprite() && !GetCurrentAnimatedSprite()->IsAnimationComplete() && newState != BossState::DEATH) return; // Must finish hurt anim
+    if (m_currentState == BossState::DEATH && newState != BossState::DEATH) return;
+    if (m_currentState == BossState::HURT) 
+    {
+        AnimatedSprite* hurtSprite = GetCurrentAnimatedSprite();
+        if (hurtSprite && !hurtSprite->IsAnimationComplete() && newState != BossState::DEATH) return;
+    }
+    // Prevent interrupting spell sequence unless for HURT or DEATH
+    if ((m_currentState == BossState::CASTING ||
+        m_currentState == BossState::SPELL_WINDUP ||
+        m_currentState == BossState::SPELL_STRIKE ||
+        m_currentState == BossState::SPELL_OVER) && (newState != BossState::HURT && newState != BossState::DEATH && newState != BossState::IDLE && newState != BossState::SPELL_WINDUP && newState != BossState::SPELL_STRIKE && newState != BossState::SPELL_OVER)) 
+    {
+        AnimatedSprite* currentActionSprite = GetCurrentAnimatedSprite();
+        if (m_currentState == BossState::CASTING && currentActionSprite && !currentActionSprite->IsAnimationComplete()) return; 
+    }
+
+    LogManager::GetInstance().Log(("Boss: Transitioning from state " + std::to_string(static_cast<int>(m_currentState)) + " to " + std::to_string(static_cast<int>(newState))).c_str());
 
     BossState oldState = m_currentState;
     m_currentState = newState;
-    m_currentPhaseTimer = 0.0f; // Reset phase timer for any new state
+    m_currentPhaseTimer = 0.0f;
 
-    // Manage Collision Radius and attack flags
-    if (newState == BossState::ATTACKING_STRIKE)
+    // --- Manage Melee Attack Radius ---
+    bool wasInAnyAttackPhase = (oldState == BossState::ATTACKING_WINDUP || oldState == BossState::ATTACKING_STRIKE || oldState == BossState::ATTACKING_OVER);
+
+    bool willBeInAnyAttackPhase = (newState == BossState::ATTACKING_WINDUP || newState == BossState::ATTACKING_STRIKE || newState == BossState::ATTACKING_OVER);
+
+    if (newState == BossState::ATTACKING_STRIKE) 
     {
         SetRadius(m_strikePhaseRadius);
         m_bHasDealtDMG = false;
     }
-    else if (newState == BossState::ATTACKING_WINDUP || newState == BossState::ATTACKING_OVER)
+    else if (newState == BossState::ATTACKING_WINDUP || newState == BossState::ATTACKING_OVER) 
     {
         SetRadius(m_baseRadius);
-        if (newState == BossState::ATTACKING_WINDUP)
-        {
-            m_bHasDealtDMG = false;
-        }
+        if (newState == BossState::ATTACKING_WINDUP) m_bHasDealtDMG = false;
     }
-    else if (wasInAnyAttackPhase && !willBeInAnyAttackPhase)
+    else if (wasInAnyAttackPhase && !willBeInAnyAttackPhase) 
     {
-        // Transitioning OUT of all attack phases to a non-attack phase
         SetRadius(m_baseRadius);
     }
 
-    AnimatedSprite* newSprite = GetCurrentAnimatedSprite();
-    if (newSprite)
+    // --- Spell Effect Specific Setup on State Transition ---
+    if (newState == BossState::CASTING) 
     {
-        newSprite->Restart();
-        newSprite->Animate();
+        LogManager::GetInstance().Log("Boss: Entered CASTING state (boss animation begins).");
     }
-    else
+    else if (newState == BossState::SPELL_WINDUP) 
+    {
+        LogManager::GetInstance().Log("Boss: Entered SPELL_WINDUP state (spell effect visual starts windup).");
+        m_spellPhaseTimer = 0.0f; 
+        m_bSpellDamageDealtThisCast = false;
+        if (m_pSpellEffectSprite && m_pSpellEffectTexture_Windup) 
+        {
+            m_pSpellEffectSprite->Initialise(*m_pSpellEffectTexture_Windup);
+            m_pSpellEffectSprite->SetupFrames(BOSS_DEFAULT_SPRITE_CASTWINDUP_WIDTH, BOSS_DEFAULT_SPRITE_CASTWINDUP_HEIGHT);
+            int totalFrames = m_pSpellEffectSprite->GetTotalFrames();
+            m_pSpellEffectSprite->SetFrameDuration(totalFrames > 0 ? BOSS_SPELL_WINDUP_DURATION / totalFrames : 0.1f);
+            m_pSpellEffectSprite->SetLooping(false);
+            m_pSpellEffectSprite->SetX(static_cast<int>(m_spellTargetPosition.x));
+            m_pSpellEffectSprite->SetY(static_cast<int>(m_spellTargetPosition.y));
+            m_pSpellEffectSprite->Restart();
+            m_pSpellEffectSprite->Animate();
+        }
+        else 
+        {
+            LogManager::GetInstance().Log("Error: Spell effect sprite or windup texture missing for SPELL_WINDUP.");
+            TransitionToState(BossState::IDLE);
+        }
+    }
+    else if (newState == BossState::SPELL_STRIKE) 
+    {
+        LogManager::GetInstance().Log("Boss: Entered SPELL_STRIKE state (spell effect visual strikes).");
+        m_spellPhaseTimer = 0.0f; // Reset timer for THIS spell effect phase
+        // m_bSpellDamageDealtThisCast is reset in WINDUP or before CASTING
+        if (m_pSpellEffectSprite && m_pSpellEffectTexture_Strike) 
+        {
+            m_pSpellEffectSprite->Initialise(*m_pSpellEffectTexture_Strike);
+            m_pSpellEffectSprite->SetupFrames(BOSS_DEFAULT_SPRITE_CASTSTRIKE_WIDTH, BOSS_DEFAULT_SPRITE_CASTSTRIKE_HEIGHT);
+            int totalFrames = m_pSpellEffectSprite->GetTotalFrames();
+            m_pSpellEffectSprite->SetFrameDuration(totalFrames > 0 ? BOSS_SPELL_STRIKE_DURATION / totalFrames : 0.08f);
+            m_pSpellEffectSprite->SetLooping(false);
+            m_pSpellEffectSprite->SetX(static_cast<int>(m_spellTargetPosition.x));
+            m_pSpellEffectSprite->SetY(static_cast<int>(m_spellTargetPosition.y));
+            m_pSpellEffectSprite->Restart();
+            m_pSpellEffectSprite->Animate();
+        }
+        else 
+        {
+            LogManager::GetInstance().Log("Error: Spell effect sprite or strike texture missing for SPELL_STRIKE.");
+            TransitionToState(BossState::IDLE); // Fallback
+        }
+    }
+    else if (newState == BossState::SPELL_OVER) 
+    {
+        LogManager::GetInstance().Log("Boss: Entered SPELL_OVER state (spell effect visual fades).");
+        m_spellPhaseTimer = 0.0f; // Reset timer for THIS spell effect phase
+        if (m_pSpellEffectSprite && m_pSpellEffectTexture_Over) 
+        {
+            m_pSpellEffectSprite->Initialise(*m_pSpellEffectTexture_Over);
+            m_pSpellEffectSprite->SetupFrames(BOSS_DEFAULT_SPRITE_CAST_END_WIDTH, BOSS_DEFAULT_SPRITE_CAST_END_HEIGHT);
+            int totalFrames = m_pSpellEffectSprite->GetTotalFrames();
+            m_pSpellEffectSprite->SetFrameDuration(totalFrames > 0 ? BOSS_SPELL_OVER_DURATION / totalFrames : 0.1f);
+            m_pSpellEffectSprite->SetLooping(false);
+            m_pSpellEffectSprite->SetX(static_cast<int>(m_spellTargetPosition.x));
+            m_pSpellEffectSprite->SetY(static_cast<int>(m_spellTargetPosition.y));
+            m_pSpellEffectSprite->Restart();
+            m_pSpellEffectSprite->Animate();
+        }
+        else 
+        {
+            LogManager::GetInstance().Log("Error: Spell effect sprite or over texture missing for SPELL_OVER.");
+            TransitionToState(BossState::IDLE); // Fallback
+        }
+    }
+
+    AnimatedSprite* newBossSprite = GetCurrentAnimatedSprite(); // Gets the sprite for the boss's body
+    if (newBossSprite) 
+    {
+
+        AnimatedSprite* spriteToAnimate = nullptr;
+        if (newState == BossState::SPELL_WINDUP || newState == BossState::SPELL_STRIKE || newState == BossState::SPELL_OVER) 
+        {
+            auto it_idle = m_animatedSprites.find(BossState::IDLE);
+            if (it_idle != m_animatedSprites.end()) 
+            {
+                spriteToAnimate = it_idle->second;
+            }
+        }
+        else 
+        {
+            spriteToAnimate = newBossSprite; // Use the direct animation for the new state
+        }
+
+        if (spriteToAnimate) 
+        {
+            spriteToAnimate->Restart();
+            spriteToAnimate->Animate();
+        }
+
+    }
+    else 
     {
         LogManager::GetInstance().Log(("Boss::TransitionToState: No sprite found for new state " + std::to_string(static_cast<int>(newState))).c_str());
     }
@@ -365,47 +621,56 @@ void Boss::TakeDamage(int amount)
     if (!m_bAlive) return;
 
     bool wasAlive = m_bAlive;
-    bool wasInAnyAttackPhase = (m_currentState == BossState::ATTACKING_WINDUP ||
-        m_currentState == BossState::ATTACKING_STRIKE ||
-        m_currentState == BossState::ATTACKING_OVER);
+    bool wasAttacking = IsAttacking();
+    bool wasCasting = IsCastingSpell(); // Check if was in any casting phase
 
     Entity::TakeDamage(amount);
 
     if (wasAlive && !m_bAlive)
     {
+        LogManager::GetInstance().Log("Boss has died.");
+        if (wasAttacking || wasCasting) { // If died during melee or casting animation
+            SetRadius(m_baseRadius);
+        }
+        
         TransitionToState(BossState::DEATH);
         m_velocity.Set(0.0f, 0.0f);
-        if (wasInAnyAttackPhase)
-        {
-            SetRadius(m_baseRadius); // Reset radius if died during attack
-        }
 
         if (m_pTargetPlayer)
         {
-            int droppedEssence = 0;
-            if (m_maxEssenceDrop >= m_minEssenceDrop)
+            int droppedEssence = m_minEssenceDrop;
+            if (m_maxEssenceDrop > m_minEssenceDrop) 
             {
-                droppedEssence = (rand() & (m_maxEssenceDrop - m_minEssenceDrop + 1)) + m_minEssenceDrop;
+                droppedEssence += (rand() % (m_maxEssenceDrop - m_minEssenceDrop + 1));
             }
-
-            else
-            {
-                droppedEssence = m_minEssenceDrop;
-            }
-
             if (droppedEssence > 0)
             {
                 m_pTargetPlayer->GainEssence(droppedEssence);
+                LogManager::GetInstance().Log(("Boss dropped " + std::to_string(droppedEssence) + " essence.").c_str());
             }
         }
-    }
-    else if (amount > 0) // Took damage and still alive
-    {
-        if (wasInAnyAttackPhase)
+        if (m_pSceneRef && m_pSceneRef->GetWaveSystem()) 
         {
-            SetRadius(m_baseRadius); // Reset radius if hurt during attack
+            // Notify wave system if boss defeat is a specific condition
+            // For example: m_pSceneRef->GetWaveSystem()->NotifyBossDefeated();
         }
-        TransitionToState(BossState::HURT);
+    }
+    else if (amount > 0 && m_bAlive)
+    {
+        if (m_currentState != BossState::HURT && m_currentState != BossState::DEATH)
+        {
+            bool shouldInterrupt = true;
+
+            if (shouldInterrupt) {
+                if (wasAttacking || wasCasting)
+                {
+                    SetRadius(m_baseRadius);
+                }
+
+                TransitionToState(BossState::HURT);
+                LogManager::GetInstance().Log("Boss transitioned to HURT state.");
+            }
+        }
     }
 }
 
@@ -432,11 +697,29 @@ void Boss::OnDeathAnimationComplete()
     LogManager::GetInstance().Log("Enemy death animation complete. Ready for cleanup.");
 }
 
+void Boss::OnCastingAnimComplete() 
+{
+    if (m_currentState == BossState::CASTING) 
+    {
+        LogManager::GetInstance().Log("Boss Casting Animation Complete. Activating spell effect.");
+        IsCastingSpell();
+        TransitionToState(BossState::IDLE);
+    }
+}
+
 bool Boss::IsAttacking() const
 {
     return m_currentState == BossState::ATTACKING_WINDUP ||
         m_currentState == BossState::ATTACKING_STRIKE ||
         m_currentState == BossState::ATTACKING_OVER;
+}
+
+bool Boss::IsCastingSpell() const
+{
+    return m_currentState == BossState::CASTING ||
+        m_currentState == BossState::SPELL_WINDUP ||
+        m_currentState == BossState::SPELL_STRIKE ||
+        m_currentState == BossState::SPELL_OVER;
 }
 
 void Boss::DebugDraw()

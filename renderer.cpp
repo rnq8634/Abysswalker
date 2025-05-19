@@ -386,7 +386,7 @@ Renderer::DrawAnimatedSprite(AnimatedSprite& sprite, int frame, bool flipHorizon
 	Matrix4 orthoViewProj;
 	CreateOrthoProjection(orthoViewProj, static_cast<float>(m_iWidth), static_cast<float>(m_iHeight));
 
-	m_pSpriteShader->SetVector4Uniform("colour"
+	m_pSpriteShader->SetVector4Uniform("color"
 		, sprite.GetRedTint()
 		, sprite.GetGreenTint()
 		, sprite.GetBlueTint()

@@ -61,6 +61,7 @@ private:
 
 	// Member data:
 public:
+	TextureManager* GetTextureManager() { return m_pTextureManager; }
 
 protected:
 	TextureManager* m_pTextureManager;
