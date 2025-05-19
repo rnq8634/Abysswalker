@@ -16,6 +16,7 @@
 #include "XboxController.h"
 #include "PlayerStats.h"
 #include "SoundSystem.h"
+#include "Boss.h"
 
 // IMGUI
 #include "imgui/imgui.h"
@@ -49,6 +50,7 @@ SceneAbyssWalker::SceneAbyssWalker()
     , m_pCurrentBGMChannel(nullptr)
     , m_currentBGMState(CurrentPlayingBGM::NONE)
     , m_bInitialised(false)
+    , m_pBoss(nullptr)
 {
 }
 
@@ -59,6 +61,9 @@ SceneAbyssWalker::~SceneAbyssWalker()
         SoundSystem::GetInstance().StopChannel(m_pCurrentBGMChannel);
         m_pCurrentBGMChannel = nullptr;
     }
+
+    delete m_pBoss;
+    m_pBoss = nullptr;
 
     delete m_pWaveCountTextTexture;
     m_pWaveCountTextTexture = nullptr;

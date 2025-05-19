@@ -25,6 +25,7 @@ class Renderer;
 class InputSystem;
 class Sprite;
 class Texture;
+class Boss;
 
 class SceneAbyssWalker : public Scene
 {
@@ -55,8 +56,11 @@ public:
 
 	void AddEnemy(EnemyBat* bat);
 	void AddEnemy(EnemyType2* type2);
+	void SpawnBoss();
 
 	void PlayerRequestsQuit() { m_playerChoseToQuit = true; }
+
+	Boss* GetBoss() const { return m_pBoss; }
 
 protected:
 	void CleanupDead();
@@ -101,12 +105,14 @@ protected:
 	EnemySpawner* m_pEnemySpawner;
 	PlayerHUD* m_pPlayerHUD;
 	CollisionSystem* m_pCollisionSystem;
+	Boss* m_pBoss;
 
 	std::vector<EnemyBat*> m_enemyBats;
 	std::vector<EnemyType2*> m_enemyType2;
 
 	bool m_playerChoseToQuit;
 	bool m_bInitialised;
+	bool m_bBossHasSpawned;
 
 	// Font details for custom UI
 	const char* m_uiFontPath = "assets/fonts/OptimusPrinceps.ttf";
