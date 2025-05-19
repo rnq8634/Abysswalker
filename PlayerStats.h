@@ -16,6 +16,7 @@ enum class StatType
 class PlayerStats
 {
 public:
+    // Member methids
     PlayerStats();
     ~PlayerStats();
 
@@ -42,6 +43,8 @@ public:
 private:
     void CalculateNextUpgradeCost();
 
+    // Member data
+private:
     // Base Values
     int m_baseAttackDamage;
     int m_baseMaxHealth;
@@ -58,16 +61,16 @@ private:
 
     // Amount per level
     const int m_attackDamagePerLevel = 5;
-    const int m_maxHealthPerLevel = 10;
+    const int m_maxHealthPerLevel = 20;
     const float m_healthRegenPerLevel = 0.5f;
-    const float m_maxStaminaPerLevel = 10.0f;
+    const float m_maxStaminaPerLevel = 15.0f;
     const float m_staminaRegenPerLevel = 2.0f;
 
     // Upgrade Cost
     int m_currentUpgradeCost;
     int m_totalUpgradesPurchased;
     const int m_initialUpgradeCost = 10;
-    const int m_costIncreasePerUpgrade = 5;
+    const int m_costIncreasePerUpgrade = 4;
 };
 
-#endif //__PLAYERSTATS_H__#pragma once
+#endif //__PLAYERSTATS_H__

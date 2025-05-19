@@ -37,6 +37,7 @@ void CollisionSystem::ProcessCollisions(Player* player, std::vector<EnemyBat*>& 
 	}
 }
 
+// Bat
 void CollisionSystem::CheckPlayerHitByEnemy(Player* player, EnemyBat* enemy)
 {
     if (player->GetCurrentState() != PlayerState::ROLLING &&
@@ -48,6 +49,7 @@ void CollisionSystem::CheckPlayerHitByEnemy(Player* player, EnemyBat* enemy)
     }
 }
 
+// Type 2
 void CollisionSystem::CheckPlayerHitByEnemy(Player* player, EnemyType2* enemy)
 {
     if (player->GetCurrentState() != PlayerState::ROLLING &&

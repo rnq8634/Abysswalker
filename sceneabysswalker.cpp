@@ -102,17 +102,33 @@ void SceneAbyssWalker::fullBackground(Renderer& renderer)
 bool SceneAbyssWalker::Initialise(Renderer& renderer)
 {
     m_pRenderer = &renderer;
-    fullBackground(*m_pRenderer);
-
-    // Load Player
-    m_pPlayer = new Player();
-    if (!m_pPlayer || !m_pPlayer->Initialise(*m_pRenderer))
+    if (!m_pmoonBackground)
     {
-        LogManager::GetInstance().Log("Failed to initialise Player!!");
-        delete m_pPlayer; m_pPlayer = nullptr;
-        return false;
+        fullBackground(*m_pRenderer);
     }
-    m_pPlayer->ResetForNewGame();
+
+    for (EnemyBat* enemyBat : m_enemyBats) delete enemyBat;
+    m_enemyBats.clear();
+    for (EnemyType2* enemyType2 : m_enemyType2) delete enemyType2;
+    m_enemyType2.clear();
+
+    // Load Player 
+    if (m_pPlayer) 
+    {
+        LogManager::GetInstance().Log("SceneAbyssWalker::Initialise - Player exists, calling ResetForNewGame.");
+        m_pPlayer->ResetForNewGame();
+    }
+    else 
+    {
+        LogManager::GetInstance().Log("SceneAbyssWalker::Initialise - Player is NULL, creating new.");
+        m_pPlayer = new Player();
+        if (!m_pPlayer || !m_pPlayer->Initialise(*m_pRenderer)) 
+        {
+            delete m_pPlayer; 
+            m_pPlayer = nullptr;
+            return false;
+        }
+    }
 
     // Load Upgrade Menu prompt (Shows up at the end of each wave)
     m_pUpgradeMenu = new UpgradeMenu(m_pRenderer, m_pPlayer, this);
@@ -162,6 +178,8 @@ bool SceneAbyssWalker::Initialise(Renderer& renderer)
         return false;
     }
 
+    if (m_pWaveSystem) m_pWaveSystem->ResetForNewGame();
+    if (m_pEnemySpawner) m_pEnemySpawner->Reset();
     m_playerChoseToQuit = false;
 
     SetupUpgradeMenuUI();
@@ -181,8 +199,10 @@ void SceneAbyssWalker::RestartGame()
     if (m_pWaveSystem) m_pWaveSystem->ResetForNewGame();
     if (m_pEnemySpawner) m_pEnemySpawner->Reset();
 
+    if (m_pUpgradeMenu) m_pUpgradeMenu->SetActive(false);
+    if (m_pGameEndPrompt) m_pGameEndPrompt->SetActive(false);
+
     if (m_pPlayer) m_pPlayer->ResetForNewGame();
-    if (m_pWaveSystem) m_pWaveSystem->ResetForNewGame();
 
     m_playerChoseToQuit = false;
 }

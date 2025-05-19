@@ -23,8 +23,8 @@ PlayerStats::~PlayerStats()
 void PlayerStats::InitialiseDefault()
 {
     m_baseAttackDamage = 25; // Default player attack
-    m_baseMaxHealth = 100;
-    m_baseMaxStamina = 100.0f;
+    m_baseMaxHealth = 125;
+    m_baseMaxStamina = 115.0f;
     m_baseStaminaRegenRate = 10.0f;
     m_baseHealthRegenRate = 0.0f; // Starts with no health regen
 

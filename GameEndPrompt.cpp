@@ -298,6 +298,7 @@ void GameEndPrompt::ActivateButtonAction(const std::string& identifier)
     else if (identifier == "restart_game") 
     {
         Game::GetInstance().SetCurrentScene(SCENE_INDEX_ABYSSWALKER);
+        SetActive(false);
     }
     else if (identifier == "quit_title") 
     {

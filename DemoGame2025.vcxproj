@@ -144,6 +144,7 @@
   <ItemGroup>
     <ClCompile Include="AbyssalEssence.cpp" />
     <ClCompile Include="AnimatedSprite.cpp" />
+    <ClCompile Include="Boss.cpp" />
     <ClCompile Include="CollisionSystem.cpp" />
     <ClCompile Include="EnemyBat.cpp" />
     <ClCompile Include="EnemySpawner.cpp" />
@@ -161,6 +162,7 @@
     <ClCompile Include="InputSystem.cpp" />
     <ClCompile Include="LogManager.cpp" />
     <ClInclude Include="AbyssalEssence.h" />
+    <ClInclude Include="Boss.h" />
     <ClInclude Include="CollisionSystem.h" />
     <ClInclude Include="EnemyBat.h" />
     <ClInclude Include="EnemySpawner.h" />

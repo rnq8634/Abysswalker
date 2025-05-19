@@ -154,6 +154,8 @@ protected:
 	// Stats
 	float m_currentStamina;
 
+	float m_healthRegenFractionAccumulator;
+
 	// Physics constants
 	const float kGravity = 150.0f; // gravity strengtth
 	const float kJumpForce = 100.0f; // initial jump strength

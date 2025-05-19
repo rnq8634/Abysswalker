@@ -57,6 +57,7 @@ protected:
 	InputSystem* m_pInputSystem;
 
 	bool m_bShowDebugWindow;
+	bool m_bForceScene;
 
 	__int64 m_iLastTime;
 	float m_fExecutionTime;

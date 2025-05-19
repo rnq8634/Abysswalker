@@ -32,6 +32,7 @@ Player::Player()
 	, m_justRevived(false)
 	, m_invincibilityTimer(0.0f)
 	, m_bIsInvincible(false)
+	, m_healthRegenFractionAccumulator(0.0f)
 {
 	m_velocity.Set(0.0f, 0.0f);
 	ResetForNewGame();
@@ -52,13 +53,25 @@ Player::~Player()
 
 void Player::ResetForNewGame()
 {
-	m_playerStats.ResetStats();
-	m_abyssalEssence = AbyssalEssence(); // Re-create to reset amount
-	UpdateStatsFromPlayerStats();
-	m_currentStamina = m_playerStats.GetMaxStamina();
-	m_currentHealth = m_playerStats.GetMaxHealth(); // Entity's m_currentHealth
+	LogManager::GetInstance().Log("Game has resetted!!");
+
 	m_bAlive = true;
+	m_currentState = PlayerState::IDLE;
+	m_playerStats.ResetStats();
+	m_abyssalEssence = AbyssalEssence(); 
+	UpdateStatsFromPlayerStats();
+
+	m_healthRegenFractionAccumulator = 0.0f;
+
+	m_currentStamina = m_playerStats.GetMaxStamina();
+	m_currentHealth = m_playerStats.GetMaxHealth();
+
 	m_justRevived = false;
+	m_velocity.Set(0.0f, 0.0f);                   
+	m_invincibilityTimer = 0.0f;
+	m_bIsInvincible = false;
+	
+	ClearHitEntitiesList();
 }
 
 bool Player::Initialise(Renderer& renderer)
@@ -247,11 +260,31 @@ void Player::Process(float deltaTime)
 
 void Player::ApplyHealthRegen(float deltaTime)
 {
-	float regenAmount = m_playerStats.GetHealthRegenRate() * deltaTime;
-	if (regenAmount > 0 && m_currentHealth < m_playerStats.GetMaxHealth())
+	// Early exit if not alive or already at max health
+	if (!m_bAlive || m_currentHealth >= m_playerStats.GetMaxHealth()) 
 	{
-		m_currentHealth += static_cast<int>(regenAmount);
-		m_currentHealth = std::min(m_currentHealth, m_playerStats.GetMaxHealth());
+		m_healthRegenFractionAccumulator = 0.0f;
+		return;
+	}
+
+	float currentRegenRate = m_playerStats.GetHealthRegenRate();
+
+	// Early exit if there's no regen rate
+	if (currentRegenRate <= 0.0f) 
+	{
+		m_healthRegenFractionAccumulator = 0.0f;
+		return;
+	}
+
+	m_healthRegenFractionAccumulator += currentRegenRate * deltaTime;
+
+	if (m_healthRegenFractionAccumulator >= 1.0f) {
+		int wholePointsToRegen = static_cast<int>(m_healthRegenFractionAccumulator);
+
+		m_currentHealth += wholePointsToRegen;
+		m_currentHealth = std::min(m_currentHealth, m_playerStats.GetMaxHealth()); // Caps at max health
+
+		m_healthRegenFractionAccumulator -= static_cast<float>(wholePointsToRegen);
 	}
 }
 

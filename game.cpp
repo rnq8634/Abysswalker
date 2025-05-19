@@ -53,6 +53,7 @@ Game::Game()
 	, m_iFrameCount(0)
 	, m_iLastTime(0)
 {
+	m_bForceScene = false;
 }
 
 Game::~Game()
@@ -143,6 +144,10 @@ void Game::SetCurrentScene(int index)
 {
 	if (index >= 0 && static_cast<size_t>(index) < m_scenes.size())
 	{
+		if (m_iCurrentScene == index)
+		{
+			m_bForceScene = true;
+		}
 		m_iCurrentScene = index;
 	}
 	else
@@ -222,7 +227,7 @@ void Game::Process(float deltaTime)
 		}
 	}
 
-	if (m_iCurrentScene != previousFrameSceneIndex)
+	if (m_iCurrentScene != previousFrameSceneIndex || m_bForceScene)
 	{
 		LogManager::GetInstance().Log(("Transitioning to scene: " + std::to_string(m_iCurrentScene)).c_str());
 		if (m_iCurrentScene >= 0 && static_cast<size_t>(m_iCurrentScene) < m_scenes.size())
@@ -233,7 +238,8 @@ void Game::Process(float deltaTime)
 				Quit();
 				return; // Exit Process if initialization fails
 			}
-			previousFrameSceneIndex = m_iCurrentScene; // IMPORTANT: Update tracker to the NEW current scene
+			previousFrameSceneIndex = m_iCurrentScene;
+			m_bForceScene = false;
 		}
 		else
 		{
