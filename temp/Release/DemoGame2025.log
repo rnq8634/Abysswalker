@@ -1,9 +1,14 @@
 ﻿  AbyssalEssence.cpp
   AnimatedSprite.cpp
+  Boss.cpp
+  CollisionSystem.cpp
   EnemyBat.cpp
+  EnemySpawner.cpp
   EnemyType2.cpp
   Entity.cpp
   Game.cpp
+  GameEndPrompt.cpp
+C:\Users\nikol\source\repos\DemoGame2025\GameEndPrompt.cpp(88,130): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
   imgui.cpp
   imgui_demo.cpp
   imgui_draw.cpp
@@ -14,17 +19,16 @@
   InputSystem.cpp
   LogManager.cpp
   main.cpp
+  Compiling...
   Matrix4.cpp
   Particle.cpp
   ParticleEmitter.cpp
   Player.cpp
-  Compiling...
+  PlayerHUD.cpp
   PlayerStats.cpp
   Renderer.cpp
   Scene.cpp
   SceneAbyssWalker.cpp
-C:\Users\nikol\source\repos\DemoGame2025\SceneAbyssWalker.cpp(604,130): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-  SceneControls.cpp
   SceneSplashScreenAUT.cpp
   SceneTitleScreen.cpp
   Shader.cpp
@@ -33,11 +37,14 @@ C:\Users\nikol\source\repos\DemoGame2025\SceneAbyssWalker.cpp(604,130): warning 
   Sprite.cpp
   Texture.cpp
   TextureManager.cpp
+  UpgradeMenu.cpp
   Vector2.cpp
   VertexArray.cpp
-  xboxcontroller.cpp
+  Compiling...
+  WaveSystem.cpp
+  XboxController.cpp
   Generating code
   Previous IPDB not found, fall back to full compilation.
-  All 3339 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  All 3472 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   Finished generating code
   DemoGame2025.vcxproj -> C:\Users\nikol\source\repos\DemoGame2025\game\DemoGame2025.exe
