@@ -39,15 +39,13 @@ bool SceneSplashScreenAUT::Initialise(Renderer& renderer)
 {
 	renderer.SetClearColor(0, 0, 0);
 
-	// Allocate Texture
 	m_pAUTLogoTexture = new Texture();
-	if (!m_pAUTLogoTexture) // Check texture allocation
+	if (!m_pAUTLogoTexture)
 	{
-		LogManager::GetInstance().Log("Failed to allocate AUT Logo texture."); // Specific log
+		LogManager::GetInstance().Log("Failed to allocate AUT Logo texture.");
 		return false;
 	}
 
-	// Initialise Texture
 	if (!m_pAUTLogoTexture->Initialise(AUT_LOGO_FILEPATH))
 	{
 		LogManager::GetInstance().Log("Failed to initialise AUT Logo texture from file!!");
@@ -56,9 +54,8 @@ bool SceneSplashScreenAUT::Initialise(Renderer& renderer)
 		return false;
 	}
 
-	// Allocate Sprite
 	m_pAUTLogoSprite = new Sprite();
-	if (!m_pAUTLogoSprite) // Check sprite allocation
+	if (!m_pAUTLogoSprite)
 	{
 		LogManager::GetInstance().Log("Failed to allocate AUT Logo Sprite!");
 		delete m_pAUTLogoTexture;
@@ -66,7 +63,6 @@ bool SceneSplashScreenAUT::Initialise(Renderer& renderer)
 		return false;
 	}
 
-	// Initialise Sprite
 	if (!m_pAUTLogoSprite->Initialise(*m_pAUTLogoTexture))
 	{
 		LogManager::GetInstance().Log("Failed to Init AUT Logo Sprite with texture!");

@@ -72,7 +72,7 @@ SceneTitleScreen::~SceneTitleScreen()
 
 bool SceneTitleScreen::Initialise(Renderer& renderer)
 {
-    renderer.SetClearColor(0, 0, 0); // Black background
+    renderer.SetClearColor(0, 0, 0);
 
     // To load and play the BGM
     SoundSystem& soundSys = SoundSystem::GetInstance();
@@ -85,7 +85,7 @@ bool SceneTitleScreen::Initialise(Renderer& renderer)
         m_pBGMChannel = soundSys.PlaySound(TITLE_BGM_ID);
         if (m_pBGMChannel)
         {
-            soundSys.SetChannelVolume(m_pBGMChannel, 0.8f); // NOTE: Volume can be set here!
+            soundSys.SetChannelVolume(m_pBGMChannel, 0.8f);
         }
         else
         {
@@ -295,6 +295,7 @@ void SceneTitleScreen::Draw(Renderer& renderer)
     }
 }
 
+// Checking if the mouse over the button
 bool SceneTitleScreen::IsMouseOverButton(const Button& button, const Vector2& mousePos)
 {
     float halfWidth = button.size.x / 2.0f;

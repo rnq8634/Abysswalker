@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="SceneAbyssWalker" Collapsed="true">
+    <Position X="4.75" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AIoAQMCEIAMBFzA0AysAKAAUGIgAAA1SsABgAAKSgBI=</HashCode>
+      <FileName>SceneAbyssWalker.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Scene">
+    <Position X="7" Y="5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAwAAggAAAAAAQAAAAAAQAAAgAAAAAAA=</HashCode>
+      <FileName>Scene.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SceneSplashScreenAUT" Collapsed="true">
+    <Position X="4.5" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAIAEwAABkAAAAgAAAAAIAgQBAAAAAAAAAE=</HashCode>
+      <FileName>SceneSplashScreenAUT.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SceneSplashScreenFMOD" Collapsed="true">
+    <Position X="7.5" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAQAAAAAAMwAABkAAAAAAAAAAIBAQBAAAAAAAAAE=</HashCode>
+      <FileName>SceneSplashScreenFMOD.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SceneTitleScreen" Collapsed="true">
+    <Position X="10" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAEICAAAAEAAAwQAAgAAAAQAEAQAAAFRQCAAAAACAAA=</HashCode>
+      <FileName>SceneTitleScreen.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

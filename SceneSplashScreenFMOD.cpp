@@ -39,37 +39,33 @@ bool SceneSplashScreenFMOD::Initialise(Renderer& renderer)
 {
 	renderer.SetClearColor(0, 0, 0);
 
-	// Allocate Texture
 	m_pFMODLogoTexture = new Texture();
-	if (!m_pFMODLogoTexture) // Check if m_pFMODLogoTexture allocation failed
+	if (!m_pFMODLogoTexture)
 	{
-		LogManager::GetInstance().Log("Failed to allocate FMOD Logo texture."); // Specific log
+		LogManager::GetInstance().Log("Failed to allocate FMOD Logo texture.");
 		return false;
 	}
 
-	// Initialise Texture
 	if (!m_pFMODLogoTexture->Initialise(FMOD_LOGO_FILEPATH))
 	{
-		LogManager::GetInstance().Log("Failed to initialise FMOD Logo texture from file!!"); // Corrected log from my previous suggestion
+		LogManager::GetInstance().Log("Failed to initialise FMOD Logo texture from file!!");
 		delete m_pFMODLogoTexture;
 		m_pFMODLogoTexture = nullptr;
 		return false;
 	}
 
-	// Allocate Sprite
 	m_pFMODLogoSprite = new Sprite();
-	if (!m_pFMODLogoSprite) // Check if m_pFMODLogoSprite allocation failed
+	if (!m_pFMODLogoSprite) 
 	{
 		LogManager::GetInstance().Log("Failed to allocate FMOD Logo Sprite!");
-		delete m_pFMODLogoTexture; // Clean up already loaded texture
+		delete m_pFMODLogoTexture;
 		m_pFMODLogoTexture = nullptr;
 		return false;
 	}
 
-	// Initialise Sprite
 	if (!m_pFMODLogoSprite->Initialise(*m_pFMODLogoTexture))
 	{
-		LogManager::GetInstance().Log("Failed to Init FMOD Logo Sprite with texture!"); // Corrected log
+		LogManager::GetInstance().Log("Failed to Init FMOD Logo Sprite with texture!");
 		delete m_pFMODLogoSprite;
 		m_pFMODLogoSprite = nullptr;
 		delete m_pFMODLogoTexture;

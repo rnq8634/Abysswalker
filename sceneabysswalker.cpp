@@ -226,7 +226,7 @@ void SceneAbyssWalker::SpawnBoss()
 {
     if (!m_pRenderer || !m_pPlayer)
     {
-        LogManager::GetInstance().Log("SceneAbyssWalker::SpawnBoss - Renderer or Player is null. Cannot spawn boss.");
+        LogManager::GetInstance().Log("SceneAbyssWalker::SpawnBoss - Cannot spawn boss.");
         return;
     }
 
@@ -234,11 +234,11 @@ void SceneAbyssWalker::SpawnBoss()
     {
         if (m_pBoss && m_pBoss->IsAlive())
         {
-            LogManager::GetInstance().Log("SceneAbyssWalker::SpawnBoss - Boss already spawned and is alive. Aborting spawn.");
+            LogManager::GetInstance().Log("SceneAbyssWalker::SpawnBoss - Boss already spawned and is alive.");
         }
         else
         {
-            LogManager::GetInstance().Log("SceneAbyssWalker::SpawnBoss - Boss was already spawned in this session (may be dead). Not respawning.");
+            LogManager::GetInstance().Log("SceneAbyssWalker::SpawnBoss - Boss was already spawned in this session.");
         }
 
         return;
@@ -382,6 +382,7 @@ void SceneAbyssWalker::RestartGame()
     for (EnemyType2* enemyType2 : m_enemyType2) delete enemyType2;
     m_enemyType2.clear();
 
+    // Delete boss so can spawn again for next instance
     delete m_pBoss;
     m_pBoss = nullptr;
     m_bBossHasSpawned = false;
@@ -502,15 +503,14 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
         for (EnemyBat* enemyBat : m_enemyBats) 
         {
             if (enemyBat->IsAlive() && processEnemies) 
-            { // Only process AI and movement if wave active
+            {
                 if (enemyBat->m_pTargetPlayer == nullptr && m_pPlayer) enemyBat->m_pTargetPlayer = m_pPlayer;
                 enemyBat->Process(deltaTime);
             }
             else if (!enemyBat->IsAlive() && enemyBat->GetCurrentState() == EnemyBatState::DEATH) 
             {
-                // If dead and in death state, just process animation
                 AnimatedSprite* sprite = enemyBat->GetCurrentAnimatedSprite();
-                if (sprite) enemyBat->UpdateSprite(sprite, deltaTime); // Assuming UpdateSprite handles animation process
+                if (sprite) enemyBat->UpdateSprite(sprite, deltaTime);
             }
         }
 
@@ -562,6 +562,7 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
     CleanupDead();
 }
 
+// Cleaning up
 void SceneAbyssWalker::EndWaveEnemyCleanup()
 {
     for (EnemyBat* bat : m_enemyBats)
@@ -614,6 +615,7 @@ void SceneAbyssWalker::SetupUpgradeMenuUI()
     }
 }
 
+// Cheats
 void SceneAbyssWalker::DebugSkipToLastWave()
 {
     if (!m_pWaveSystem || !m_pPlayer)

@@ -234,6 +234,7 @@
     <ClInclude Include="XboxController.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram.cd" />
     <None Include="sprite.frag" />
     <None Include="sprite.vert" />
   </ItemGroup>

@@ -249,14 +249,6 @@ void Player::Process(float deltaTime)
 	{
 		LogManager::GetInstance().Log(("Error: No Sprite found for state: " + std::to_string((int)m_currentState)).c_str());
 	}
-
-	if (!m_bAlive && m_currentState == PlayerState::DEATH && GetCurrentAnimatedSprite() && GetCurrentAnimatedSprite()->IsAnimationComplete())
-	{
-		if (m_abyssalEssence.CanRevive())
-		{
-			// Have a UI that asks if player wants to be revived
-		}
-	}
 }
 
 void Player::ApplyHealthRegen(float deltaTime)
@@ -304,7 +296,6 @@ void Player::Revive()
 			m_position.y = kGroundLevel;
 			m_velocity.Set(0.0f, 0.0f);
 			TransitionToState(PlayerState::IDLE);
-			LogManager::GetInstance().Log("Player Revived using Abyssal Essence!");
 
 			// Grant invincibility upon revival
 			m_bIsInvincible = true;
@@ -312,7 +303,7 @@ void Player::Revive()
 		}
 		else
 		{
-			LogManager::GetInstance().Log("Player tried to revive but not enough Abyssal Essence.");
+			LogManager::GetInstance().Log("Player tried to revive but not enough Essence.");
 		}
 	}
 	else if (m_bAlive)
@@ -427,10 +418,6 @@ void Player::TransitionToState(PlayerState newState)
 		newSprite->Restart();
 		newSprite->Animate();
 	}
-	else
-	{
-		LogManager::GetInstance().Log(("Error: No sprite found for state transitioning: " + std::to_string((int)newState)).c_str());
-	}
 }
 
 //-----------------------------------------------Player Action---------------------------------------------------------
@@ -529,11 +516,6 @@ void Player::Jump()
 			m_velocity.y = -kJumpForce;
 			TransitionToState(PlayerState::JUMPING);
 		}
-		else if (isOnGround)
-		{
-			LogManager::GetInstance().Log("Not enought stamina!");
-			// Show on the player bar no stamina
-		}
 	}
 }
 
@@ -550,11 +532,6 @@ void Player::Attack()
 			ClearHitEntitiesList();
 
 			TransitionToState(PlayerState::ATTACKING);
-		}
-		else
-		{
-			LogManager::GetInstance().Log("Not enough stamina!");
-			// Stamina bar decreases
 		}
 	}
 }
@@ -575,10 +552,6 @@ void Player::Roll(float speedBoost)
 
 			TransitionToState(PlayerState::ROLLING);
 			// Add a invincibility during roll
-		}
-		else
-		{
-			LogManager::GetInstance().Log("Not enough stamina to roll!");
 		}
 	}
 }
@@ -738,15 +711,6 @@ void Player::HurtAnimationComplete()
 void Player::DeathAnimationComplete() 
 {
 	LogManager::GetInstance().Log("Death animation complete.");
-	if (m_abyssalEssence.CanRevive())
-	{
-		LogManager::GetInstance().Log(("Player can revive. Cost: " + std::to_string(AbyssalEssence::DEFAULT_REVIVE_COST) + " essence.").c_str());
-		// Add this prompt here,maybe above the player, the camera zooms in abit and blurs all sprites around the playuer
-	}
-	else
-	{
-		LogManager::GetInstance().Log("Player cannot revive (not enough essence). Game Over or return to menu.");
-	}
 }
 
 bool Player::DamageDoneToTarget(Entity* target)
@@ -759,55 +723,6 @@ bool Player::DamageDoneToTarget(Entity* target)
 void Player::ClearHitEntitiesList()
 {
 	m_hitEntitiesThisAttack.clear();
-}
-
-// ------------------------------------------Debugging-------------------------------------------------------
-void Player::DebugDraw()
-{
-	if (ImGui::CollapsingHeader("Player Debug##Player"))
-	{
-		ImGui::Checkbox("Alive", &m_bAlive);
-		ImGui::Text("Health: %d / %d", m_currentHealth, m_playerStats.GetMaxHealth());
-		ImGui::Text("Stamina: %.1f / %.1f", m_currentStamina, m_playerStats.GetMaxStamina());
-		ImGui::Text("Position: (%.1f, %.1f)", m_position.x, m_position.y);
-		ImGui::Text("Velocity: (%.1f, %.1f)", m_velocity.x, m_velocity.y);
-		ImGui::Text("Invincible: %s (%.1f seconds)", m_bIsInvincible ? "Yes" : "No", m_invincibilityTimer);
-
-		ImGui::Separator();
-		m_abyssalEssence.DebugDraw();
-		m_playerStats.DebugDraw();
-
-		std::string stateName = "UNKNOWN";
-		switch (m_currentState) {
-		case PlayerState::IDLE: stateName = "IDLE"; break;
-		case PlayerState::RUNNING: stateName = "RUNNING"; break;
-		case PlayerState::JUMPING: stateName = "JUMPING"; break;
-		case PlayerState::FALLING: stateName = "FALLING"; break;
-		case PlayerState::ATTACKING: stateName = "ATTACKING"; break;
-		case PlayerState::TURNING: stateName = "TURNING"; break;
-		case PlayerState::ROLLING: stateName = "ROLLING"; break;
-		case PlayerState::HURT: stateName = "HURT"; break;
-		case PlayerState::DEATH: stateName = "DEATH"; break;
-		default: stateName = "(" + std::to_string((int)m_currentState) + ")"; break;
-		}
-		ImGui::Text("State: %s", stateName.c_str());
-		ImGui::Text("Facing: %s", m_bFacingRight ? "Right" : "Left");
-		ImGui::Text("On Ground: %s", (m_position.y >= kGroundLevel) ? "Yes" : "No");
-
-		if (ImGui::Button("Damage Player (15)")) { TakeDamage(15); }
-		ImGui::SameLine();
-		if (ImGui::Button("Kill Player")) { TakeDamage(m_playerStats.GetMaxHealth() * 2); }
-		if (ImGui::Button("Revive Player")) { Revive(); }
-
-		AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
-		if (currentSprite)
-		{
-			ImGui::Separator();
-			ImGui::Text("Current Sprite Details:");
-			currentSprite->DebugDraw();
-		}
-		else ImGui::Text("Current Sprite: None");
-	}
 }
 
 bool Player::CheckCollision(const Entity& other) const
@@ -836,4 +751,30 @@ bool Player::CheckCollision(const Entity& other) const
 		playerRight > otherLeft &&
 		playerTop < otherBottom &&
 		playerBottom > otherTop);
+}
+
+// ------------------------------------------Debugging-------------------------------------------------------
+void Player::DebugDraw()
+{
+	if (ImGui::CollapsingHeader("Player Debug##Player"))
+	{
+		ImGui::Checkbox("Alive", &m_bAlive);
+		ImGui::Text("Health: %d / %d", m_currentHealth, m_playerStats.GetMaxHealth());
+		ImGui::Text("Stamina: %.1f / %.1f", m_currentStamina, m_playerStats.GetMaxStamina());
+		ImGui::Text("Position: (%.1f, %.1f)", m_position.x, m_position.y);
+		ImGui::Text("Velocity: (%.1f, %.1f)", m_velocity.x, m_velocity.y);
+		ImGui::Text("Invincible: %s (%.1f seconds)", m_bIsInvincible ? "Yes" : "No", m_invincibilityTimer);
+
+		ImGui::Separator();
+		m_abyssalEssence.DebugDraw();
+		m_playerStats.DebugDraw();
+
+		ImGui::Text("Facing: %s", m_bFacingRight ? "Right" : "Left");
+		ImGui::Text("On Ground: %s", (m_position.y >= kGroundLevel) ? "Yes" : "No");
+
+		if (ImGui::Button("Damage Player (15)")) { TakeDamage(15); }
+		ImGui::SameLine();
+		if (ImGui::Button("Kill Player")) { TakeDamage(m_playerStats.GetMaxHealth() * 2); }
+		if (ImGui::Button("Revive Player")) { Revive(); }
+	}
 }

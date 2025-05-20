@@ -304,6 +304,7 @@
   <ItemGroup>
     <None Include="sprite.vert" />
     <None Include="sprite.frag" />
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DemoGame2025.rc" />

@@ -67,7 +67,8 @@ void Entity::DebugDraw()
 		ImGui::Checkbox("Is Alive", &m_bAlive);
 		ImGui::SliderInt("Health", &m_currentHealth, 0, m_maxHealth);
 		ImGui::SameLine();
-		if (ImGui::InputInt("Max HP", &m_maxHealth)) {
+		if (ImGui::InputInt("Max HP", &m_maxHealth)) 
+		{
 			if (m_maxHealth < 1) m_maxHealth = 1;
 			if (m_currentHealth > m_maxHealth) m_currentHealth = m_maxHealth;
 		}
@@ -77,15 +78,13 @@ void Entity::DebugDraw()
 }
 
 // Check if the entity is alive
-bool
-Entity::IsAlive() const
+bool Entity::IsAlive() const
 {
 	return m_bAlive;
 }
 
 // Mark the entity as dead
-void
-Entity::SetDead()
+void Entity::SetDead()
 {
 	m_bAlive = false;
 }
@@ -96,8 +95,7 @@ float Entity::GetRadius() const
 	return m_radius; // Default value
 }
 
-void
-Entity::SetRadius(float radius)
+void Entity::SetRadius(float radius)
 {
 	m_radius = radius > 0 ? radius : 0.0f;
 }

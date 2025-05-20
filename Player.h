@@ -149,7 +149,7 @@ protected:
 
 	// Player I-Frames
 	float m_invincibilityTimer;
-	const float m_invincibilityDuration = 1.0f;
+	const float m_invincibilityDuration = 2.0f;
 
 	// Stats
 	float m_currentStamina;

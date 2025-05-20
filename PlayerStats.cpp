@@ -128,8 +128,14 @@ void PlayerStats::CalculateNextUpgradeCost()
     m_currentUpgradeCost = m_initialUpgradeCost + (m_totalUpgradesPurchased * m_costIncreasePerUpgrade);
 }
 
-void PlayerStats::ModifyBaseAttack(int amount) { m_baseAttackDamage += amount; }
-void PlayerStats::ModifyBaseMaxHealth(int amount) { m_baseMaxHealth += amount; }
+void PlayerStats::ModifyBaseAttack(int amount) 
+{ 
+    m_baseAttackDamage += amount; 
+}
+void PlayerStats::ModifyBaseMaxHealth(int amount) 
+{ 
+    m_baseMaxHealth += amount; 
+}
 
 void PlayerStats::DebugDraw()
 {
