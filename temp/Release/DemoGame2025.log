@@ -45,6 +45,6 @@ C:\Users\nikol\source\repos\DemoGame2025\GameEndPrompt.cpp(88,130): warning C424
   XboxController.cpp
   Generating code
   Previous IPDB not found, fall back to full compilation.
-  All 3660 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  All 3705 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   Finished generating code
   DemoGame2025.vcxproj -> C:\Users\nikol\source\repos\DemoGame2025\game\DemoGame2025.exe
