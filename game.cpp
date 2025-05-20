@@ -1,5 +1,4 @@
 // COMP710 GP Framework
-#define _CRTDBG_MAP_ALLOC
 // This include:
 #include "Game.h"
 
@@ -66,9 +65,6 @@ Game::Game()
 
 Game::~Game()
 {
-	if (m_pCurrentScenePtr)
-	{
-	}
 	m_pCurrentScenePtr = nullptr;
 
 	delete m_pRenderer;
@@ -76,15 +72,27 @@ Game::~Game()
 	m_pInputSystem = 0;
 	m_pRenderer = 0;
 
+	// Delete Scenes
 	for (Scene* scene : m_scenes)
 	{
 		delete scene;
 	}
 	m_scenes.clear();
 
-	SoundSystem::DestroyInstance();
+	// Delete Game systems
+	delete m_pRenderer;
+	m_pRenderer = nullptr;
 
+	delete m_pInputSystem;
+	m_pInputSystem = nullptr;
+
+	// Libraries and subsystems
+	SoundSystem::DestroyInstance();
 	TTF_Quit();
+
+#ifdef _DEBUG
+	_CrtDumpMemoryLeaks();
+#endif
 }
 
 void Game::Quit()
@@ -95,7 +103,6 @@ void Game::Quit()
 // Where scenes will be added
 bool Game::Initialise()
 {
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	// WIndow screen
 	int bbWidth = 1280;
 	int bbHeight = 720;
@@ -146,7 +153,6 @@ bool Game::Initialise()
 	return SetCurrentScene(SCENE_INDEX_FMODSPLASH, true);
 
 	return true;
-	_CrtDumpMemoryLeaks();
 }
 
 bool Game::SetCurrentScene(int index, bool forceInitialise)

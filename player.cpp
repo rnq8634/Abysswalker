@@ -762,10 +762,6 @@ void Player::ClearHitEntitiesList()
 }
 
 // ------------------------------------------Debugging-------------------------------------------------------
-// Need to add cheat features for debug
-// God Mode
-// One Shot
-// Inf Stamina
 void Player::DebugDraw()
 {
 	if (ImGui::CollapsingHeader("Player Debug##Player"))

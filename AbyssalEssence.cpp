@@ -2,13 +2,13 @@
 #include "AbyssalEssence.h"
 
 // Local Includes
-#include "LogManager.h" // For logging, if you want to log essence changes
+#include "LogManager.h"
 
 // IMGUI
 #include "imgui/imgui.h"
 
 // Lib includes
-#include <algorithm> // For std::max
+#include <algorithm> 
 
 AbyssalEssence::AbyssalEssence()
     : m_currentAmount(0) // Player starts with 0 essence
@@ -31,17 +31,13 @@ bool AbyssalEssence::SpendEssence(int amount)
 {
     if (amount <= 0)
     {
-        // LogManager::GetInstance().Log("Cannot spend zero or negative essence.");
         return false;
     }
     if (m_currentAmount >= amount)
     {
         m_currentAmount -= amount;
-        // Optional: Log essence spent
-        // LogManager::GetInstance().Log(("Spent " + std::to_string(amount) + " Abyssal Essence. Remaining: " + std::to_string(m_currentAmount)).c_str());
         return true;
     }
-    // LogManager::GetInstance().Log("Not enough Abyssal Essence to spend.");
     return false;
 }
 
@@ -67,13 +63,21 @@ bool AbyssalEssence::SpendForRevive()
         LogManager::GetInstance().Log("Spent essence for revival.");
         return true;
     }
-    // LogManager::GetInstance().Log("Could not spend essence for revival (not enough).");
-    return false; // SpendEssence would have already logged "not enough" if that was the case
+    return false;
 }
 
 void AbyssalEssence::DebugDraw()
 {
     if (ImGui::TreeNode("Abyssal Essence"))
     {
+        ImGui::Text("Current Amount: %d / %d", m_currentAmount, MAX_ESSENCE_CAP);
+
+        // Add essence
+        if (ImGui::Button("Add 500 Essence")) 
+        { 
+            AddEssence(500); 
+        }
+
+        ImGui::TreePop();
     }
 }

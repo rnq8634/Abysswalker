@@ -9,24 +9,22 @@ public:
     ~AbyssalEssence();
 
     void AddEssence(int amount);
-    bool SpendEssence(int amount); // Generic spending
+    bool SpendEssence(int amount);
     int GetCurrentAmount() const;
     bool CanAfford(int amount) const;
 
     // Specific for Revival
     bool CanRevive() const;
-    bool SpendForRevive(); // Uses the defined revive cost
+    bool SpendForRevive();
 
     void DebugDraw();
 
     static const int DEFAULT_REVIVE_COST = 100;
+    static const int MAX_ESSENCE_CAP = 99999;
 
     // Member data
 private:
     int m_currentAmount;
-    // If REVIVE_COST needs to be dynamic, it could be a member variable
-    // initialized in the constructor or set via a method.
-    // For now, a static const is fine.
 };
 
 #endif // __ABYSSALESSENCE_H__

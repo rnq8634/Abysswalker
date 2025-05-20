@@ -2,6 +2,11 @@
 #ifndef __GAME_H_
 #define __GAME_H_
 
+// Only for debugs
+#ifndef _DEBUG
+	#define _CRTDBG_MAP_ALLOC
+#endif
+
 // Forward delcarations:
 class Renderer;
 class Scene;
@@ -9,6 +14,8 @@ class InputSystem;
 
 // Lib includes
 #include <vector>
+#include <stdlib.h>
+#include <crtdbg.h>
 
 const int SCENE_INDEX_FMODSPLASH = 0;
 const int SCENE_INDEX_AUTSPLASH = 1;
