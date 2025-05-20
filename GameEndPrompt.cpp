@@ -15,6 +15,7 @@
 
 // Lib includes
 #include <cstdio>
+#include <cmath>
 
 GameEndPrompt::GameEndPrompt(Renderer* renderer, Player* player, SceneAbyssWalker* scene)
     : m_pRenderer(renderer),
@@ -81,11 +82,12 @@ void GameEndPrompt::SetupUI(const std::string& titleMessage)
     float buttonWidth = 250.0f;
     float buttonHeight = 40.0f;
     float spacing = 15.0f;
+    int calculatedFontSize = static_cast<int>(std::round(m_uiTitleFontSize * 1.2f));
 
     // Title Message
     m_pGameEndTitleTexture = new Texture();
     m_pGameEndTitleSprite = new Sprite();
-    if (m_pGameEndTitleSprite->InitialiseWithText(*m_pGameEndTitleTexture, titleMessage.c_str(), m_uiFontPath, m_uiTitleFontSize * 1.2f)) 
+    if (m_pGameEndTitleSprite->InitialiseWithText(*m_pGameEndTitleTexture, titleMessage.c_str(), m_uiFontPath, calculatedFontSize))
     {
         m_pGameEndTitleSprite->SetX(static_cast<int>(centerX));
         m_pGameEndTitleSprite->SetY(static_cast<int>(menuY));
@@ -148,7 +150,10 @@ void GameEndPrompt::SetupUI(const std::string& titleMessage)
         quitTitleBtn.textSprite->SetY(static_cast<int>(menuY + buttonHeight / 2.0f));
         m_gameEndButtons.push_back(std::move(quitTitleBtn));
     }
-    else { delete quitTitleBtn.textSprite; delete quitTitleBtn.textTexture; }
+    else 
+    { 
+        delete quitTitleBtn.textSprite; delete quitTitleBtn.textTexture; 
+    }
     menuY += buttonHeight + spacing;
 
     // Quit Game Button

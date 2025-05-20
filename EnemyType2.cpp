@@ -97,7 +97,6 @@ bool EnemyType2::Initialise(Renderer& renderer, const Vector2& startPosition)
     return true;
 }
 
-
 bool EnemyType2::InitialiseAnimatedSprite(Renderer& renderer, EnemyType2State state, const char* pcFilename,
     int frameWidth, int frameHeight, float frameDuration, bool loop, AnimationCallBack onComplete)
 {

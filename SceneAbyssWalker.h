@@ -63,6 +63,8 @@ public:
 
 	Boss* GetBoss() const { return m_pBoss; }
 
+	void DebugSkipToLastWave();
+
 protected:
 	void CleanupDead();
 

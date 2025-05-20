@@ -6,6 +6,7 @@
 #include "AnimatedSprite.h"
 #include "LogManager.h"
 #include "Texture.h"
+#include "Game.h"
 
 // IMGUI
 #include "imgui/imgui.h"
@@ -585,6 +586,12 @@ void Player::Roll(float speedBoost)
 // --- Stat Modifiers ---
 void Player::TakeDamage(int amount)
 {
+	if (Game::s_bGodMode)
+	{
+		LogManager::GetInstance().Log("Player took no dmg since in god mode");
+		return;
+	}
+
 	if (!m_bAlive) return;
 	if (m_currentState == PlayerState::ROLLING || m_bIsInvincible) return;
 
@@ -608,6 +615,11 @@ void Player::TakeDamage(int amount)
 
 bool Player::UseStamina(float amount)
 {
+	if (Game::s_bInfiniteStaminaMode)
+	{
+		return true;
+	}
+
 	if (m_currentStamina >= amount)
 	{
 		m_currentStamina -= amount;
@@ -619,6 +631,11 @@ bool Player::UseStamina(float amount)
 
 int Player::GetAttackDamage() const
 {
+	if (Game::s_bOneShotMode)
+	{
+		return 99999;
+	}
+
 	return m_playerStats.GetAttackDamage();
 }
 

@@ -101,62 +101,75 @@ void WaveSystem::ProcessInWave(float deltaTime)
 {
     if (!m_pPlayer->IsAlive())
     {
-        if (m_pScene) m_pScene->EndWaveEnemyCleanup();
+        //if (m_pScene) m_pScene->EndWaveEnemyCleanup();
         TransitionToState(WaveState::GAME_END_PROMPT);
         if (m_pScene) m_pScene->SetupGameEndPromptUI("YOU DIED!");
         return;
     }
 
-    if (m_bBossKilled || m_currentWaveState == WaveState::GAME_WON)
+    if (m_currentWaveState == WaveState::GAME_WON)
     {
         return;
     }
 
     m_waveTimer -= deltaTime;
-
     bool isBossWave = (m_currentWaveNumber == MAX_WAVES);
 
     if (isBossWave)
     {
         // If the player runs out of time AND does not kill the boss
-        if (m_waveTimer <= 0 && !m_bBossKilled)
+        if (m_waveTimer <= 0)
         {
-            // Player loses by default
-            if (m_pScene) m_pScene->EndWaveEnemyCleanup();
-
-            if (m_pScene) m_pScene->SetupGameEndPromptUI("The Night has consumed you...");
-        }
-        else
-        {
-            if (m_waveTimer <= 0 || m_enemiesKilledThisWave >= KILLS_TO_END_WAVE_EARLY)
+            if (!m_bBossKilled)
             {
-                ProcessEndOfWaveLogic();
+                // Player loses by default
+                if (m_pScene) m_pScene->EndWaveEnemyCleanup();
+                TransitionToState(WaveState::GAME_END_PROMPT);
+                if (m_pScene) m_pScene->SetupGameEndPromptUI("The Night has consumed you...");
+
+                return;
             }
         }
     }
-
-    if (m_waveTimer <= 0 || m_enemiesKilledThisWave >= KILLS_TO_END_WAVE_EARLY)
+    else
     {
-        ProcessEndOfWaveLogic();
+        if (m_waveTimer <= 0 || m_enemiesKilledThisWave >= KILLS_TO_END_WAVE_EARLY)
+        {
+            ProcessEndOfWaveLogic();
+        }
     }
 }
 
 void WaveSystem::ProcessEndOfWaveLogic()
 {
-    m_pScene->EndWaveEnemyCleanup(); 
+    if (m_currentWaveNumber >= MAX_WAVES)
+    {
+        if (m_currentWaveNumber == MAX_WAVES)
+        {
+            if (m_bBossKilled && m_currentWaveState != WaveState::GAME_WON)
+            {
+                TransitionToState(WaveState::GAME_WON);
+
+                if (m_pScene)
+                {
+                    m_pScene->SetupGameEndPromptUI("YOU HAVE SURVIVED THE NIGHT!");
+                }
+            }
+            else if (!m_bBossKilled && m_currentWaveState != WaveState::GAME_END_PROMPT && m_waveTimer <= 0)
+            {
+                if (m_pScene) m_pScene->EndWaveEnemyCleanup();
+                TransitionToState(WaveState::GAME_END_PROMPT);
+                if (m_pScene) m_pScene->SetupGameEndPromptUI("The Night has consumed your soul...");
+            }
+        }
+        return;
+    }
+
+    if (m_pScene) m_pScene->EndWaveEnemyCleanup(); 
     LogManager::GetInstance().Log(("Wave " + std::to_string(m_currentWaveNumber) + " ended. Kills: " + std::to_string(m_enemiesKilledThisWave)).c_str());
 
-    if (IsMaxWavesReached())
-    {
-        TransitionToState(WaveState::GAME_WON);
-        m_pScene->SetupGameEndPromptUI("Victory!"); 
-    }
-    else if (m_currentWaveNumber < MAX_WAVES)
-    {
-        StartIntermission();
-    }
+    StartIntermission();
 }
-
 
 void WaveSystem::ProcessIntermission(float deltaTime, InputSystem& inputSystem)
 {
@@ -214,13 +227,28 @@ void WaveSystem::NotifyEnemyKilled()
 
 void WaveSystem::NotifyBossKilled()
 {
-    if (m_bBossKilled || m_currentWaveState == WaveState::GAME_WON) return;
+    if (m_currentWaveState == WaveState::GAME_WON)
+    {
+        return;
+    }
 
     m_bBossKilled = true;
-    if (m_pScene) m_pScene->EndWaveEnemyCleanup();
+    if (m_pScene)
+    {
+        m_pScene->EndWaveEnemyCleanup();
+    }
 
     TransitionToState(WaveState::GAME_WON);
-    if (m_pScene) m_pScene->SetupGameEndPromptUI("YOU HAVE SURVIVED THE NIGHT!");
+    if (m_pScene)
+    {
+        m_pScene->SetupGameEndPromptUI("YOU HAVE SURVIVED THE NIGHT!");
+    }
+}
+
+void WaveSystem::SetCurrentWaveNumber(int number)
+{
+    m_currentWaveNumber = number;
+    LogManager::GetInstance().Log(("CHEAT: Wave number set to " + std::to_string(m_currentWaveNumber)).c_str());
 }
 
 void WaveSystem::TransitionToState(WaveState newState)

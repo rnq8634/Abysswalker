@@ -49,8 +49,12 @@ public:
     void ResetIntermissionTimer();
     void SetEnemiesKilledThisWave(int count);
 
-private:
+    void SetCurrentWaveNumber(int number);
     void StartNewWave();
+
+    void ResetBossKilledFlag() { m_bBossKilled = false; }
+
+private:
     void ProcessEndOfWaveLogic(); // Handles logic after wave timer or kills are met
     void StartIntermission();
 
@@ -68,6 +72,8 @@ public:
     static const int MAX_WAVES; // Don't forget to set this to 10!
     static const float BOSS_WAVE_DURATION;
 
+    bool m_bBossKilled;
+
 private:
     SceneAbyssWalker* m_pScene;  
     Player* m_pPlayer;
@@ -77,7 +83,6 @@ private:
     float m_waveTimer;
     float m_intermissionTimer;
     int m_enemiesKilledThisWave;
-    bool m_bBossKilled;
 };
 
 #endif // !__WAVESYSTEM_H__

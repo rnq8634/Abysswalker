@@ -417,7 +417,8 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
     {
         UpdateUpgradeMenuUI(inputSystem);
     }
-    else if (currentWaveState == WaveState::GAME_END_PROMPT || currentWaveState == WaveState::GAME_WON)
+    
+    if (currentWaveState == WaveState::GAME_END_PROMPT || currentWaveState == WaveState::GAME_WON)
     {
         UpdateGameEndPromptUI(inputSystem);
     }
@@ -528,20 +529,6 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
             }
         }
 
-        bool proecessEnemies = (currentWaveState == WaveState::IN_WAVE);
-        if (processEnemies) 
-        {
-            if (m_pCollisionSystem && m_pPlayer && m_pPlayer->IsAlive())
-            {
-                m_pCollisionSystem->ProcessCollisions(m_pPlayer, m_enemyBats, m_enemyType2);
-            }
-
-            if (m_pPlayer->IsAlive() && m_pEnemySpawner)
-            {
-                m_pEnemySpawner->Update(deltaTime, m_enemyBats, m_enemyType2);
-            }
-        }
-
         // Boss
         if (m_pBoss && m_pBoss->IsAlive())
         {
@@ -550,6 +537,7 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
 
             if (!m_pBoss->IsAlive())
             {
+                LogManager::GetInstance().Log("Is boss dead");
                 m_pWaveSystem->NotifyBossKilled();
             }
         }
@@ -559,7 +547,7 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
         }
 
         bool isBossActive = (m_pBoss && m_pBoss->IsAlive() && m_bBossHasSpawned);
-        if (m_pEnemySpawner && m_pPlayer->IsAlive() && !isBossActive && m_pWaveSystem->GetCurrentWaveNumber() < WaveSystem::MAX_WAVES)
+        if (m_pEnemySpawner && m_pPlayer->IsAlive() && !isBossActive && m_pWaveSystem->GetCurrentWaveNumber() < WaveSystem::MAX_WAVES && currentWaveState == WaveState::IN_WAVE)
         {
             m_pEnemySpawner->Update(deltaTime, m_enemyBats, m_enemyType2);
         }
@@ -567,7 +555,7 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
         // Collisions
         if (m_pCollisionSystem && m_pPlayer && m_pPlayer->IsAlive())
         {
-            m_pCollisionSystem->ProcessCollisions(m_pPlayer, m_enemyBats, m_enemyType2);
+            m_pCollisionSystem->ProcessCollisions(m_pPlayer, m_enemyBats, m_enemyType2, m_pBoss);
         }
     }
 
@@ -626,6 +614,48 @@ void SceneAbyssWalker::SetupUpgradeMenuUI()
     }
 }
 
+void SceneAbyssWalker::DebugSkipToLastWave()
+{
+    if (!m_pWaveSystem || !m_pPlayer)
+    {
+        LogManager::GetInstance().Log("SceneAbyssWalker::DebugSkipToLastWave - WaveSystem or Player is null. Cannot Skip.");
+        return;
+    }
+
+    LogManager::GetInstance().Log("SceneAbyssWalker::DebugSkipToLastWave - Initiating skip to last wave");
+
+    EndWaveEnemyCleanup();
+    CleanupDead();
+
+    // Make sure no other existing boss is spawned by accident
+    if (m_pBoss)
+    {
+        LogManager::GetInstance().Log("SceneAbyssWalker::DebugSkipToLastWave has removed existing boss instance");
+        delete m_pBoss;
+        m_pBoss = nullptr;
+    }
+    m_bBossHasSpawned = false;
+
+    // Reset UI in case they might glitch out
+    if (m_pUpgradeMenu)
+    {
+        m_pUpgradeMenu->SetActive(false);
+        LogManager::GetInstance().Log("DebugSkipToLastWave Upg menu deactivated");
+    }
+
+    if (m_pGameEndPrompt)
+    {
+        m_pGameEndPrompt->SetActive(false);
+        LogManager::GetInstance().Log("DebugSkipToLastWave GameEnd menu been deactivated");
+    }
+
+    m_pWaveSystem->SetCurrentWaveNumber(WaveSystem::MAX_WAVES - 1);
+    m_pWaveSystem->SetEnemiesKilledThisWave(0);
+    m_pWaveSystem->ResetBossKilledFlag();
+
+    LogManager::GetInstance().Log("DebugSkipLastWave has triggered boss wave!!");
+    m_pWaveSystem->StartNewWave();
+}
 
 void SceneAbyssWalker::UpdateUpgradeMenuUI(InputSystem& inputSystem) 
 {
@@ -804,14 +834,12 @@ void SceneAbyssWalker::Draw(Renderer& renderer)
             {
                 snprintf(timerBuffer, sizeof(timerBuffer), "Wave 1 Starting: %.0fs", std::max(0.0f, waveTimer));
             }
-
             else 
             {
                 snprintf(timerBuffer, sizeof(timerBuffer), "Wave %d Starting: %.0fs", currentWaveNum + 1, std::max(0.0f, waveTimer));
             }
         }
-
-        else 
+        else if (currentWaveState == WaveState::IN_WAVE)
         {
             snprintf(timerBuffer, sizeof(timerBuffer), "Time Left: %.0fs", std::max(0.0f, waveTimer));
         }

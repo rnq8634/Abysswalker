@@ -24,16 +24,26 @@ public:
 	bool Initialise();
 	bool DoGameLoop();
 	void Quit();
+
 	//IMGUI
 	void ToggleDebugWindow();
 
 	bool SetCurrentScene(int index, bool forceInitialise = false);
 	int GetCurrentSceneIndex() const;
 
+	// CHeatz
+	static bool s_bGodMode;
+	static bool s_bOneShotMode;
+	static bool s_bInfiniteStaminaMode;
+
+	InputSystem* GetInputSystem();
+
 protected:
 	void Process(float deltaTime);
 	void Draw(Renderer& renderer);
 	void ProcessFrameCounting(float deltaTime);
+
+	void ProcessCheats();
 	
 	//IMGUI
 	void DebugDraw();

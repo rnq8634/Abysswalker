@@ -30,6 +30,10 @@
 // Static Members:
 Game* Game::sm_pInstance = 0;
 
+bool Game::s_bGodMode = false;
+bool Game::s_bOneShotMode = false;
+bool Game::s_bInfiniteStaminaMode = false;
+
 Game& Game::GetInstance()
 {
 	if (sm_pInstance == 0)
@@ -172,6 +176,11 @@ int Game::GetCurrentSceneIndex() const
 	return m_iCurrentScene;
 }
 
+InputSystem* Game::GetInputSystem()
+{
+	return m_pInputSystem;
+}
+
 bool Game::DoGameLoop()
 {
 	const float stepSize = 1.0f / 60.0f;
@@ -179,6 +188,8 @@ bool Game::DoGameLoop()
 	// TODO: process input here:
 	
 	m_pInputSystem->ProcessInput();
+
+	ProcessCheats();
 	
 	if (m_bLooping)
 	{
@@ -211,6 +222,46 @@ bool Game::DoGameLoop()
 	}
 
 	return m_bLooping;
+}
+
+void Game::ProcessCheats()
+{
+	if (!m_pInputSystem) return;
+
+	// GOD MODE! Key: F1
+	if (m_pInputSystem->GetKeyState(SDL_SCANCODE_F1) == BS_PRESSED)
+	{
+		s_bGodMode = !s_bGodMode;
+		LogManager::GetInstance().Log(s_bGodMode ? "CHEAT: God Mode ENABLED" : "CHEAT: God Mode DISABLED");
+	}
+
+	// ONE SHOT MODE! Key: F2
+	if (m_pInputSystem->GetKeyState(SDL_SCANCODE_F2) == BS_PRESSED)
+	{
+		s_bOneShotMode = !s_bOneShotMode;
+		LogManager::GetInstance().Log(s_bOneShotMode ? "CHEAT: One Shot Mode ENABLED" : "CHEAT: One Shot Mode DISABLED");
+	}
+
+	// INFINITE STAMINA! Key: F3
+	if (m_pInputSystem->GetKeyState(SDL_SCANCODE_F3) == BS_PRESSED)
+	{
+		s_bInfiniteStaminaMode = !s_bInfiniteStaminaMode;
+		LogManager::GetInstance().Log(s_bInfiniteStaminaMode ? "CHEAT: Inf Stam Mode ENABLED" : "CHEAT: Inf Stam Mode DISABLED");
+	}
+
+	// SKIP TO LAST WAVE! Key: F4
+	if (m_pInputSystem->GetKeyState(SDL_SCANCODE_F4) == BS_PRESSED)
+	{
+		if (m_iCurrentScene == SCENE_INDEX_ABYSSWALKER && m_pCurrentScenePtr)
+		{
+			SceneAbyssWalker* pAbyssScene = static_cast<SceneAbyssWalker*>(m_pCurrentScenePtr);
+			if (pAbyssScene)
+			{
+				LogManager::GetInstance().Log("CHEAT: F4 Pressed - Skipping to last wave!!");
+				pAbyssScene->DebugSkipToLastWave();
+			}
+		}
+	}
 }
 
 void Game::Process(float deltaTime)

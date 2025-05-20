@@ -629,7 +629,8 @@ void Boss::TakeDamage(int amount)
     if (wasAlive && !m_bAlive)
     {
         LogManager::GetInstance().Log("Boss has died.");
-        if (wasAttacking || wasCasting) { // If died during melee or casting animation
+        if (wasAttacking || wasCasting) 
+        { // If died during melee or casting animation
             SetRadius(m_baseRadius);
         }
         
@@ -651,8 +652,7 @@ void Boss::TakeDamage(int amount)
         }
         if (m_pSceneRef && m_pSceneRef->GetWaveSystem()) 
         {
-            // Notify wave system if boss defeat is a specific condition
-            // For example: m_pSceneRef->GetWaveSystem()->NotifyBossDefeated();
+            m_pSceneRef->GetWaveSystem()->NotifyBossKilled();
         }
     }
     else if (amount > 0 && m_bAlive)
