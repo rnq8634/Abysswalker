@@ -8,7 +8,6 @@
   Entity.cpp
   Game.cpp
   GameEndPrompt.cpp
-C:\Users\nikol\source\repos\DemoGame2025\GameEndPrompt.cpp(88,130): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
   imgui.cpp
   imgui_demo.cpp
   imgui_draw.cpp
@@ -45,6 +44,6 @@ C:\Users\nikol\source\repos\DemoGame2025\GameEndPrompt.cpp(88,130): warning C424
   XboxController.cpp
   Generating code
   Previous IPDB not found, fall back to full compilation.
-  All 3705 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  All 3713 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   Finished generating code
   DemoGame2025.vcxproj -> C:\Users\nikol\source\repos\DemoGame2025\game\DemoGame2025.exe
