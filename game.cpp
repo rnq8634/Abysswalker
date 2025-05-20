@@ -1,9 +1,9 @@
 // COMP710 GP Framework
-
+#define _CRTDBG_MAP_ALLOC
 // This include:
 #include "Game.h"
 
-// Library includes:
+// Local includes:
 #include "Renderer.h"
 #include "LogManager.h"
 #include "Sprite.h"
@@ -11,8 +11,12 @@
 #include "InputSystem.h"
 #include "XboxController.h"
 #include "fmod.hpp"
-#include <SDL_ttf.h>
 #include "SoundSystem.h"
+
+// Lib icnludes
+#include <SDL_ttf.h>
+#include <cstdlib>
+#include <crtdbg.h>
 
 //IMGUI INCLUDES
 #include "imgui/imgui_impl_sdl2.h"
@@ -87,6 +91,7 @@ void Game::Quit()
 // Where scenes will be added
 bool Game::Initialise()
 {
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	// WIndow screen
 	int bbWidth = 1280;
 	int bbHeight = 720;
@@ -137,6 +142,7 @@ bool Game::Initialise()
 	return SetCurrentScene(SCENE_INDEX_FMODSPLASH, true);
 
 	return true;
+	_CrtDumpMemoryLeaks();
 }
 
 bool Game::SetCurrentScene(int index, bool forceInitialise)

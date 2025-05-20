@@ -47,6 +47,7 @@ public:
 	void EndWaveEnemyCleanup();
 
 	WaveSystem* GetWaveSystem() const { return m_pWaveSystem; }
+	Player* GetPlayer() const { return m_pPlayer; }
 
 	void SetupUpgradeMenuUI();
 	void ClearUpgradeMenuUI();

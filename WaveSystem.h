@@ -31,6 +31,7 @@ public:
     void ResetForNewGame();
 
     void NotifyEnemyKilled();
+    void NotifyBossKilled();
 
     // Getters for abysswalker
     WaveState GetCurrentState() const { return m_currentWaveState; }
@@ -39,6 +40,7 @@ public:
     float GetWaveTimer() const { return m_waveTimer; }
     float GetIntermissionTimer() const { return m_intermissionTimer; }
     bool IsMaxWavesReached() const { return m_currentWaveNumber > MAX_WAVES;  }
+    bool IsBossKilled() const { return m_bBossKilled; }
 
     // Methods to be called by SceneAbyssWalker
     void EndIntermission();
@@ -63,7 +65,8 @@ public:
     static const float WAVE_DURATION;
     static const float INTERMISSION_DURATION;
     static const int KILLS_TO_END_WAVE_EARLY;
-    static const int MAX_WAVES;
+    static const int MAX_WAVES; // Don't forget to set this to 10!
+    static const float BOSS_WAVE_DURATION;
 
 private:
     SceneAbyssWalker* m_pScene;  
@@ -74,6 +77,7 @@ private:
     float m_waveTimer;
     float m_intermissionTimer;
     int m_enemiesKilledThisWave;
+    bool m_bBossKilled;
 };
 
 #endif // !__WAVESYSTEM_H__

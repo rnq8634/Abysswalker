@@ -19,9 +19,9 @@
 #include <cmath> 
 #include <cstdlib>
 
-const float BOSS_VISUAL_SCALE = 5.0f;
 const float Boss::kGroundLevel = 700.0f;
-const float Boss::BOSS_SPELL_EFFECT_VISUAL_SCALE = 2.0f;
+const float Boss::SPELL_EFFECT_VISUAL_SCALE = 2.0f;
+const float Boss::BOSS_VISUAL_SCALE = 5.0f;
 const float Boss::BOSS_SPELL_WINDUP_DURATION = 0.7f;
 const float Boss::BOSS_SPELL_STRIKE_DURATION = 0.5f;
 const float Boss::BOSS_SPELL_OVER_DURATION = 0.8f;
@@ -267,7 +267,7 @@ void Boss::Process(float deltaTime)
             {
                 if (m_pTargetPlayer && m_pTargetPlayer->IsAlive()) 
                 {
-                    float spellAOERadius = BOSS_DEFAULT_SPRITE_CASTSTRIKE_WIDTH * BOSS_SPELL_EFFECT_VISUAL_SCALE / 2.0f;
+                    float spellAOERadius = BOSS_DEFAULT_SPRITE_CASTSTRIKE_WIDTH * SPELL_EFFECT_VISUAL_SCALE / 2.0f;
                     float playerRadius = m_pTargetPlayer->GetRadius();
                     float combinedRadius = playerRadius + spellAOERadius;
                     float distanceToSpellCenterSq = (m_pTargetPlayer->GetPosition() - m_spellTargetPosition).LengthSquared();

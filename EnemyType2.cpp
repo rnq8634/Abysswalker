@@ -89,6 +89,11 @@ bool EnemyType2::Initialise(Renderer& renderer, const Vector2& startPosition)
     if (!InitialiseAnimatedSprite(renderer, EnemyType2State::DEATH, "assets/enemyType2/Death.png", ENEMY_DEFAULT_SPRITE_WIDTH, ENEMY_DEFAULT_SPRITE_HEIGHT, 0.08f, false, [this]() { this->OnDeathAnimationComplete(); })) return false;
 
     TransitionToState(EnemyType2State::IDLE);
+    AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
+    if (currentSprite)
+    {
+        UpdateSprite(currentSprite, 0.0f);
+    }
     return true;
 }
 

@@ -299,9 +299,13 @@
     <ClInclude Include="Boss.h">
       <Filter>Engine\GameObjects</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="sprite.vert" />
     <None Include="sprite.frag" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DemoGame2025.rc" />
   </ItemGroup>
 </Project>

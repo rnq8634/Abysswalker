@@ -333,13 +333,13 @@ void Player::GainEssence(int amount)
 void Player::UpdateSprite(AnimatedSprite* sprite, float deltaTime)
 {
 	sprite->Process(deltaTime);
+
 	sprite->SetX(static_cast<int>(m_position.x));
 	sprite->SetY(static_cast<int>(m_position.y));
 	sprite->SetFlipHorizontal(!m_bFacingRight);
 }
 
 // ---Drawing---
-
 void Player::Draw(Renderer& renderer)
 {
 	AnimatedSprite* currentSprite = GetCurrentAnimatedSprite();
@@ -602,6 +602,7 @@ void Player::TakeDamage(int amount)
 		m_velocity.y = -50.0f;
 		m_bIsInvincible = true;
 		m_invincibilityTimer = m_invincibilityDuration;
+
 	}
 }
 

@@ -115,13 +115,15 @@ public:
     static const int BOSS_DEFAULT_SPRITE_CAST_END_WIDTH = 40;
     static const int BOSS_DEFAULT_SPRITE_CAST_END_HEIGHT = 30;
 
-    static const float BOSS_SPELL_EFFECT_VISUAL_SCALE;
+    static const float BOSS_VISUAL_SCALE;
+    static const float SPELL_EFFECT_VISUAL_SCALE;
 
     static const float BOSS_SPELL_WINDUP_DURATION;
     static const float BOSS_SPELL_STRIKE_DURATION;
     static const float BOSS_SPELL_OVER_DURATION;
 
 protected:
+    Renderer* m_pRenderer;
     BossState m_currentState;
     bool m_bFacingRight; // True if facing right, false if facing left
 

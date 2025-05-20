@@ -12,6 +12,7 @@
 
 const float WaveSystem::PRE_WAVE_DELAY_DURATION = 3.0f;
 const float WaveSystem::WAVE_DURATION = 60.0f;
+const float WaveSystem::BOSS_WAVE_DURATION = 180.0f;
 const float WaveSystem::INTERMISSION_DURATION = 30.0f;
 const int WaveSystem::KILLS_TO_END_WAVE_EARLY = 10;
 const int WaveSystem::MAX_WAVES = 10;
@@ -24,6 +25,7 @@ WaveSystem::WaveSystem(SceneAbyssWalker* scene, Player* player)
     , m_waveTimer(0.0f)
     , m_intermissionTimer(0.0f)
     , m_enemiesKilledThisWave(0)
+    , m_bBossKilled(false)
 {
     // Ensuring if valid
     if (!m_pScene) 
@@ -48,6 +50,7 @@ void WaveSystem::Initialise()
     m_waveTimer = PRE_WAVE_DELAY_DURATION;
     m_intermissionTimer = INTERMISSION_DURATION;
     m_currentWaveState = WaveState::PRE_WAVE_DELAY;
+    m_bBossKilled = false;
 }
 
 void WaveSystem::ResetForNewGame()
@@ -58,6 +61,11 @@ void WaveSystem::ResetForNewGame()
 void WaveSystem::Process(float deltaTime, InputSystem& inputSystem)
 {
     if (!m_pPlayer || !m_pScene) return;
+
+    if (m_currentWaveState == WaveState::GAME_WON || m_currentWaveState == WaveState::GAME_END_PROMPT)
+    {
+        return;
+    }
 
     switch (m_currentWaveState)
     {
@@ -93,14 +101,40 @@ void WaveSystem::ProcessInWave(float deltaTime)
 {
     if (!m_pPlayer->IsAlive())
     {
-        LogManager::GetInstance().Log("Player died during wave. Game Prompt will now appear");
-        m_pScene->EndWaveEnemyCleanup(); 
+        if (m_pScene) m_pScene->EndWaveEnemyCleanup();
         TransitionToState(WaveState::GAME_END_PROMPT);
-        m_pScene->SetupGameEndPromptUI("YOU DIED!");
+        if (m_pScene) m_pScene->SetupGameEndPromptUI("YOU DIED!");
+        return;
+    }
+
+    if (m_bBossKilled || m_currentWaveState == WaveState::GAME_WON)
+    {
         return;
     }
 
     m_waveTimer -= deltaTime;
+
+    bool isBossWave = (m_currentWaveNumber == MAX_WAVES);
+
+    if (isBossWave)
+    {
+        // If the player runs out of time AND does not kill the boss
+        if (m_waveTimer <= 0 && !m_bBossKilled)
+        {
+            // Player loses by default
+            if (m_pScene) m_pScene->EndWaveEnemyCleanup();
+
+            if (m_pScene) m_pScene->SetupGameEndPromptUI("The Night has consumed you...");
+        }
+        else
+        {
+            if (m_waveTimer <= 0 || m_enemiesKilledThisWave >= KILLS_TO_END_WAVE_EARLY)
+            {
+                ProcessEndOfWaveLogic();
+            }
+        }
+    }
+
     if (m_waveTimer <= 0 || m_enemiesKilledThisWave >= KILLS_TO_END_WAVE_EARLY)
     {
         ProcessEndOfWaveLogic();
@@ -117,7 +151,7 @@ void WaveSystem::ProcessEndOfWaveLogic()
         TransitionToState(WaveState::GAME_WON);
         m_pScene->SetupGameEndPromptUI("Victory!"); 
     }
-    else
+    else if (m_currentWaveNumber < MAX_WAVES)
     {
         StartIntermission();
     }
@@ -147,8 +181,19 @@ void WaveSystem::StartNewWave()
     m_currentWaveNumber++;
     m_enemiesKilledThisWave = 0;
     m_waveTimer = WAVE_DURATION;
+
+    if (m_pScene && m_currentWaveNumber == MAX_WAVES)
+    {
+        LogManager::GetInstance().Log(("Starting Boss Wave: " + std::to_string(m_currentWaveNumber)).c_str());
+        m_pScene->SpawnBoss();
+        m_waveTimer = BOSS_WAVE_DURATION;
+    }
+    else
+    {
+        LogManager::GetInstance().Log(("Starting Wave " + std::to_string(m_currentWaveNumber)).c_str());
+    }
+
     TransitionToState(WaveState::IN_WAVE);
-    LogManager::GetInstance().Log(("Starting Wave " + std::to_string(m_currentWaveNumber)).c_str());
 }
 
 void WaveSystem::StartIntermission()
@@ -165,6 +210,17 @@ void WaveSystem::NotifyEnemyKilled()
     {
         m_enemiesKilledThisWave++;
     }
+}
+
+void WaveSystem::NotifyBossKilled()
+{
+    if (m_bBossKilled || m_currentWaveState == WaveState::GAME_WON) return;
+
+    m_bBossKilled = true;
+    if (m_pScene) m_pScene->EndWaveEnemyCleanup();
+
+    TransitionToState(WaveState::GAME_WON);
+    if (m_pScene) m_pScene->SetupGameEndPromptUI("YOU HAVE SURVIVED THE NIGHT!");
 }
 
 void WaveSystem::TransitionToState(WaveState newState)

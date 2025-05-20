@@ -15,7 +15,6 @@
 #include "Texture.h"
 #include "XboxController.h"
 #include "PlayerStats.h"
-#include "SoundSystem.h"
 #include "Boss.h"
 
 // IMGUI
@@ -84,6 +83,9 @@ SceneAbyssWalker::~SceneAbyssWalker()
     delete m_pPlayerHUD;
     m_pPlayerHUD = nullptr;
 
+    delete m_pUpgradeMenu;
+    m_pUpgradeMenu = nullptr;
+
     delete m_pEnemySpawner;
     m_pEnemySpawner = nullptr;
 
@@ -111,9 +113,6 @@ SceneAbyssWalker::~SceneAbyssWalker()
     // Background
     delete m_pmoonBackground; 
     m_pmoonBackground = nullptr;
-
-    ClearUpgradeMenuUI();
-    ClearGameEndPromptUI();
 }
 
 void SceneAbyssWalker::fullBackground(Renderer& renderer)
@@ -142,6 +141,7 @@ void SceneAbyssWalker::fullBackground(Renderer& renderer)
 bool SceneAbyssWalker::Initialise(Renderer& renderer)
 {
     m_pRenderer = &renderer;
+    m_bInitialised = false;
     if (!m_pmoonBackground)
     {
         fullBackground(*m_pRenderer);
@@ -230,9 +230,17 @@ void SceneAbyssWalker::SpawnBoss()
         return;
     }
 
-    if (m_bBossHasSpawned && m_pBoss && m_pBoss->IsAlive())
+    if (m_bBossHasSpawned)
     {
-        LogManager::GetInstance().Log("SceneAbyssWalker::SpawnBoss - Boss already spawned and alive.");
+        if (m_pBoss && m_pBoss->IsAlive())
+        {
+            LogManager::GetInstance().Log("SceneAbyssWalker::SpawnBoss - Boss already spawned and is alive. Aborting spawn.");
+        }
+        else
+        {
+            LogManager::GetInstance().Log("SceneAbyssWalker::SpawnBoss - Boss was already spawned in this session (may be dead). Not respawning.");
+        }
+
         return;
     }
 
@@ -534,26 +542,36 @@ void SceneAbyssWalker::Process(float deltaTime, InputSystem& inputSystem)
             }
         }
 
+        // Boss
         if (m_pBoss && m_pBoss->IsAlive())
         {
             if (m_pBoss->m_pTargetPlayer == nullptr && m_pPlayer) m_pBoss->m_pTargetPlayer = m_pPlayer;
             m_pBoss->Process(deltaTime);
-        }
 
-        if (proecessEnemies && m_pEnemySpawner) // Enemy Spawner only active during IN_WAVE
-        {
-            if (m_pPlayer->IsAlive()) // Only spawn if player is alive
+            if (!m_pBoss->IsAlive())
             {
-                m_pEnemySpawner->Update(deltaTime, m_enemyBats, m_enemyType2);
+                m_pWaveSystem->NotifyBossKilled();
             }
         }
-        CleanupDead();
+        else if (m_pBoss && !m_pBoss->IsAlive() && m_pBoss->GetCurrentState() == BossState::DEATH)
+        {
+            m_pBoss->UpdateSprite(m_pBoss->GetCurrentAnimatedSprite(), deltaTime);
+        }
 
+        bool isBossActive = (m_pBoss && m_pBoss->IsAlive() && m_bBossHasSpawned);
+        if (m_pEnemySpawner && m_pPlayer->IsAlive() && !isBossActive && m_pWaveSystem->GetCurrentWaveNumber() < WaveSystem::MAX_WAVES)
+        {
+            m_pEnemySpawner->Update(deltaTime, m_enemyBats, m_enemyType2);
+        }
+
+        // Collisions
         if (m_pCollisionSystem && m_pPlayer && m_pPlayer->IsAlive())
         {
             m_pCollisionSystem->ProcessCollisions(m_pPlayer, m_enemyBats, m_enemyType2);
         }
     }
+
+    CleanupDead();
 }
 
 void SceneAbyssWalker::EndWaveEnemyCleanup()
@@ -763,14 +781,19 @@ void SceneAbyssWalker::Draw(Renderer& renderer)
     // Draw the Boss
     if (m_pBoss)
     {
-        m_pBoss->Draw(renderer);
+        if (m_pBoss->IsAlive() || (m_pBoss->GetCurrentState() == BossState::DEATH && m_pBoss->GetCurrentAnimatedSprite() && !m_pBoss->GetCurrentAnimatedSprite()->IsAnimationComplete()))
+        {
+            m_pBoss->Draw(renderer);
+        }
     }
 
+    // Player HUD
     if (m_pPlayerHUD)
     {
         m_pPlayerHUD->Draw();
     }
 
+    // Wave timer
     if (currentWaveState == WaveState::IN_WAVE || currentWaveState == WaveState::PRE_WAVE_DELAY) 
     {
         char timerBuffer[64];
